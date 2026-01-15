@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Student Database</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .barcode-img { margin: 0 10px 10px 0; }
+        .student-card { border: 1px solid #ccc; border-radius: 6px; padding: 16px; margin-bottom: 12px; background: #f8f9fa; }
+        .section-title { margin-top: 32px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+            <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+            <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="welcome.html">Home</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container mt-4" style="margin-top: 120px !important;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="welcome.html" class="btn btn-secondary">← Back</a>
+        <div>
+            <button id="clearAll" class="btn btn-danger me-2">Clear All</button>
+            <button id="exportExcel" class="btn btn-success">Export to Excel</button>
+        </div>
+    </div>
+    <h1 class="mb-4">Student Barcode Database</h1>
+    <form id="addStudentForm" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="addStudentId" placeholder="Student ID" required>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="addStudentName" placeholder="Student Name" required>
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="addStudentSection" placeholder="Section" required>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Add / Update Student</button>
+        </div>
+    </form>
+    <div class="mb-3">
+        <label for="excelInput" class="form-label">Import Excel File (.xlsx):</label>
+        <input type="file" id="excelInput" accept=".xlsx" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by ID, name, or section...">
+            <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+        </div>
+    </div>
+    <div id="database"></div>
+</div>
+
+<!-- Clear All Confirmation Modal -->
+<div class="modal fade" id="clearAllModal" tabindex="-1" aria-labelledby="clearAllModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clearAllModalLabel">Delete All Students</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger" role="alert">
+          <strong>Warning:</strong> This action cannot be undone. All students will be permanently deleted.
+        </div>
+        <p>To confirm, please type <strong>"Delete"</strong> in the box below:</p>
+        <input type="text" id="deleteConfirmInput" class="form-control" placeholder="Type 'Delete' to confirm">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteAll" disabled>Delete All Students</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Single Student Confirmation Modal -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" aria-labelledby="deleteStudentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteStudentModalLabel">Delete Student</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger" role="alert">
+          <strong>Warning:</strong> This action cannot be undone. This student will be permanently deleted.
+        </div>
+        <p>To confirm, please type <strong>"Delete"</strong> in the box below:</p>
+        <input type="text" id="deleteStudentConfirmInput" class="form-control" placeholder="Type 'Delete' to confirm">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteStudent" disabled>Delete Student</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="lib/JsBarcode.all.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/encoder.js"></script>
+<script src="lib/bootstrap.bundle.min.js"></script>
+<script>
+// Sample data (replace with your real data or import from Excel)
+const SAMPLE_STUDENTS = [
+    { studentId: '2023001', studentName: 'Alice Smith', section: 'A' },
+    { studentId: '2023002', studentName: 'Bob Johnson', section: 'A' },
+    { studentId: '2023003', studentName: 'Charlie Lee', section: 'B' },
+    { studentId: '2023004', studentName: 'Diana King', section: 'B' },
+    { studentId: '2023005', studentName: 'Evan Wright', section: 'C' }
+];
+
+function saveStudents() {
+    localStorage.setItem('barcodeStudents', JSON.stringify(students));
+}
+
+function loadStudents() {
+    const data = localStorage.getItem('barcodeStudents');
+    if (data) {
+        try {
+            return JSON.parse(data);
+        } catch (e) {
+            return [...SAMPLE_STUDENTS];
+        }
+    }
+    return [...SAMPLE_STUDENTS];
+}
+
+function ensureUniqueIds(students) {
+    return students.map(s => {
+        s.uniqueId = s.studentId;
+        return s;
+    });
+}
+
+let students = ensureUniqueIds(loadStudents());
+
+function groupBySection(students) {
+    const sections = {};
+    students.forEach(s => {
+        if (!sections[s.section]) sections[s.section] = [];
+        sections[s.section].push(s);
+    });
+    return sections;
+}
+
+function renderDatabase() {
+    const dbDiv = document.getElementById('database');
+    dbDiv.innerHTML = '';
+    
+    // Get search term
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // Filter students based on search term
+    let filteredStudents = students;
+    if (searchTerm) {
+        filteredStudents = students.filter(student => 
+            student.studentId.toLowerCase().includes(searchTerm) ||
+            student.studentName.toLowerCase().includes(searchTerm) ||
+            student.section.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    const sections = groupBySection(filteredStudents);
+    Object.keys(sections).sort().forEach(section => {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.innerHTML = `<h2 class=\"section-title\">Section ${section}</h2>`;
+        sections[section].forEach((student, idx) => {
+            const ref = encodeStudentData(student.studentId);
+            const card = document.createElement('div');
+            card.className = 'student-card row align-items-center';
+            card.innerHTML = `
+                <div class=\"col-md-3 col-12 text-center\">
+                    <svg id=\"barcode-${ref}\"></svg>
+                </div>
+                <div class=\"col-md-8 col-12\">
+                    <strong>ID:</strong> ${student.studentId}<br>
+                    <strong>Name:</strong> ${student.studentName}<br>
+                    <strong>Section:</strong> ${student.section}<br>
+                    <strong>Barcode Ref:</strong> ${ref}<br>
+                    <small class=\"text-muted\">Unique ID: ${student.studentId}</small>
+                </div>
+                <div class=\"col-md-1 col-12 text-end\">
+                    <button class=\"btn btn-sm btn-danger delete-student\" title=\"Delete Student\" data-studentid=\"${student.studentId}\"><span aria-hidden=\"true\">🗑️</span></button>
+                </div>
+            `;
+            sectionDiv.appendChild(card);
+            setTimeout(() => {
+                JsBarcode(`#barcode-${ref}`, ref, { format: "CODE128", width: 2, height: 60, displayValue: true });
+            }, 0);
+        });
+        dbDiv.appendChild(sectionDiv);
+    });
+    // Attach delete handlers
+    document.querySelectorAll('.delete-student').forEach(btn => {
+        btn.addEventListener('click', function() {
+            studentToDeleteId = this.getAttribute('data-studentid');
+            deleteStudentConfirmInput.value = '';
+            confirmDeleteStudentBtn.disabled = true;
+            deleteStudentModal.show();
+        });
+    });
+    saveStudents();
+}
+
+// Excel import handler
+const excelInput = document.getElementById('excelInput');
+excelInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        // Expecting header: ID, Name, Section
+        const header = rows[0].map(h => h.toLowerCase());
+        const newStudents = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row[header.indexOf('studentid')] && row[header.indexOf('studentname')] && row[header.indexOf('section')]) {
+                newStudents.push({
+                    uniqueId: String(row[header.indexOf('studentid')]),
+                    studentId: String(row[header.indexOf('studentid')]),
+                    studentName: String(row[header.indexOf('studentname')]),
+                    section: String(row[header.indexOf('section')])
+                });
+            }
+        }
+        // Merge: update existing or add new
+        const studentMap = {};
+        students.forEach(s => { studentMap[s.studentId] = s; });
+        newStudents.forEach(s => { studentMap[s.studentId] = s; });
+        students = Object.values(studentMap);
+        students = ensureUniqueIds(students);
+        renderDatabase();
+        saveStudents();
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+// Add/Edit student form handler
+const addStudentForm = document.getElementById('addStudentForm');
+const studentIdInput = document.getElementById('addStudentId');
+const studentNameInput = document.getElementById('addStudentName');
+const studentSectionInput = document.getElementById('addStudentSection');
+
+// Add event listener for student ID input
+studentIdInput.addEventListener('input', function() {
+    const studentId = this.value.trim();
+    if (studentId) {
+        const existingStudent = students.find(s => s.studentId === studentId);
+        if (existingStudent) {
+            studentNameInput.value = existingStudent.studentName;
+            studentSectionInput.value = existingStudent.section;
+        } else {
+            studentNameInput.value = '';
+            studentSectionInput.value = '';
+        }
+    }
+});
+
+addStudentForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const studentId = document.getElementById('addStudentId').value.trim();
+    const studentName = document.getElementById('addStudentName').value.trim();
+    const section = document.getElementById('addStudentSection').value.trim();
+    if (!studentId || !studentName || !section) return;
+    // Check if studentId exists
+    let found = false;
+    students = students.map(s => {
+        if (s.studentId === studentId) {
+            found = true;
+            return { ...s, studentName, section };
+        }
+        return s;
+    });
+    if (!found) {
+        students.push({ uniqueId: studentId, studentId, studentName, section });
+    }
+    students = ensureUniqueIds(students);
+    renderDatabase();
+    saveStudents();
+    addStudentForm.reset();
+});
+
+// Add search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    renderDatabase();
+});
+
+document.getElementById('clearSearch').addEventListener('click', function() {
+    document.getElementById('searchInput').value = '';
+    renderDatabase();
+});
+
+// Replace the clearAll handler with modal logic
+const clearAllBtn = document.getElementById('clearAll');
+const clearAllModal = new bootstrap.Modal(document.getElementById('clearAllModal'));
+const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+const confirmDeleteAllBtn = document.getElementById('confirmDeleteAll');
+
+clearAllBtn.addEventListener('click', function() {
+    deleteConfirmInput.value = '';
+    confirmDeleteAllBtn.disabled = true;
+    clearAllModal.show();
+});
+
+deleteConfirmInput.addEventListener('input', function() {
+    confirmDeleteAllBtn.disabled = (this.value !== 'Delete');
+});
+
+// Add Enter key functionality for delete all confirmation
+deleteConfirmInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value === 'Delete') {
+        e.preventDefault();
+        confirmDeleteAllBtn.click();
+    }
+});
+
+confirmDeleteAllBtn.addEventListener('click', function() {
+    students = [];
+    renderDatabase();
+    saveStudents();
+    clearAllModal.hide();
+});
+
+document.getElementById('exportExcel').addEventListener('click', function() {
+    // Prepare data for export (include uniqueId = studentId)
+    const exportData = [
+        ['uniqueId', 'studentId', 'studentName', 'section']
+    ];
+    students.forEach(s => {
+        exportData.push([s.studentId, s.studentId, s.studentName, s.section]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    XLSX.writeFile(wb, 'barcode-students.xlsx');
+});
+
+// Modal logic for deleting a single student
+const deleteStudentModal = new bootstrap.Modal(document.getElementById('deleteStudentModal'));
+const deleteStudentConfirmInput = document.getElementById('deleteStudentConfirmInput');
+const confirmDeleteStudentBtn = document.getElementById('confirmDeleteStudent');
+let studentToDeleteId = null;
+
+deleteStudentConfirmInput.addEventListener('input', function() {
+    confirmDeleteStudentBtn.disabled = (this.value !== 'Delete');
+});
+
+// Add Enter key functionality for delete single student confirmation
+deleteStudentConfirmInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value === 'Delete') {
+        e.preventDefault();
+        confirmDeleteStudentBtn.click();
+    }
+});
+
+confirmDeleteStudentBtn.addEventListener('click', async function() {
+    if (studentToDeleteId) {
+        // Remove from Firebase first
+        if (rentalFirebaseService) {
+            try {
+                await rentalFirebaseService.deleteStudent(studentToDeleteId);
+                console.log('Student deleted from Firebase:', studentToDeleteId);
+            } catch (error) {
+                console.error('Error deleting student from Firebase:', error);
+                // Still remove from local array even if Firebase fails
+            }
+        }
+        
+        students = students.filter(s => s.studentId !== studentToDeleteId);
+        renderDatabase();
+        
+        // Fallback to localStorage if Firebase not available
+        if (!rentalFirebaseService) {
+            saveStudents();
+        }
+        
+        deleteStudentModal.hide();
+    }
+});
+
+// Initial render
+renderDatabase();
+</script>
+
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- Firebase Config -->
+<script src="firebase-config.js"></script>
+
+<!-- Rental Firebase Service -->
+<script src="rental-firebase-service.js"></script>
+
+<script>
+// Firebase integration for student database
+let rentalFirebaseService = null;
+
+// Initialize Firebase
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        if (window.firebaseDb) {
+            rentalFirebaseService = new RentalSystemFirebaseService();
+            
+            // Load students from Firebase
+            students = await rentalFirebaseService.getStudents();
+            console.log('Students loaded from Firebase');
+            
+            // Re-render the database
+            renderDatabase();
+        } else {
+            throw new Error('Firebase not available');
+        }
+    } catch (error) {
+        console.error('Firebase initialization failed, falling back to localStorage:', error);
+        // Fallback to localStorage
+        students = JSON.parse(localStorage.getItem('barcodeStudents')) || [];
+        renderDatabase();
+    }
+});
+
+// Override the saveStudents function to use Firebase
+async function saveStudents() {
+    if (rentalFirebaseService) {
+        try {
+            // Save each student to Firebase
+            for (const student of students) {
+                await rentalFirebaseService.addStudent(student);
+            }
+            console.log('Students saved to Firebase');
+        } catch (error) {
+            console.error('Error saving students to Firebase:', error);
+            // Fallback to localStorage
+            localStorage.setItem('barcodeStudents', JSON.stringify(students));
+        }
+    } else {
+        // Fallback to localStorage
+        localStorage.setItem('barcodeStudents', JSON.stringify(students));
+    }
+}
+
+// Override the addStudent function to use Firebase
+async function addStudent(student) {
+    if (rentalFirebaseService) {
+        try {
+            const id = await rentalFirebaseService.addStudent(student);
+            students.push({ id, ...student });
+            console.log('Student added to Firebase');
+        } catch (error) {
+            console.error('Error adding student to Firebase:', error);
+            // Fallback to localStorage
+            students.push(student);
+            localStorage.setItem('barcodeStudents', JSON.stringify(students));
+        }
+    } else {
+        // Fallback to localStorage
+        students.push(student);
+        localStorage.setItem('barcodeStudents', JSON.stringify(students));
+    }
+}
+
+// Override the updateStudent function to use Firebase
+async function updateStudent(studentId, studentData) {
+    if (rentalFirebaseService) {
+        try {
+            await rentalFirebaseService.updateStudent(studentId, studentData);
+            const index = students.findIndex(s => s.id === studentId || s.studentId === studentId);
+            if (index !== -1) {
+                students[index] = { ...students[index], ...studentData };
+            }
+            console.log('Student updated in Firebase');
+        } catch (error) {
+            console.error('Error updating student in Firebase:', error);
+            // Fallback to localStorage
+            localStorage.setItem('barcodeStudents', JSON.stringify(students));
+        }
+    } else {
+        // Fallback to localStorage
+        localStorage.setItem('barcodeStudents', JSON.stringify(students));
+    }
+}
+
+// Override the deleteStudent function to use Firebase
+async function deleteStudent(studentId) {
+    if (rentalFirebaseService) {
+        try {
+            await rentalFirebaseService.deleteStudent(studentId);
+            students = students.filter(s => s.id !== studentId && s.studentId !== studentId);
+            console.log('Student deleted from Firebase');
+        } catch (error) {
+            console.error('Error deleting student from Firebase:', error);
+            // Fallback to localStorage
+            students = students.filter(s => s.studentId !== studentId);
+            localStorage.setItem('barcodeStudents', JSON.stringify(students));
+        }
+    } else {
+        // Fallback to localStorage
+        students = students.filter(s => s.studentId !== studentId);
+        localStorage.setItem('barcodeStudents', JSON.stringify(students));
+    }
+}
+</script>
+</body>
+</html> 

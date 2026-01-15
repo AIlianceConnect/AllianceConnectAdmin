@@ -1,0 +1,227 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+:root {
+  --gold: #FFD700;
+  --black: #181818;
+}
+
+.navbar {
+  background: var(--black) !important;
+}
+
+.navbar-brand, .navbar-brand:hover {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 900;
+  color: var(--gold) !important;
+  letter-spacing: 2px;
+}
+
+.btn-primary { background: var(--gold); color: var(--black); border: none; font-weight: 700; }
+.btn-primary:hover, .btn-primary:focus { background: var(--black); color: var(--gold); }
+
+.btn-light { color: var(--black); border-color: var(--gold); }
+.btn-light:hover { background: var(--gold); color: var(--black); border-color: var(--gold); }
+
+.with-fixed-navbar { margin-top: 100px; }
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar .btn-light {
+    margin-left: auto;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.payment-status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.payment-status.paid {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.payment-status.unpaid {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.action-buttons {
+    white-space: nowrap;
+}
+
+.action-buttons .btn {
+    margin-right: 4px;
+}
+
+.action-buttons .btn:last-child {
+    margin-right: 0;
+}
+
+#referenceNumber {
+    background-color: #e9ecef;
+    font-family: monospace;
+    font-weight: 600;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#syncButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#syncButton i {
+    font-size: 1.1em;
+}
+
+/* Styles for same student highlighting */
+.same-student {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107;
+}
+
+.same-student:hover {
+    background-color: #ffe69c !important;
+}
+
+/* Update existing student group styles to work with new highlighting */
+.student-group-even {
+    background-color: #f8f9fa;
+}
+
+.student-group-odd {
+    background-color: #ffffff;
+}
+
+.student-group-even.same-student,
+.student-group-odd.same-student {
+    background-color: #fff3cd !important;
+}
+
+/* Add a visual indicator for same student */
+.same-student-indicator {
+    color: #856404;
+    font-size: 0.8em;
+    margin-left: 5px;
+    font-style: italic;
+}
+
+/* Remove problematic tbody scroll styles */
+#ordersList {
+    display: table-row-group;
+    max-height: unset;
+    overflow-y: unset;
+}
+#ordersList tr {
+    display: table-row;
+    width: auto;
+    table-layout: auto;
+}
+#ordersList td, #ordersList th {
+    /* white-space: nowrap; */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Add a scrollable wrapper for the table body */
+.orders-table-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.date-header {
+    /* position: sticky; */
+    /* top: 0; */
+    /* z-index: 1; */
+}
+
+.date-header td {
+    padding: 12px 15px !important;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.date-header td:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.date-header td:last-child {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+/* Styles for clickable payment status badges */
+.badge.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.badge.clickable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.badge.clickable:active {
+    transform: scale(0.95);
+} 

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Officer Database</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .barcode-img { margin: 0 10px 10px 0; }
+        .officer-card { border: 1px solid #ccc; border-radius: 6px; padding: 16px; margin-bottom: 12px; background: #f8f9fa; }
+        .section-title { margin-top: 32px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+            <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+            <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="welcome.html">Home</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container mt-4" style="margin-top: 120px !important;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="welcome.html" class="btn btn-secondary">← Back</a>
+        <div>
+            <button id="clearAll" class="btn btn-danger me-2">Clear All</button>
+            <button id="exportExcel" class="btn btn-success">Export to Excel</button>
+        </div>
+    </div>
+    <h1 class="mb-4">Officer Barcode Database</h1>
+    <form id="addOfficerForm" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="addOfficerId" placeholder="Officer ID" required>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="addOfficerName" placeholder="Officer Name" required>
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="addOfficerDepartment" placeholder="Department" required>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Add / Update Officer</button>
+        </div>
+    </form>
+    <div class="mb-3">
+        <label for="excelInput" class="form-label">Import Excel File (.xlsx):</label>
+        <input type="file" id="excelInput" accept=".xlsx" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by ID, name, or department...">
+            <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+        </div>
+    </div>
+    <div id="database"></div>
+</div>
+
+<!-- Delete All Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Type <strong>Delete</strong> to confirm clearing all officer data. This cannot be undone.</p>
+        <input type="text" class="form-control" id="deleteConfirmInput" placeholder="Type 'Delete' to confirm">
+        <div id="deleteConfirmError" class="text-danger mt-2" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Individual Officer Confirmation Modal -->
+<div class="modal fade" id="deleteOfficerModal" tabindex="-1" aria-labelledby="deleteOfficerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteOfficerModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Type <strong>Delete</strong> to confirm deleting this officer. This cannot be undone.</p>
+        <input type="text" class="form-control" id="deleteOfficerConfirmInput" placeholder="Type 'Delete' to confirm">
+        <div id="deleteOfficerConfirmError" class="text-danger mt-2" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="deleteOfficerConfirmBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="lib/bootstrap.bundle.min.js"></script>
+<script src="lib/JsBarcode.all.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/encoder.js"></script>
+<script>
+// Sample data (replace with your real data or import from Excel)
+const SAMPLE_OFFICERS = [
+    { officerId: 'OFF001', officerName: 'John Smith', department: 'IT' },
+    { officerId: 'OFF002', officerName: 'Sarah Johnson', department: 'HR' },
+    { officerId: 'OFF003', officerName: 'Michael Brown', department: 'Finance' },
+    { officerId: 'OFF004', officerName: 'Emily Davis', department: 'IT' },
+    { officerId: 'OFF005', officerName: 'Robert Wilson', department: 'HR' }
+];
+
+async function saveOfficers() {
+    if (rentalFirebaseService) {
+        try {
+            // Save each officer to Firebase (this will update existing or create new)
+            for (const officer of officers) {
+                await rentalFirebaseService.addOfficer(officer);
+            }
+            console.log('Officers saved to Firebase');
+        } catch (error) {
+            console.error('Error saving officers to Firebase:', error);
+            // Fallback to localStorage
+            localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+        }
+    } else {
+        // Fallback to localStorage
+        localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+    }
+}
+
+// Add individual officer to Firebase
+async function addOfficerToFirebase(officer) {
+    if (rentalFirebaseService) {
+        try {
+            await rentalFirebaseService.addOfficer(officer);
+            console.log('Officer added to Firebase:', officer.officerId);
+        } catch (error) {
+            console.error('Error adding officer to Firebase:', error);
+            // Fallback to localStorage
+            localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+        }
+    } else {
+        // Fallback to localStorage
+        localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+    }
+}
+
+function loadOfficers() {
+    const data = localStorage.getItem('barcodeOfficers');
+    if (data) {
+        try {
+            return JSON.parse(data);
+        } catch (e) {
+            return [...SAMPLE_OFFICERS];
+        }
+    }
+    return [...SAMPLE_OFFICERS];
+}
+
+function ensureUniqueIds(officers) {
+    return officers.map(o => {
+        o.uniqueId = o.officerId;
+        return o;
+    });
+}
+
+let officers = ensureUniqueIds(loadOfficers());
+
+function groupByDepartment(officers) {
+    const departments = {};
+    officers.forEach(o => {
+        if (!departments[o.department]) departments[o.department] = [];
+        departments[o.department].push(o);
+    });
+    return departments;
+}
+
+function renderDatabase() {
+    const dbDiv = document.getElementById('database');
+    dbDiv.innerHTML = '';
+    
+    // Get search term
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // Filter officers based on search term
+    let filteredOfficers = officers;
+    if (searchTerm) {
+        filteredOfficers = officers.filter(officer => 
+            officer.officerId.toLowerCase().includes(searchTerm) ||
+            officer.officerName.toLowerCase().includes(searchTerm) ||
+            officer.department.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    const departments = groupByDepartment(filteredOfficers);
+    Object.keys(departments).sort().forEach(department => {
+        const departmentDiv = document.createElement('div');
+        departmentDiv.innerHTML = `<h2 class="section-title">Department: ${department}</h2>`;
+        departments[department].forEach((officer, idx) => {
+            const ref = encodeStudentData(officer.officerId);
+            const card = document.createElement('div');
+            card.className = 'officer-card row align-items-center';
+            card.innerHTML = `
+                <div class="col-md-3 col-12 text-center">
+                    <svg id="barcode-${ref}"></svg>
+                </div>
+                <div class="col-md-8 col-12">
+                    <strong>ID:</strong> ${officer.officerId}<br>
+                    <strong>Name:</strong> ${officer.officerName}<br>
+                    <strong>Department:</strong> ${officer.department}<br>
+                    <strong>Barcode Ref:</strong> ${ref}<br>
+                    <small class="text-muted">Unique ID: ${officer.officerId}</small>
+                </div>
+                <div class="col-md-1 col-12 text-end">
+                    <button class="btn btn-sm btn-danger delete-officer" title="Delete Officer" data-department="${department}" data-index="${idx}"><span aria-hidden="true">🗑️</span></button>
+                </div>
+            `;
+            departmentDiv.appendChild(card);
+            setTimeout(() => {
+                JsBarcode(`#barcode-${ref}`, ref, { format: "CODE128", width: 2, height: 60, displayValue: true });
+            }, 0);
+        });
+        dbDiv.appendChild(departmentDiv);
+    });
+    // Attach delete handlers
+    document.querySelectorAll('.delete-officer').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const department = this.getAttribute('data-department');
+            const idx = parseInt(this.getAttribute('data-index'));
+            const departmentOfficers = departments[department];
+            const officerToDelete = departmentOfficers[idx];
+            
+            // Store the officer to delete for the confirmation modal
+            window._officerToDelete = officerToDelete;
+            
+            // Show confirmation modal
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteOfficerModal'));
+            document.getElementById('deleteOfficerConfirmInput').value = '';
+            document.getElementById('deleteOfficerConfirmError').style.display = 'none';
+            deleteModal.show();
+            
+            // Focus input when modal is shown
+            document.getElementById('deleteOfficerModal').addEventListener('shown.bs.modal', function () {
+                document.getElementById('deleteOfficerConfirmInput').focus();
+            }, { once: true });
+        });
+    });
+    saveOfficers();
+}
+
+// Excel import handler
+const excelInput = document.getElementById('excelInput');
+excelInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        // Accept both officer and student column headers
+        const header = rows[0].map(h => h.toLowerCase());
+        const newOfficers = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            // Try officer columns first
+            let officerId = row[header.indexOf('officer id')] || row[header.indexOf('officerid')];
+            let officerName = row[header.indexOf('officer name')] || row[header.indexOf('officername')];
+            let department = row[header.indexOf('department')];
+            // If not found, try student columns with various formats
+            if (!officerId) {
+                officerId = row[header.indexOf('student id')] || row[header.indexOf('studentid')];
+            }
+            if (!officerName) {
+                officerName = row[header.indexOf('student name')] || row[header.indexOf('studentname')];
+            }
+            if (!department) {
+                department = row[header.indexOf('section')];
+            }
+            if (officerId && officerName && department) {
+                newOfficers.push({
+                    uniqueId: String(officerId),
+                    officerId: String(officerId),
+                    officerName: String(officerName),
+                    department: String(department)
+                });
+            }
+        }
+        // Merge: update existing or add new
+        const officerMap = {};
+        officers.forEach(o => { officerMap[o.officerId] = o; });
+        newOfficers.forEach(o => { officerMap[o.officerId] = o; });
+        officers = Object.values(officerMap);
+        officers = ensureUniqueIds(officers);
+        renderDatabase();
+        saveOfficers();
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+// Add/Edit officer form handler
+const addOfficerForm = document.getElementById('addOfficerForm');
+const officerIdInput = document.getElementById('addOfficerId');
+const officerNameInput = document.getElementById('addOfficerName');
+const officerDepartmentInput = document.getElementById('addOfficerDepartment');
+
+// Add event listener for officer ID input
+officerIdInput.addEventListener('input', function() {
+    const officerId = this.value.trim();
+    if (officerId) {
+        const existingOfficer = officers.find(o => o.officerId === officerId);
+        if (existingOfficer) {
+            officerNameInput.value = existingOfficer.officerName;
+            officerDepartmentInput.value = existingOfficer.department;
+        } else {
+            officerNameInput.value = '';
+            officerDepartmentInput.value = '';
+        }
+    }
+});
+
+addOfficerForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const officerId = document.getElementById('addOfficerId').value.trim();
+    const officerName = document.getElementById('addOfficerName').value.trim();
+    const department = document.getElementById('addOfficerDepartment').value.trim();
+    if (!officerId || !officerName || !department) return;
+    
+    // Check if officerId exists
+    let found = false;
+    officers = officers.map(o => {
+        if (o.officerId === officerId) {
+            found = true;
+            return { ...o, officerName, department };
+        }
+        return o;
+    });
+    
+    if (!found) {
+        const newOfficer = { uniqueId: officerId, officerId, officerName, department };
+        officers.push(newOfficer);
+        
+        // Add to Firebase immediately
+        await addOfficerToFirebase(newOfficer);
+    } else {
+        // Update existing officer in Firebase
+        const updatedOfficer = officers.find(o => o.officerId === officerId);
+        if (updatedOfficer && rentalFirebaseService) {
+            try {
+                await rentalFirebaseService.updateOfficer(updatedOfficer.id || updatedOfficer.officerId, updatedOfficer);
+                console.log('Officer updated in Firebase:', officerId);
+            } catch (error) {
+                console.error('Error updating officer in Firebase:', error);
+            }
+        }
+    }
+    
+    officers = ensureUniqueIds(officers);
+    renderDatabase();
+    addOfficerForm.reset();
+});
+
+// Add search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    renderDatabase();
+});
+
+document.getElementById('clearSearch').addEventListener('click', function() {
+    document.getElementById('searchInput').value = '';
+    renderDatabase();
+});
+
+// Clear all data
+document.getElementById('clearAll').addEventListener('click', function() {
+    // Show modal for delete confirmation
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    document.getElementById('deleteConfirmInput').value = '';
+    document.getElementById('deleteConfirmError').style.display = 'none';
+    deleteModal.show();
+    // Focus input when modal is shown
+    document.getElementById('deleteConfirmModal').addEventListener('shown.bs.modal', function () {
+        document.getElementById('deleteConfirmInput').focus();
+    }, { once: true });
+    
+    // Function to handle delete confirmation
+    async function confirmDelete() {
+        const val = document.getElementById('deleteConfirmInput').value.trim();
+        if (val === 'Delete') {
+            // Clear from Firebase first
+            if (rentalFirebaseService) {
+                try {
+                    // Get all officers and delete them from Firebase
+                    const allOfficers = await rentalFirebaseService.getOfficers();
+                    for (const officer of allOfficers) {
+                        await rentalFirebaseService.deleteOfficer(officer.id || officer.officerId);
+                    }
+                    console.log('All officers deleted from Firebase');
+                } catch (error) {
+                    console.error('Error clearing officers from Firebase:', error);
+                }
+            }
+            
+            officers = [];
+            renderDatabase();
+            
+            // Fallback to localStorage if Firebase not available
+            if (!rentalFirebaseService) {
+                saveOfficers();
+            }
+            
+            deleteModal.hide();
+        } else {
+            const err = document.getElementById('deleteConfirmError');
+            err.textContent = "You must type 'Delete' to confirm.";
+            err.style.display = 'block';
+        }
+    }
+    
+    // Add Enter key functionality to the input field
+    document.getElementById('deleteConfirmInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmDelete();
+        }
+    });
+    
+    // Set up the delete button click handler
+    document.getElementById('deleteConfirmBtn').onclick = confirmDelete;
+});
+
+// Individual Officer Delete Confirmation Handler
+document.getElementById('deleteOfficerConfirmBtn').addEventListener('click', async function() {
+    const val = document.getElementById('deleteOfficerConfirmInput').value.trim();
+    if (val === 'Delete') {
+        const officerToDelete = window._officerToDelete;
+        if (officerToDelete) {
+            // Remove from Firebase first
+            if (rentalFirebaseService) {
+                try {
+                    await rentalFirebaseService.deleteOfficer(officerToDelete.id || officerToDelete.officerId);
+                    console.log('Officer deleted from Firebase:', officerToDelete.officerId);
+                } catch (error) {
+                    console.error('Error deleting officer from Firebase:', error);
+                    // Still remove from local array even if Firebase fails
+                }
+            }
+            
+            // Remove from officers array by officerId
+            officers = officers.filter(o => o.officerId !== officerToDelete.officerId);
+            renderDatabase();
+            
+            // Fallback to localStorage if Firebase not available
+            if (!rentalFirebaseService) {
+                saveOfficers();
+            }
+            
+            // Hide modal
+            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteOfficerModal'));
+            if (deleteModal) deleteModal.hide();
+        }
+    } else {
+        const err = document.getElementById('deleteOfficerConfirmError');
+        err.textContent = "You must type 'Delete' to confirm.";
+        err.style.display = 'block';
+    }
+});
+
+// Individual Officer Delete Modal Enter key support
+document.getElementById('deleteOfficerConfirmInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('deleteOfficerConfirmBtn').click();
+    }
+});
+
+// Export to Excel
+document.getElementById('exportExcel').addEventListener('click', function() {
+    const ws = XLSX.utils.json_to_sheet(officers.map(o => ({
+        'Officer ID': o.officerId,
+        'Officer Name': o.officerName,
+        'Department': o.department
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Officers");
+    XLSX.writeFile(wb, "officer_database.xlsx");
+});
+
+// Initial render
+renderDatabase();
+</script>
+
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- Firebase Config -->
+<script src="firebase-config.js"></script>
+
+<!-- Rental Firebase Service -->
+<script src="rental-firebase-service.js"></script>
+
+<script>
+// Firebase integration for admin
+let rentalFirebaseService = null;
+
+// Initialize Firebase
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        if (window.firebaseDb) {
+            rentalFirebaseService = new RentalSystemFirebaseService();
+            
+            // Load officers from Firebase
+            officers = await rentalFirebaseService.getOfficers();
+            console.log('Officers loaded from Firebase');
+            
+            // Re-render the database
+            renderDatabase();
+        } else {
+            throw new Error('Firebase not available');
+        }
+    } catch (error) {
+        console.error('Firebase initialization failed, falling back to localStorage:', error);
+        // Fallback to localStorage
+        officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
+        renderDatabase();
+    }
+});
+
+// Override officer functions to use Firebase
+async function addOfficer(officer) {
+    if (rentalFirebaseService) {
+        try {
+            const id = await rentalFirebaseService.addOfficer(officer);
+            officers.push({ id, ...officer });
+            console.log('Officer added to Firebase');
+        } catch (error) {
+            console.error('Error adding officer to Firebase:', error);
+            // Fallback to localStorage
+            officers.push(officer);
+            localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+        }
+    } else {
+        // Fallback to localStorage
+        officers.push(officer);
+        localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+    }
+}
+
+async function updateOfficer(officerId, officerData) {
+    if (rentalFirebaseService) {
+        try {
+            await rentalFirebaseService.updateOfficer(officerId, officerData);
+            const index = officers.findIndex(o => o.id === officerId || o.officerId === officerId);
+            if (index !== -1) {
+                officers[index] = { ...officers[index], ...officerData };
+            }
+            console.log('Officer updated in Firebase');
+        } catch (error) {
+            console.error('Error updating officer in Firebase:', error);
+            // Fallback to localStorage
+            localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+        }
+    } else {
+        // Fallback to localStorage
+        localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+    }
+}
+
+async function deleteOfficer(officerId) {
+    if (rentalFirebaseService) {
+        try {
+            await rentalFirebaseService.deleteOfficer(officerId);
+            officers = officers.filter(o => o.id !== officerId && o.officerId !== officerId);
+            console.log('Officer deleted from Firebase');
+        } catch (error) {
+            console.error('Error deleting officer from Firebase:', error);
+            // Fallback to localStorage
+            officers = officers.filter(o => o.officerId !== officerId);
+            localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+        }
+    } else {
+        // Fallback to localStorage
+        officers = officers.filter(o => o.officerId !== officerId);
+        localStorage.setItem('barcodeOfficers', JSON.stringify(officers));
+    }
+}
+</script>
+</body>
+</html> 

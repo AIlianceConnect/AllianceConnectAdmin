@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGP Rental System - Firebase Migration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .migration-step {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .step-completed {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .step-error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .step-in-progress {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">🏢 IGP Rental System - Firebase Migration</h3>
+                        <p class="mb-0">Migrate from localStorage to Firebase with RentalSystem_ prefix</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <strong>Migration Overview:</strong> This will migrate your rental system data from localStorage to Firebase using the <code>RentalSystem_</code> prefix to keep it separate from your attendance system.
+                        </div>
+
+                        <div id="migrationStatus" class="mb-4"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>📊 Data Sources (localStorage)</h5>
+                                <div id="localStorageData" class="mb-3"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>🔥 Firebase Collections</h5>
+                                <div id="firebaseData" class="mb-3"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button id="checkDataBtn" class="btn btn-info">
+                                🔍 Check Current Data
+                            </button>
+                            <button id="migrateBtn" class="btn btn-success" disabled>
+                                🚀 Start Migration
+                            </button>
+                            <button id="clearDataBtn" class="btn btn-danger" disabled>
+                                🗑️ Clear All Firebase Data
+                            </button>
+                        </div>
+
+                        <div id="migrationResults" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Rental Firebase Service -->
+    <script src="rental-firebase-service.js"></script>
+
+    <script>
+        let rentalFirebaseService;
+        
+        // Data from localStorage
+        let localStorageData = {
+            students: [],
+            officers: [],
+            inventoryItems: [],
+            rentalRecords: []
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase
+            try {
+                if (!window.firebaseDb) {
+                    throw new Error('Firebase not initialized');
+                }
+                
+                // Initialize rental service
+                rentalFirebaseService = new RentalSystemFirebaseService();
+                
+                updateStatus('✅ Firebase connected successfully', 'success');
+            } catch (error) {
+                updateStatus('❌ Firebase connection failed: ' + error.message, 'danger');
+                return;
+            }
+            
+            // Event listeners
+            document.getElementById('checkDataBtn').addEventListener('click', checkCurrentData);
+            document.getElementById('migrateBtn').addEventListener('click', startMigration);
+            document.getElementById('clearDataBtn').addEventListener('click', clearAllFirebaseData);
+        });
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('migrationStatus');
+            statusDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+        
+        function updateResults(message) {
+            const resultsDiv = document.getElementById('migrationResults');
+            resultsDiv.innerHTML += `<div class="alert alert-info">${message}</div>`;
+        }
+        
+        function addMigrationStep(stepName, status, message) {
+            const resultsDiv = document.getElementById('migrationResults');
+            const stepDiv = document.createElement('div');
+            stepDiv.className = `migration-step step-${status}`;
+            stepDiv.innerHTML = `
+                <h6>${stepName}</h6>
+                <p class="mb-0">${message}</p>
+            `;
+            resultsDiv.appendChild(stepDiv);
+        }
+        
+        async function checkCurrentData() {
+            try {
+                updateStatus('🔍 Checking current data...', 'info');
+                
+                // Check localStorage data
+                localStorageData.students = JSON.parse(localStorage.getItem('barcodeStudents')) || [];
+                localStorageData.officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
+                localStorageData.inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+                localStorageData.rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+                
+                // Display localStorage data
+                const localStorageDiv = document.getElementById('localStorageData');
+                localStorageDiv.innerHTML = `
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Students</span>
+                            <span class="badge bg-primary">${localStorageData.students.length}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Officers</span>
+                            <span class="badge bg-primary">${localStorageData.officers.length}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Inventory Items</span>
+                            <span class="badge bg-primary">${localStorageData.inventoryItems.length}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Rental Records</span>
+                            <span class="badge bg-primary">${localStorageData.rentalRecords.length}</span>
+                        </li>
+                    </ul>
+                `;
+                
+                // Check Firebase data
+                const students = await rentalFirebaseService.getStudents();
+                const officers = await rentalFirebaseService.getOfficers();
+                const inventoryItems = await rentalFirebaseService.getInventoryItems();
+                const rentalRecords = await rentalFirebaseService.getRentalRecords();
+                
+                // Display Firebase data
+                const firebaseDiv = document.getElementById('firebaseData');
+                firebaseDiv.innerHTML = `
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>RentalSystem_students</span>
+                            <span class="badge bg-success">${students.length}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>RentalSystem_officers</span>
+                            <span class="badge bg-success">${officers.length}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>RentalSystem_inventory</span>
+                            <span class="badge bg-success">${inventoryItems.length}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>RentalSystem_rentalRecords</span>
+                            <span class="badge bg-success">${rentalRecords.length}</span>
+                        </li>
+                    </ul>
+                `;
+                
+                // Enable migration button if there's data to migrate
+                const totalLocalData = localStorageData.students.length + 
+                                     localStorageData.officers.length + 
+                                     localStorageData.inventoryItems.length + 
+                                     localStorageData.rentalRecords.length;
+                
+                if (totalLocalData > 0) {
+                    document.getElementById('migrateBtn').disabled = false;
+                    updateStatus(`✅ Found ${totalLocalData} items to migrate`, 'success');
+                } else {
+                    updateStatus('ℹ️ No data found in localStorage to migrate', 'info');
+                }
+                
+                // Enable clear button if there's Firebase data
+                const totalFirebaseData = students.length + officers.length + inventoryItems.length + rentalRecords.length;
+                if (totalFirebaseData > 0) {
+                    document.getElementById('clearDataBtn').disabled = false;
+                }
+                
+            } catch (error) {
+                updateStatus('❌ Error checking data: ' + error.message, 'danger');
+            }
+        }
+        
+        async function startMigration() {
+            if (!confirm('Start migration from localStorage to Firebase? This will create RentalSystem_ collections.')) {
+                return;
+            }
+            
+            try {
+                updateStatus('🚀 Starting migration...', 'warning');
+                document.getElementById('migrateBtn').disabled = true;
+                
+                // Clear previous results
+                document.getElementById('migrationResults').innerHTML = '';
+                
+                let totalMigrated = 0;
+                let totalErrors = 0;
+                
+                // Migrate Students
+                if (localStorageData.students.length > 0) {
+                    addMigrationStep('Students Migration', 'in-progress', `Migrating ${localStorageData.students.length} students...`);
+                    
+                    let migrated = 0;
+                    let errors = 0;
+                    
+                    for (const student of localStorageData.students) {
+                        try {
+                            await rentalFirebaseService.addStudent(student);
+                            migrated++;
+                        } catch (error) {
+                            console.error('Error migrating student:', student, error);
+                            errors++;
+                        }
+                    }
+                    
+                    addMigrationStep('Students Migration', errors > 0 ? 'error' : 'completed', 
+                        `${migrated} students migrated, ${errors} errors`);
+                    totalMigrated += migrated;
+                    totalErrors += errors;
+                }
+                
+                // Migrate Officers
+                if (localStorageData.officers.length > 0) {
+                    addMigrationStep('Officers Migration', 'in-progress', `Migrating ${localStorageData.officers.length} officers...`);
+                    
+                    let migrated = 0;
+                    let errors = 0;
+                    
+                    for (const officer of localStorageData.officers) {
+                        try {
+                            await rentalFirebaseService.addOfficer(officer);
+                            migrated++;
+                        } catch (error) {
+                            console.error('Error migrating officer:', officer, error);
+                            errors++;
+                        }
+                    }
+                    
+                    addMigrationStep('Officers Migration', errors > 0 ? 'error' : 'completed', 
+                        `${migrated} officers migrated, ${errors} errors`);
+                    totalMigrated += migrated;
+                    totalErrors += errors;
+                }
+                
+                // Migrate Inventory Items
+                if (localStorageData.inventoryItems.length > 0) {
+                    addMigrationStep('Inventory Migration', 'in-progress', `Migrating ${localStorageData.inventoryItems.length} inventory items...`);
+                    
+                    let migrated = 0;
+                    let errors = 0;
+                    
+                    for (const item of localStorageData.inventoryItems) {
+                        try {
+                            await rentalFirebaseService.addInventoryItem(item);
+                            migrated++;
+                        } catch (error) {
+                            console.error('Error migrating inventory item:', item, error);
+                            errors++;
+                        }
+                    }
+                    
+                    addMigrationStep('Inventory Migration', errors > 0 ? 'error' : 'completed', 
+                        `${migrated} inventory items migrated, ${errors} errors`);
+                    totalMigrated += migrated;
+                    totalErrors += errors;
+                }
+                
+                // Migrate Rental Records
+                if (localStorageData.rentalRecords.length > 0) {
+                    addMigrationStep('Rental Records Migration', 'in-progress', `Migrating ${localStorageData.rentalRecords.length} rental records...`);
+                    
+                    let migrated = 0;
+                    let errors = 0;
+                    
+                    for (const record of localStorageData.rentalRecords) {
+                        try {
+                            await rentalFirebaseService.addRentalRecord(record);
+                            migrated++;
+                        } catch (error) {
+                            console.error('Error migrating rental record:', record, error);
+                            errors++;
+                        }
+                    }
+                    
+                    addMigrationStep('Rental Records Migration', errors > 0 ? 'error' : 'completed', 
+                        `${migrated} rental records migrated, ${errors} errors`);
+                    totalMigrated += migrated;
+                    totalErrors += errors;
+                }
+                
+                // Final summary
+                if (totalErrors === 0) {
+                    updateStatus(`🎉 Migration completed successfully! ${totalMigrated} items migrated`, 'success');
+                } else {
+                    updateStatus(`⚠️ Migration completed with ${totalErrors} errors. ${totalMigrated} items migrated`, 'warning');
+                }
+                
+                // Refresh data display
+                await checkCurrentData();
+                
+            } catch (error) {
+                updateStatus('❌ Migration failed: ' + error.message, 'danger');
+            } finally {
+                document.getElementById('migrateBtn').disabled = false;
+            }
+        }
+        
+        async function clearAllFirebaseData() {
+            if (!confirm('⚠️ Are you sure you want to delete ALL Firebase data? This cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                updateStatus('🗑️ Clearing all Firebase data...', 'warning');
+                document.getElementById('clearDataBtn').disabled = true;
+                
+                await rentalFirebaseService.clearAllData();
+                
+                updateStatus('✅ All Firebase data cleared successfully', 'success');
+                
+                // Refresh data display
+                await checkCurrentData();
+                
+            } catch (error) {
+                updateStatus('❌ Error clearing data: ' + error.message, 'danger');
+            } finally {
+                document.getElementById('clearDataBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

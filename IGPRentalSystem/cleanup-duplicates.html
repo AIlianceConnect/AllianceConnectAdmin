@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleanup Duplicate IDs - Rental System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0">🧹 Cleanup Duplicate IDs</h4>
+                        <p class="mb-0">Remove duplicate entries and ensure unique IDs within each collection</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Important:</strong> This will remove duplicate entries from Firebase. Make sure you have a backup before proceeding.
+                        </div>
+
+                        <div id="status" class="mb-4"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>📊 Current Duplicates</h5>
+                                <div id="duplicatesInfo" class="mb-3"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>🔧 Actions</h5>
+                                <div class="d-grid gap-2">
+                                    <button id="checkDuplicatesBtn" class="btn btn-info">
+                                        🔍 Check for Duplicates
+                                    </button>
+                                    <button id="cleanupBtn" class="btn btn-warning" disabled>
+                                        🧹 Cleanup Duplicates
+                                    </button>
+                                    <button id="recreateBtn" class="btn btn-success" disabled>
+                                        🔄 Recreate with Unique IDs
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="results" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Rental Firebase Service -->
+    <script src="rental-firebase-service.js"></script>
+
+    <script>
+        let rentalFirebaseService;
+        let duplicates = {
+            students: [],
+            officers: [],
+            inventory: []
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase
+            try {
+                if (!window.firebaseDb) {
+                    throw new Error('Firebase not initialized');
+                }
+                
+                rentalFirebaseService = new RentalSystemFirebaseService();
+                updateStatus('✅ Firebase connected successfully', 'success');
+            } catch (error) {
+                updateStatus('❌ Firebase connection failed: ' + error.message, 'danger');
+                return;
+            }
+            
+            // Event listeners
+            document.getElementById('checkDuplicatesBtn').addEventListener('click', checkDuplicates);
+            document.getElementById('cleanupBtn').addEventListener('click', cleanupDuplicates);
+            document.getElementById('recreateBtn').addEventListener('click', recreateWithUniqueIds);
+        });
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+        
+        function updateResults(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += `<div class="alert alert-info">${message}</div>`;
+        }
+        
+        async function checkDuplicates() {
+            try {
+                updateStatus('🔍 Checking for duplicate IDs...', 'info');
+                
+                // Check students
+                const students = await rentalFirebaseService.getStudents();
+                const studentIds = {};
+                duplicates.students = [];
+                
+                students.forEach(student => {
+                    const id = student.id || student.studentId;
+                    if (studentIds[id]) {
+                        duplicates.students.push(student);
+                    } else {
+                        studentIds[id] = student;
+                    }
+                });
+                
+                // Check officers
+                const officers = await rentalFirebaseService.getOfficers();
+                const officerIds = {};
+                duplicates.officers = [];
+                
+                officers.forEach(officer => {
+                    const id = officer.id || officer.officerId;
+                    if (officerIds[id]) {
+                        duplicates.officers.push(officer);
+                    } else {
+                        officerIds[id] = officer;
+                    }
+                });
+                
+                // Check inventory
+                const inventory = await rentalFirebaseService.getInventoryItems();
+                const inventoryIds = {};
+                duplicates.inventory = [];
+                
+                inventory.forEach(item => {
+                    const id = item.id;
+                    if (inventoryIds[id]) {
+                        duplicates.inventory.push(item);
+                    } else {
+                        inventoryIds[id] = item;
+                    }
+                });
+                
+                // Display results
+                const duplicatesDiv = document.getElementById('duplicatesInfo');
+                duplicatesDiv.innerHTML = `
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Students</span>
+                            <span class="badge bg-${duplicates.students.length > 0 ? 'danger' : 'success'}">${duplicates.students.length} duplicates</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Officers</span>
+                            <span class="badge bg-${duplicates.officers.length > 0 ? 'danger' : 'success'}">${duplicates.officers.length} duplicates</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Inventory</span>
+                            <span class="badge bg-${duplicates.inventory.length > 0 ? 'danger' : 'success'}">${duplicates.inventory.length} duplicates</span>
+                        </li>
+                    </ul>
+                `;
+                
+                const totalDuplicates = duplicates.students.length + duplicates.officers.length + duplicates.inventory.length;
+                
+                if (totalDuplicates > 0) {
+                    updateStatus(`⚠️ Found ${totalDuplicates} duplicate entries`, 'warning');
+                    document.getElementById('cleanupBtn').disabled = false;
+                    document.getElementById('recreateBtn').disabled = false;
+                } else {
+                    updateStatus('✅ No duplicates found! All IDs are unique.', 'success');
+                }
+                
+            } catch (error) {
+                updateStatus('❌ Error checking duplicates: ' + error.message, 'danger');
+            }
+        }
+        
+        async function cleanupDuplicates() {
+            if (!confirm('⚠️ This will permanently delete duplicate entries. Continue?')) {
+                return;
+            }
+            
+            try {
+                updateStatus('🧹 Cleaning up duplicates...', 'warning');
+                document.getElementById('cleanupBtn').disabled = true;
+                
+                let deletedCount = 0;
+                
+                // Delete duplicate students
+                for (const student of duplicates.students) {
+                    try {
+                        await rentalFirebaseService.deleteStudent(student.id);
+                        deletedCount++;
+                        updateResults(`Deleted duplicate student: ${student.id}`);
+                    } catch (error) {
+                        console.error('Error deleting student:', error);
+                    }
+                }
+                
+                // Delete duplicate officers
+                for (const officer of duplicates.officers) {
+                    try {
+                        await rentalFirebaseService.deleteOfficer(officer.id);
+                        deletedCount++;
+                        updateResults(`Deleted duplicate officer: ${officer.id}`);
+                    } catch (error) {
+                        console.error('Error deleting officer:', error);
+                    }
+                }
+                
+                // Delete duplicate inventory items
+                for (const item of duplicates.inventory) {
+                    try {
+                        await rentalFirebaseService.deleteInventoryItem(item.id);
+                        deletedCount++;
+                        updateResults(`Deleted duplicate inventory item: ${item.id}`);
+                    } catch (error) {
+                        console.error('Error deleting inventory item:', error);
+                    }
+                }
+                
+                updateStatus(`✅ Cleanup completed! ${deletedCount} duplicates removed`, 'success');
+                
+                // Refresh duplicates check
+                await checkDuplicates();
+                
+            } catch (error) {
+                updateStatus('❌ Error during cleanup: ' + error.message, 'danger');
+            } finally {
+                document.getElementById('cleanupBtn').disabled = false;
+            }
+        }
+        
+        async function recreateWithUniqueIds() {
+            if (!confirm('⚠️ This will recreate all data with unique IDs. This is a major operation. Continue?')) {
+                return;
+            }
+            
+            try {
+                updateStatus('🔄 Recreating data with unique IDs...', 'warning');
+                document.getElementById('recreateBtn').disabled = true;
+                
+                // Get all current data
+                const students = await rentalFirebaseService.getStudents();
+                const officers = await rentalFirebaseService.getOfficers();
+                const inventory = await rentalFirebaseService.getInventoryItems();
+                
+                // Clear all data
+                await rentalFirebaseService.clearAllData();
+                updateResults('Cleared all existing data');
+                
+                // Recreate students with unique IDs
+                const studentIds = new Set();
+                for (const student of students) {
+                    const id = student.id || student.studentId;
+                    if (!studentIds.has(id)) {
+                        await rentalFirebaseService.addStudent(student);
+                        studentIds.add(id);
+                        updateResults(`Recreated student: ${id}`);
+                    }
+                }
+                
+                // Recreate officers with unique IDs
+                const officerIds = new Set();
+                for (const officer of officers) {
+                    const id = officer.id || officer.officerId;
+                    if (!officerIds.has(id)) {
+                        await rentalFirebaseService.addOfficer(officer);
+                        officerIds.add(id);
+                        updateResults(`Recreated officer: ${id}`);
+                    }
+                }
+                
+                // Recreate inventory with unique IDs
+                const inventoryIds = new Set();
+                for (const item of inventory) {
+                    const id = item.id;
+                    if (!inventoryIds.has(id)) {
+                        await rentalFirebaseService.addInventoryItem(item);
+                        inventoryIds.add(id);
+                        updateResults(`Recreated inventory item: ${id}`);
+                    }
+                }
+                
+                updateStatus('✅ Data recreation completed with unique IDs!', 'success');
+                
+                // Refresh duplicates check
+                await checkDuplicates();
+                
+            } catch (error) {
+                updateStatus('❌ Error during recreation: ' + error.message, 'danger');
+            } finally {
+                document.getElementById('recreateBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
+

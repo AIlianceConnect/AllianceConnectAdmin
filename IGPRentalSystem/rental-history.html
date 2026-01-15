@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental History</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="welcome.html">Home</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5" style="margin-top: 120px !important;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Rental History</h1>
+            <div>
+                <a href="index.html" class="btn btn-outline-secondary me-2">Back to Rental System</a>
+                <button class="btn btn-outline-success nav-secure-btn me-2" data-target="financial-summary.html">Financial Summary</button>
+                <button id="clearHistory" class="btn btn-danger me-2">Clear History</button>
+                <button id="exportExcel" class="btn btn-success me-2">Export to Excel</button>
+                <input type="file" id="importExcel" accept=".xlsx" style="display:inline-block; width:auto;" class="form-control form-control-sm" />
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <label for="historyDateFilter" class="form-label mb-0 me-2">Filter by Date:</label>
+                    <input type="date" id="historyDateFilter" class="form-control form-control-sm" style="max-width:200px;display:inline-block;">
+                    <button id="showMonthBtn" class="btn btn-secondary btn-sm ms-2">Show Month</button>
+                    <button id="showAllDatesBtn" class="btn btn-info btn-sm ms-2">Show All Dates</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h5>Total Profit: <span id="totalProfit">₱0</span></h5>
+                    <button id="payAllBtn" class="btn btn-warning btn-sm ms-3" style="display:none;">Mark All as Paid</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Item ID</th>
+                                <th>Name</th>
+                                <th>Rented By</th>
+                                <th>Section</th>
+                                <th>Rental Date</th>
+                                <th>Time Rented</th>
+                                <th>Expected Return</th>
+                                <th>Time Returned</th>
+                                <th>Overdue Time</th>
+                                <th>Status</th>
+                                <th>Processed By</th>
+                                <th>Returned By</th>
+                                <th>Price</th>
+                                <th>Payment Status</th>
+                                <th>Action</th>
+                                <th>Delete</th> <!-- New column for delete button -->
+                            </tr>
+                        </thead>
+                        <tbody id="rentalHistoryRecords">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-2">
+                    <small>Total Unpaid: <span id="totalUnpaid">₱0</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Type <strong>Delete</strong> to confirm clearing all rental history. This cannot be undone.</p>
+                    <input type="text" class="form-control" id="deleteConfirmInput" placeholder="Type 'Delete' to confirm">
+                    <div id="deleteConfirmError" class="text-danger mt-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Individual Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteRecordModal" tabindex="-1" aria-labelledby="deleteRecordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteRecordModalLabel">Confirm Delete Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Type <strong>Delete</strong> to confirm deleting this rental record. This cannot be undone.</p>
+                    <input type="text" class="form-control" id="deleteRecordConfirmInput" placeholder="Type 'Delete' to confirm">
+                    <div id="deleteRecordConfirmError" class="text-danger mt-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteRecordConfirmBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Officer Verification Modal (copied from welcome.html for security) -->
+    <div class="modal fade" id="officerVerifyModal" tabindex="-1" aria-labelledby="officerVerifyModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="officerVerifyModalLabel">Officer Verification</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Scan Officer Barcode</label>
+              <div id="scannedBarcodeDisplay" class="form-control bg-light" style="height:38px; line-height:38px; font-size:1.1em; user-select:all;">Waiting for scan...</div>
+            </div>
+            <div class="text-center mb-2">or</div>
+            <div class="mb-3">
+              <label for="officerPasswordInput" class="form-label">Enter Password</label>
+              <input type="password" class="form-control" id="officerPasswordInput" placeholder="Enter password...">
+            </div>
+            <div id="officerVerifyError" class="text-danger mb-2" style="display:none;"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="officerVerifyBtn">Verify</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="lib/encoder.js"></script>
+    <script>
+        // Initialize Firebase
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                if (window.firebaseDb) {
+                    rentalFirebaseService = new RentalSystemFirebaseService();
+                    rentalRecords = await rentalFirebaseService.getRentalRecords();
+                    console.log('Rental history loaded from Firebase');
+                    
+                    // Set up real-time listener for rental records
+                    setupRentalRecordsListener();
+                } else {
+                    throw new Error('Firebase not available');
+                }
+            } catch (error) {
+                console.error('Firebase initialization failed, falling back to localStorage:', error);
+                rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            }
+            
+            // Initialize the page
+            updateRentalHistoryTableStandalone();
+            
+            // Set up event listeners after DOM is ready
+            setTimeout(() => {
+                console.log('About to call setupEventListeners...');
+                try {
+                    setupEventListeners();
+                    console.log('setupEventListeners completed successfully');
+                } catch (error) {
+                    console.error('Error in setupEventListeners:', error);
+                }
+            }, 100);
+        });
+        
+        function updateRentalHistoryTableStandalone() {
+            const tbody = document.getElementById('rentalHistoryRecords');
+            if (!tbody) return;
+            const dateInput = document.getElementById('historyDateFilter');
+            let filterDate = dateInput && dateInput.value ? new Date(dateInput.value + 'T00:00:00') : null;
+            tbody.innerHTML = '';
+            // Calculate total profit
+            let totalProfit = 0;
+            let totalUnpaid = 0;
+            let hasUnpaid = false;
+            
+            // Filter records by date if a filter is selected, otherwise show all records
+            let filteredRecords = rentalRecords;
+            if (filterDate) {
+                filteredRecords = rentalRecords.filter(record => {
+                    const rentalDateObj = new Date(record.rentalDate);
+                    const recordDateStr = rentalDateObj.toLocaleDateString();
+                    const filterDateStr = filterDate.toLocaleDateString();
+                    return recordDateStr === filterDateStr;
+                });
+            }
+            
+            // Sort: non-returned first, then returned, newest first within each group
+            filteredRecords = filteredRecords.sort((a, b) => {
+                if (a.status === 'returned' && b.status !== 'returned') return 1;
+                if (a.status !== 'returned' && b.status === 'returned') return -1;
+                return new Date(b.rentalDate) - new Date(a.rentalDate);
+            });
+            
+            filteredRecords.forEach(record => {
+                const rentalDateObj = new Date(record.rentalDate);
+                const rentalDate = rentalDateObj.toLocaleDateString();
+                const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                let timeReturned = '';
+                if (record.returnDate) {
+                    const returnDateObj = new Date(record.returnDate);
+                    timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+                const dueDate = record.dueDate ? new Date(record.dueDate) : null;
+                let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.itemId}</td>
+                    <td>${record.itemName}</td>
+                    <td>${record.renterName} (${record.renterId})</td>
+                    <td>${record.renterSection}</td>
+                    <td>${rentalDate}</td>
+                    <td>${timeRented}</td>
+                    <td>${expectedReturn}</td>
+                    <td>${timeReturned}</td>
+                    <td>${record.returnDate && record.dueDate ? 
+                        (new Date(record.returnDate) > new Date(record.dueDate) ? 
+                            formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) : 
+                            '-') : 
+                        '-'}</td>
+                    <td>${record.status}</td>
+                    <td>${record.officerName ? record.officerName : ''}</td>
+                    <td>${record.returningOfficerName ? record.returningOfficerName : ''}</td>
+                    <td>${record.status === 'returned' ?
+                        (typeof record.totalCost === 'number' ? '₱' + record.totalCost : (typeof record.baseCost === 'number' ? '₱' + record.baseCost : (typeof record.cost === 'number' ? '₱' + record.cost : '-')))
+                        : (() => {
+                            let price = typeof record.baseCost === 'number' ? record.baseCost : 0;
+                            let overtimeCost = 0;
+                            if (record.dueDate) {
+                                let now = new Date();
+                                let dueDate = new Date(record.dueDate);
+                                if (now > dueDate) {
+                                    let overtimeMinutes = Math.ceil((now - dueDate) / (1000 * 60));
+                                    overtimeCost = Math.ceil(overtimeMinutes / 30) * 5;
+                                }
+                            }
+                            return '₱' + (price + overtimeCost);
+                        })()
+                    }</td>
+                    <td>${record.paymentStatus || '-'}</td>
+                    <td>
+                        ${(record.paymentStatus === 'unpaid' && record.status === 'returned') ? `<button class=\"btn btn-success btn-sm\" onclick=\"markAsPaid('${record.itemId}', '${record.returnDate}')\">Mark as Paid</button>` : '-'}
+                    </td>
+                    <td>
+                        ${(record.status === 'returned') ? `<button class=\"btn btn-danger btn-sm delete-record-btn\" data-itemid=\"${record.itemId}\" data-returndate=\"${record.returnDate || ''}\">Delete</button>` : '-'}
+                    </td>
+                `;
+                tbody.appendChild(row);
+                let price = (typeof record.totalCost === 'number') ? record.totalCost
+                        : (typeof record.baseCost === 'number') ? record.baseCost
+                        : (typeof record.cost === 'number') ? record.cost
+                        : 0;
+                if (record.paymentStatus === 'paid' && price) {
+                    totalProfit += price;
+                }
+                if (record.paymentStatus === 'unpaid' && price) {
+                    totalUnpaid += price;
+                    hasUnpaid = true;
+                }
+            });
+            document.getElementById('totalProfit').textContent = '₱' + totalProfit;
+            document.getElementById('totalUnpaid').textContent = '₱' + totalUnpaid;
+            // Show/hide Pay All button
+            document.getElementById('payAllBtn').style.display = hasUnpaid ? '' : 'none';
+            setupDeleteRecordButtons(); // Call setupDeleteRecordButtons after table is populated
+        }
+        
+        function setupEventListeners() {
+            console.log('Setting up event listeners...');
+            
+            // Check if buttons exist
+            console.log('clearHistory button:', document.getElementById('clearHistory'));
+            console.log('exportExcel button:', document.getElementById('exportExcel'));
+            console.log('showMonthBtn button:', document.getElementById('showMonthBtn'));
+            console.log('showAllDatesBtn button:', document.getElementById('showAllDatesBtn'));
+            
+            // Date filter change - listen to both input and change events
+            const dateFilter = document.getElementById('historyDateFilter');
+            if (dateFilter) {
+                dateFilter.addEventListener('input', updateRentalHistoryTableStandalone);
+                dateFilter.addEventListener('change', updateRentalHistoryTableStandalone);
+                console.log('Date filter listeners added');
+            } else {
+                console.log('Date filter not found');
+            }
+            
+            // Show month button
+            const showMonthBtn = document.getElementById('showMonthBtn');
+            if (showMonthBtn) {
+                showMonthBtn.addEventListener('click', function() {
+                    console.log('Show month button clicked');
+                    const dateInput = document.getElementById('historyDateFilter');
+                    if (!dateInput.value) return;
+                    const selectedDate = new Date(dateInput.value);
+                    const selectedMonth = selectedDate.getMonth();
+                    const selectedYear = selectedDate.getFullYear();
+                    const tbody = document.getElementById('rentalHistoryRecords');
+                    if (!tbody) return;
+                    tbody.innerHTML = '';
+                    let totalProfit = 0;
+                    let totalUnpaid = 0;
+                    let hasUnpaid = false;
+                    let monthRecords = rentalRecords.filter(record => {
+                        const rentalDateObj = new Date(record.rentalDate);
+                        return rentalDateObj.getMonth() === selectedMonth && rentalDateObj.getFullYear() === selectedYear;
+                    });
+                    // Sort: non-returned first, then returned, newest first within each group
+                    monthRecords = monthRecords.sort((a, b) => {
+                        if (a.status === 'returned' && b.status !== 'returned') return 1;
+                        if (a.status !== 'returned' && b.status === 'returned') return -1;
+                        return new Date(b.rentalDate) - new Date(a.rentalDate);
+                    });
+                    monthRecords.forEach(record => {
+                        const rentalDateObj = new Date(record.rentalDate);
+                        const rentalDate = rentalDateObj.toLocaleDateString();
+                        const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        let timeReturned = '';
+                        if (record.returnDate) {
+                            const returnDateObj = new Date(record.returnDate);
+                            timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        }
+                        const dueDate = record.dueDate ? new Date(record.dueDate) : null;
+                        let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.itemId}</td>
+                            <td>${record.itemName}</td>
+                            <td>${record.renterName} (${record.renterId})</td>
+                            <td>${record.renterSection}</td>
+                            <td>${rentalDate}</td>
+                            <td>${timeRented}</td>
+                            <td>${expectedReturn}</td>
+                            <td>${timeReturned}</td>
+                            <td>${record.returnDate && record.dueDate ? 
+                                (new Date(record.returnDate) > new Date(record.dueDate) ? 
+                                    formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) : 
+                                    '-') : 
+                                '-'}</td>
+                            <td>${record.status}</td>
+                            <td>${record.officerName ? record.officerName : ''}</td>
+                            <td>${record.returningOfficerName ? record.returningOfficerName : ''}</td>
+                            <td>${record.status === 'returned' ?
+                                (typeof record.totalCost === 'number' ? '₱' + record.totalCost : (typeof record.baseCost === 'number' ? '₱' + record.baseCost : (typeof record.cost === 'number' ? '₱' + record.cost : '-')))
+                                : (() => {
+                                    let price = typeof record.baseCost === 'number' ? record.baseCost : 0;
+                                    let overtimeCost = 0;
+                                    if (record.dueDate) {
+                                        let now = new Date();
+                                        let dueDate = new Date(record.dueDate);
+                                        if (now > dueDate) {
+                                            let overtimeMinutes = Math.ceil((now - dueDate) / (1000 * 60));
+                                            overtimeCost = Math.ceil(overtimeMinutes / 30) * 5;
+                                        }
+                                    }
+                                    return '₱' + (price + overtimeCost);
+                                })()
+                            }</td>
+                            <td>${record.paymentStatus || '-'}</td>
+                            <td>
+                                ${(record.paymentStatus === 'unpaid' && record.status === 'returned') ? `<button class=\"btn btn-success btn-sm\" onclick=\"markAsPaid('${record.itemId}', '${record.returnDate}')\">Mark as Paid</button>` : '-'}
+                            </td>
+                            <td>
+                                ${(record.status === 'returned') ? `<button class=\"btn btn-danger btn-sm delete-record-btn\" data-itemid=\"${record.itemId}\" data-returndate=\"${record.returnDate || ''}\">Delete</button>` : '-'}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                        let price = (typeof record.totalCost === 'number') ? record.totalCost
+                                : (typeof record.baseCost === 'number') ? record.baseCost
+                                : (typeof record.cost === 'number') ? record.cost
+                                : 0;
+                        if (record.paymentStatus === 'paid' && price) {
+                            totalProfit += price;
+                        }
+                        if (record.paymentStatus === 'unpaid' && price) {
+                            totalUnpaid += price;
+                            hasUnpaid = true;
+                        }
+                    });
+                    document.getElementById('totalProfit').textContent = '₱' + totalProfit;
+                    document.getElementById('totalUnpaid').textContent = '₱' + totalUnpaid;
+                    document.getElementById('payAllBtn').style.display = hasUnpaid ? '' : 'none';
+                    setupDeleteRecordButtons(); // Call setupDeleteRecordButtons after table is populated
+                });
+                console.log('Show month button listener added');
+            }
+            
+            // Show all dates button
+            const showAllDatesBtn = document.getElementById('showAllDatesBtn');
+            if (showAllDatesBtn) {
+                showAllDatesBtn.addEventListener('click', function() {
+                    console.log('Show all dates button clicked');
+                    document.getElementById('historyDateFilter').value = '';
+                    updateRentalHistoryTableStandalone();
+                });
+                console.log('Show all dates button listener added');
+            }
+            
+            // Clear History button
+            const clearHistoryBtn = document.getElementById('clearHistory');
+            if (clearHistoryBtn) {
+                console.log('Found clearHistory button, adding listener...');
+                clearHistoryBtn.addEventListener('click', function() {
+                    console.log('Clear history button clicked');
+            // Show modal for delete confirmation
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('deleteConfirmError').style.display = 'none';
+            deleteModal.show();
+            // Focus input when modal is shown
+            document.getElementById('deleteConfirmModal').addEventListener('shown.bs.modal', function () {
+                document.getElementById('deleteConfirmInput').focus();
+            }, { once: true });
+                    document.getElementById('deleteConfirmBtn').onclick = async function() {
+                const val = document.getElementById('deleteConfirmInput').value.trim();
+                if (val === 'Delete') {
+                            // Clear from Firebase first
+                            if (rentalFirebaseService && window.firebaseDb) {
+                                try {
+                                    console.log('Starting Firebase deletion...');
+                                    
+                                    // First, try to use the current rentalRecords array (already loaded with Firebase IDs)
+                                    let recordsToDelete = rentalRecords.filter(record => record.id);
+                                    
+                                    // If no records have IDs, fetch from Firebase to get the IDs
+                                    if (recordsToDelete.length === 0 && rentalRecords.length > 0) {
+                                        console.log('Local records missing IDs, fetching from Firebase...');
+                                        recordsToDelete = await rentalFirebaseService.getRentalRecords();
+                                    }
+                                    
+                                    if (recordsToDelete.length > 0) {
+                                        console.log(`Deleting ${recordsToDelete.length} records from Firebase...`);
+                                        
+                                        // Delete records in parallel for better performance
+                                        // Each promise handles its own errors, so Promise.all will wait for all to complete
+                                        const deletePromises = recordsToDelete.map(async (record) => {
+                                            try {
+                                                if (record.id) {
+                                                    await rentalFirebaseService.deleteRentalRecord(record.id);
+                                                    console.log(`Deleted record: ${record.id}`);
+                                                    return { success: true, id: record.id };
+                                                } else {
+                                                    console.warn('Record missing ID, skipping:', record);
+                                                    return { success: false, id: null, error: 'Missing ID' };
+                                                }
+                                            } catch (error) {
+                                                console.error(`Error deleting record ${record.id}:`, error);
+                                                return { success: false, id: record.id, error: error.message };
+                                            }
+                                        });
+                                        
+                                        const results = await Promise.all(deletePromises);
+                                        const successCount = results.filter(r => r.success).length;
+                                        const failCount = results.filter(r => !r.success).length;
+                                        
+                                        console.log(`Firebase deletion complete: ${successCount} succeeded, ${failCount} failed`);
+                                        
+                                        if (failCount > 0) {
+                                            console.warn('Some records failed to delete from Firebase:', results.filter(r => !r.success));
+                                        }
+                                    } else {
+                                        console.log('No records found to delete from Firebase');
+                                    }
+                                } catch (error) {
+                                    console.error('Error deleting rental records from Firebase:', error);
+                                    alert('Warning: Error occurred while deleting from Firebase. Some records may not have been deleted. Please check the console for details.');
+                                    // Still clear localStorage even if Firebase fails
+                                }
+                            } else {
+                                console.log('Firebase service not available, skipping Firebase deletion');
+                            }
+                            
+                            // Clear from localStorage
+                    localStorage.removeItem('rentalRecords');
+                            
+                            // Clear the local array
+                            rentalRecords = [];
+                            
+                    // Update the table display
+                    updateRentalHistoryTableStandalone();
+                    
+                    // Hide the modal
+                    deleteModal.hide();
+                    
+                    // Show success message
+                    alert('All rental history has been cleared successfully!');
+                } else {
+                    const err = document.getElementById('deleteConfirmError');
+                    err.textContent = "You must type 'Delete' to confirm.";
+                    err.style.display = 'block';
+                }
+            };
+        });
+                console.log('Clear history button listener added');
+            } else {
+                console.log('Clear history button not found');
+            }
+            
+            // Export to Excel button
+            const exportExcelBtn = document.getElementById('exportExcel');
+            if (exportExcelBtn) {
+                console.log('Found exportExcel button, adding listener...');
+                exportExcelBtn.addEventListener('click', function() {
+                    console.log('Export to Excel button clicked');
+                    setupExportToExcel();
+                });
+                console.log('Export to Excel button listener added');
+            } else {
+                console.log('Export to Excel button not found');
+            }
+            
+            console.log('All event listeners set up');
+            
+            // Test if buttons can be clicked manually
+            console.log('Testing button clicks...');
+            setTimeout(() => {
+                const clearBtn = document.getElementById('clearHistory');
+                const exportBtn = document.getElementById('exportExcel');
+                if (clearBtn) {
+                    console.log('Clear button exists and is clickable:', clearBtn.offsetParent !== null);
+                }
+                if (exportBtn) {
+                    console.log('Export button exists and is clickable:', exportBtn.offsetParent !== null);
+                }
+            }, 200);
+        }
+        
+        // Set up real-time listener for rental records
+        function setupRentalRecordsListener() {
+            if (!rentalFirebaseService) {
+                console.log('Firebase service not available for real-time listener');
+                return;
+            }
+            
+            try {
+                // Listen to changes in the rental records collection
+                window.firebaseDb.collection('RentalSystem_rentalRecords').onSnapshot((snapshot) => {
+                    console.log('Rental records updated in Firebase');
+                    
+                    // Update the local rentalRecords array
+                    rentalRecords = [];
+                    snapshot.forEach((doc) => {
+                        rentalRecords.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Update the table display
+                    updateRentalHistoryTableStandalone();
+                    
+                    console.log(`Updated rental records: ${rentalRecords.length} records`);
+                }, (error) => {
+                    console.error('Error listening to rental records:', error);
+                });
+                
+                console.log('Real-time listener for rental records set up');
+            } catch (error) {
+                console.error('Error setting up rental records listener:', error);
+            }
+        }
+        
+        // Export to Excel
+        function setupExportToExcel() {
+            if (!rentalRecords.length) {
+                alert('No rental history to export!');
+                return;
+            }
+
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+
+            // Group records by month
+            const recordsByMonth = {};
+            rentalRecords.forEach(record => {
+                const date = new Date(record.rentalDate);
+                const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                if (!recordsByMonth[monthYear]) {
+                    recordsByMonth[monthYear] = [];
+                }
+                recordsByMonth[monthYear].push(record);
+            });
+
+            // Process each month
+            Object.keys(recordsByMonth).sort().forEach(monthYear => {
+                const monthRecords = recordsByMonth[monthYear];
+                const [year, month] = monthYear.split('-');
+                const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+                
+                // Group records by week
+                const recordsByWeek = {};
+                monthRecords.forEach(record => {
+                    const date = new Date(record.rentalDate);
+                    const weekNumber = Math.ceil(date.getDate() / 7);
+                    if (!recordsByWeek[weekNumber]) {
+                        recordsByWeek[weekNumber] = [];
+                    }
+                    recordsByWeek[weekNumber].push(record);
+                });
+
+                // Create a sheet for each week
+                Object.keys(recordsByWeek).sort((a, b) => parseInt(a) - parseInt(b)).forEach(weekNumber => {
+                    const weekRecords = recordsByWeek[weekNumber];
+                    const exportData = [
+                        [
+                            'Item ID', 'Name', 'Rented By', 'Section', 'Rental Date', 'Time Rented', 
+                            'Expected Return', 'Time Returned', 'Overdue Time', 'Status',
+                            'Processed By', 'Returned By', 'Price', 'Payment Status'
+                        ]
+                    ];
+
+                    let weekTotalProfit = 0;
+                    let weekTotalUnpaid = 0;
+
+                    weekRecords.forEach(r => {
+                        const rentalDateObj = new Date(r.rentalDate);
+                        const rentalDate = rentalDateObj.toLocaleDateString();
+                        const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        let timeReturned = '';
+                        if (r.returnDate) {
+                            const returnDateObj = new Date(r.returnDate);
+                            timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        }
+                        const dueDate = r.dueDate ? new Date(r.dueDate) : null;
+                        let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+                        
+                        let overdueTime = '-';
+                        if (r.returnDate && r.dueDate) {
+                            const returnDate = new Date(r.returnDate);
+                            const dueDate = new Date(r.dueDate);
+                            if (returnDate > dueDate) {
+                                overdueTime = formatMsToHHMMSS(returnDate - dueDate);
+                            }
+                        }
+
+                        exportData.push([
+                            r.itemId,
+                            r.itemName,
+                            r.renterName + ' (' + r.renterId + ')',
+                            r.renterSection,
+                            rentalDate,
+                            timeRented,
+                            expectedReturn,
+                            timeReturned,
+                            overdueTime,
+                            r.status,
+                            r.officerName || '',
+                            r.returningOfficerName || '',
+                            (() => {
+                                let price = (typeof r.totalCost === 'number') ? r.totalCost
+                                    : (typeof r.baseCost === 'number') ? r.baseCost
+                                    : (typeof r.cost === 'number') ? r.cost
+                                    : 0;
+                                if (r.paymentStatus === 'paid') {
+                                    weekTotalProfit += price;
+                                } else if (r.paymentStatus === 'unpaid') {
+                                    weekTotalUnpaid += price;
+                                }
+                                return '₱' + price;
+                            })(),
+                            r.paymentStatus || '-'
+                        ]);
+                    });
+
+                    // Add empty row for spacing
+                    exportData.push([]);
+                    // Add summary rows
+                    exportData.push(['', '', '', '', '', '', '', '', '', '', '', 'Week Total Profit', '₱' + weekTotalProfit, '']);
+                    exportData.push(['', '', '', '', '', '', '', '', '', '', '', 'Week Total Unpaid', '₱' + weekTotalUnpaid, '']);
+
+                    // Create worksheet
+                    const ws = XLSX.utils.aoa_to_sheet(exportData);
+                    
+                    // Set column widths for better spacing
+                    ws['!cols'] = [
+                        { wch: 12 },  // Item ID
+                        { wch: 20 },  // Name
+                        { wch: 22 },  // Rented By
+                        { wch: 14 },  // Section
+                        { wch: 12 },  // Rental Date
+                        { wch: 12 },  // Time Rented
+                        { wch: 16 },  // Expected Return
+                        { wch: 14 },  // Time Returned
+                        { wch: 14 },  // Overdue Time
+                        { wch: 10 },  // Status
+                        { wch: 22 },  // Processed By
+                        { wch: 22 },  // Returned By
+                        { wch: 10 },  // Price
+                        { wch: 14 }   // Payment Status
+                    ];
+                    
+                    // Add the worksheet to the workbook
+                    const sheetName = `${monthName} Week ${weekNumber}`;
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+            });
+
+            // Save the workbook
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0]; // Gets YYYY-MM-DD
+            XLSX.writeFile(wb, `rental-history-${dateStr}.xlsx`);
+        }
+        // Import from Excel
+        document.getElementById('importExcel').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                if (!rows.length) {
+                    alert('No data found in the Excel file.');
+                    e.target.value = '';
+                    return;
+                }
+                const header = rows[0].map(h => h.toLowerCase());
+                const newRecords = [];
+                // Detect new format by checking for 'item id' and 'rented by' columns
+                if (header.includes('item id') && header.includes('rented by')) {
+                    // New format (exported from this app)
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length < 10 || !row[header.indexOf('item id')]) continue;
+                        // Parse 'Rented By' column: 'Name (ID)'
+                        let renterName = '', renterId = '';
+                        const rentedBy = row[header.indexOf('rented by')] || '';
+                        const match = rentedBy.match(/^(.*) \((.*)\)$/);
+                        if (match) {
+                            renterName = match[1].trim();
+                            renterId = match[2].trim();
+                        } else {
+                            renterName = rentedBy;
+                        }
+                        // Parse dates
+                        function parseDate(dateStr, timeStr) {
+                            if (!dateStr || !timeStr || dateStr === '-' || timeStr === '-') return '';
+                            // Try to parse as local date/time string
+                            const dt = new Date(dateStr + ' ' + timeStr);
+                            if (!isNaN(dt)) return dt.toISOString();
+                            return '';
+                        }
+                        // Rental Date/Time
+                        let rentalDate = parseDate(row[header.indexOf('rental date')], row[header.indexOf('time rented')]);
+                        // Due Date/Expected Return
+                        let dueDate = parseDate(row[header.indexOf('rental date')], row[header.indexOf('expected return')]);
+                        // Return Date/Time
+                        let returnDate = parseDate(row[header.indexOf('rental date')], row[header.indexOf('time returned')]);
+                        // Price
+                        let price = 0;
+                        const priceStr = row[header.indexOf('price')] || '';
+                        if (typeof priceStr === 'string' && priceStr.startsWith('₱')) {
+                            price = parseFloat(priceStr.replace('₱', ''));
+                        }
+                        newRecords.push({
+                            itemId: row[header.indexOf('item id')],
+                            itemName: row[header.indexOf('name')],
+                            renterId,
+                            renterName,
+                            renterSection: row[header.indexOf('section')],
+                            rentalDate,
+                            dueDate,
+                            returnDate,
+                            status: row[header.indexOf('status')],
+                            officerName: row[header.indexOf('processed by')],
+                            returningOfficerName: row[header.indexOf('returned by')],
+                            totalCost: price,
+                            paymentStatus: row[header.indexOf('payment status')]
+                        });
+                    }
+                } else if (header.includes('itemid') && header.includes('renterid')) {
+                    // Old format
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row.length >= 9) {
+                            newRecords.push({
+                                itemId: row[header.indexOf('itemid')],
+                                itemName: row[header.indexOf('itemname')],
+                                renterId: row[header.indexOf('renterid')],
+                                renterName: row[header.indexOf('rentername')],
+                                renterSection: row[header.indexOf('rentersection')],
+                                rentalDate: row[header.indexOf('rentaldate')],
+                                dueDate: row[header.indexOf('duedate')],
+                                returnDate: row[header.indexOf('returndate')],
+                                status: row[header.indexOf('status')]
+                            });
+                        }
+                    }
+                }
+                if (newRecords.length) {
+                    if (confirm('Importing will overwrite all current rental history. Continue?')) {
+                        localStorage.setItem('rentalRecords', JSON.stringify(newRecords));
+                        updateRentalHistoryTableStandalone();
+                        alert('Rental history imported successfully!');
+                    }
+                } else {
+                    alert('No valid records found in the Excel file.');
+                }
+                e.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+        async function markAsPaid(itemId, returnDate) {
+            const rental = rentalRecords.find(record => record.itemId === itemId && record.returnDate === returnDate);
+            if (rental) {
+                rental.paymentStatus = 'paid';
+                
+                // Save to Firebase or localStorage
+                if (rentalFirebaseService) {
+                    try {
+                        await rentalFirebaseService.updateRentalRecord(rental.id, rental);
+                        console.log('Payment status updated in Firebase');
+                    } catch (error) {
+                        console.error('Error updating payment in Firebase:', error);
+                        // Fallback to localStorage
+                localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                    }
+                } else {
+                    // Fallback to localStorage
+                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                }
+                
+                // Refresh the table
+                if (typeof updateRentalHistoryTableStandalone === 'function') {
+                    updateRentalHistoryTableStandalone();
+                }
+            }
+        }
+        // Pay All button logic
+        document.getElementById('payAllBtn').onclick = async function() {
+            let changed = false;
+            for (const record of rentalRecords) {
+                if (record.paymentStatus === 'unpaid') {
+                    record.paymentStatus = 'paid';
+                    changed = true;
+                    
+                    // Save to Firebase
+                    if (rentalFirebaseService) {
+                        try {
+                            await rentalFirebaseService.updateRentalRecord(record.id, record);
+                        } catch (error) {
+                            console.error('Error updating payment in Firebase:', error);
+                        }
+                    }
+                }
+            }
+            
+            if (changed) {
+                // Fallback to localStorage if Firebase not available
+                if (!rentalFirebaseService) {
+                localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                }
+                updateRentalHistoryTableStandalone();
+                alert('All unpaid records marked as paid!');
+            } else {
+                alert('No unpaid records found.');
+            }
+        };
+        // Officer/Password Security for All Nav Buttons
+        document.addEventListener('DOMContentLoaded', function() {
+          const navSecureBtns = document.querySelectorAll('.nav-secure-btn');
+          const officerVerifyModalEl = document.getElementById('officerVerifyModal');
+          const officerVerifyModal = new bootstrap.Modal(officerVerifyModalEl);
+          const passwordInput = document.getElementById('officerPasswordInput');
+          const errorDiv = document.getElementById('officerVerifyError');
+          const verifyBtn = document.getElementById('officerVerifyBtn');
+          const scannedBarcodeDisplay = document.getElementById('scannedBarcodeDisplay');
+          let barcodeBuffer = '';
+          let barcodeTimer = null;
+          let modalOpen = false;
+          let navTarget = null;
+
+          function updateBarcodeDisplayMasked() {
+            scannedBarcodeDisplay.textContent = barcodeBuffer.length > 0 ? '*'.repeat(barcodeBuffer.length) : 'Waiting for scan...';
+          }
+
+          navSecureBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+              errorDiv.style.display = 'none';
+              passwordInput.value = '';
+              scannedBarcodeDisplay.textContent = 'Waiting for scan...';
+              barcodeBuffer = '';
+              navTarget = btn.getAttribute('data-target');
+              officerVerifyModal.show();
+            });
+          });
+
+          officerVerifyModalEl.addEventListener('shown.bs.modal', function () {
+            modalOpen = true;
+            scannedBarcodeDisplay.textContent = 'Waiting for scan...';
+            barcodeBuffer = '';
+          });
+          officerVerifyModalEl.addEventListener('hidden.bs.modal', function () {
+            modalOpen = false;
+            barcodeBuffer = '';
+            navTarget = null;
+          });
+
+          function verifyOfficerAccess(barcodeOverride) {
+            const barcode = (barcodeOverride !== undefined ? barcodeOverride : '').trim();
+            const password = passwordInput.value.trim();
+            if (!navTarget) return;
+            // Check password first
+            if (password === 'AISERS2025') {
+              window.location.href = navTarget;
+              return;
+            }
+            // Check barcode against officer database
+            let officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
+            if (barcode) {
+              let found = officers.find(officer => encodeStudentData(officer.officerId) === barcode || officer.officerId === barcode);
+              if (found) {
+                window.location.href = navTarget;
+                return;
+              }
+              errorDiv.textContent = 'Invalid barcode or password.';
+              errorDiv.style.display = 'block';
+            } else {
+              errorDiv.textContent = 'Please scan a barcode or enter the password.';
+              errorDiv.style.display = 'block';
+            }
+          }
+
+          verifyBtn.addEventListener('click', function() {
+            verifyOfficerAccess(barcodeBuffer);
+          });
+          passwordInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') verifyOfficerAccess(barcodeBuffer);
+          });
+
+          // Global key listener for barcode scanning
+          document.addEventListener('keydown', function(e) {
+            if (!modalOpen) return;
+            // Ignore if password input is focused
+            if (document.activeElement === passwordInput) return;
+            if (e.key === 'Enter') {
+              if (barcodeBuffer.length > 0) {
+                updateBarcodeDisplayMasked();
+                verifyOfficerAccess(barcodeBuffer);
+                barcodeBuffer = '';
+              }
+              e.preventDefault();
+              return;
+            }
+            // Ignore special keys
+            if (e.key.length === 1) {
+              barcodeBuffer += e.key;
+              updateBarcodeDisplayMasked();
+              // Reset buffer if no input for 100ms (barcode scanners are fast)
+              if (barcodeTimer) clearTimeout(barcodeTimer);
+              barcodeTimer = setTimeout(() => {
+                barcodeBuffer = '';
+                updateBarcodeDisplayMasked();
+              }, 100);
+            }
+          });
+        });
+        function formatMsToHHMMSS(ms) {
+            let totalSeconds = Math.floor(ms / 1000);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+        }
+        function setupDeleteRecordButtons() {
+            document.querySelectorAll('.delete-record-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const itemId = btn.getAttribute('data-itemid');
+                    const returnDate = btn.getAttribute('data-returndate');
+                    // Store for modal
+                    window._deleteRecordTarget = { itemId, returnDate };
+                    document.getElementById('deleteRecordConfirmInput').value = '';
+                    document.getElementById('deleteRecordConfirmError').style.display = 'none';
+                    const deleteRecordModal = new bootstrap.Modal(document.getElementById('deleteRecordModal'));
+                    deleteRecordModal.show();
+                    document.getElementById('deleteRecordModal').addEventListener('shown.bs.modal', function () {
+                        document.getElementById('deleteRecordConfirmInput').focus();
+                    }, { once: true });
+                };
+            });
+        }
+        document.getElementById('deleteRecordConfirmBtn').onclick = async function() {
+            const val = document.getElementById('deleteRecordConfirmInput').value.trim();
+            if (val === 'Delete') {
+                const { itemId, returnDate } = window._deleteRecordTarget || {};
+                if (itemId) {
+                    // Find the record to delete
+                    const recordToDelete = rentalRecords.find(record => 
+                        record.itemId === itemId && record.returnDate === returnDate
+                    );
+                    
+                    // Remove from Firebase first
+                    if (rentalFirebaseService && recordToDelete) {
+                        try {
+                            await rentalFirebaseService.deleteRentalRecord(recordToDelete.id);
+                            console.log('Rental record deleted from Firebase:', recordToDelete.id);
+                        } catch (error) {
+                            console.error('Error deleting rental record from Firebase:', error);
+                            // Still remove from local array even if Firebase fails
+                        }
+                    }
+                    
+                    // Remove from local array
+                    rentalRecords = rentalRecords.filter(record => 
+                        !(record.itemId === itemId && record.returnDate === returnDate)
+                    );
+                    
+                    // Fallback to localStorage if Firebase not available
+                    if (!rentalFirebaseService) {
+                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                    }
+                    
+                    updateRentalHistoryTableStandalone();
+                    const deleteRecordModal = bootstrap.Modal.getInstance(document.getElementById('deleteRecordModal'));
+                    if (deleteRecordModal) deleteRecordModal.hide();
+                }
+            } else {
+                const err = document.getElementById('deleteRecordConfirmError');
+                err.textContent = "You must type 'Delete' to confirm.";
+                err.style.display = 'block';
+            }
+        };
+        // Individual record delete modal Enter key support
+        document.getElementById('deleteRecordConfirmInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('deleteRecordConfirmBtn').click();
+            }
+        });
+        // Clear-all history modal Enter key support
+        document.getElementById('deleteConfirmInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('deleteConfirmBtn').click();
+            }
+        });
+    </script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Rental Firebase Service -->
+    <script src="rental-firebase-service.js"></script>
+</body>
+</html> 

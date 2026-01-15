@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+:root {
+    --gold: #FFD700;
+    --gold-dark: #FFC107;
+    --black: #181818;
+    --white: #fff;
+}
+
+/* General Styles */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Card Styles */
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Result Box Styles */
+.result-box {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+}
+
+.result-box .success {
+    color: #198754;
+}
+
+.result-box .error {
+    color: #dc3545;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Button Styles */
+.btn-group {
+    margin-bottom: 1rem;
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Merchandise-like header theme */
+.navbar {
+    background: var(--black) !important;
+    height: 70px;
+}
+
+.navbar-brand span {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+}
+
+.btn-primary {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    font-weight: 700;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background: var(--black);
+    color: var(--gold);
+}
+
+/* Outline buttons use gold theme */
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-info,
+.btn-outline-warning {
+    border-color: var(--gold) !important;
+    color: var(--black) !important;
+    background-color: #fff !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover {
+    background-color: var(--gold) !important;
+    color: var(--black) !important;
+}
+
+/* Optional: make info/success buttons align with theme on hover */
+.btn-info:hover,
+.btn-success:hover {
+    background-color: var(--black) !important;
+    color: var(--gold) !important;
+    border-color: var(--black) !important;
+}
+
+.card-header h1, .card-header h2, .card-header h3 {
+    font-family: 'Montserrat', Arial, sans-serif;
+    color: var(--black);
+}

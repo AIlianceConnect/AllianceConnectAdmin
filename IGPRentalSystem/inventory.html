@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Equipment Rental System</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="welcome.html">Home</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5" style="margin-top: 120px !important;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Inventory Management</h1>
+            <div>
+                <a href="welcome.html" class="btn btn-outline-secondary me-2">Home</a>
+                <a href="index.html" class="btn btn-outline-primary">Rental System</a>
+            </div>
+        </div>
+
+        <!-- Inventory List -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Current Inventory</h2>
+            </div>
+            <div class="card-body">
+                <!-- Inventory Summary Table -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered mb-0">
+                        <thead>
+                            <tr>
+                                <th>Item ID</th>
+                                <th>Number of Items</th>
+                                <th>Items Available</th>
+                                <th>Items Rented</th>
+                                <th>Items Reserved</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventorySummary">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tbody id="inventoryList">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Item Confirmation Modal -->
+    <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteItemModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Type <strong>Delete</strong> to confirm deleting this inventory item. This cannot be undone.</p>
+                    <input type="text" class="form-control" id="deleteItemConfirmInput" placeholder="Type 'Delete' to confirm">
+                    <div id="deleteItemConfirmError" class="text-danger mt-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteItemConfirmBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load inventory items
+        let inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+        // Ensure all items have lastRenter and currentRenter fields for backward compatibility
+        inventoryItems = inventoryItems.map(item => ({
+            ...item,
+            lastRenter: item.lastRenter || '',
+            currentRenter: item.currentRenter || ''
+        }));
+        localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+
+        // Initialize inventory if empty
+        if (inventoryItems.length === 0) {
+            inventoryItems = [
+                { id: 'SH001', name: 'Shoe Cover', barcode: 'SH001', status: 'available', lastRenter: '', currentRenter: '' },
+                { id: 'SH002', name: 'Shoe Cover', barcode: 'SH002', status: 'available', lastRenter: '', currentRenter: '' },
+                { id: 'AR001', name: 'Arnis', barcode: 'AR001', status: 'available', lastRenter: '', currentRenter: '' },
+                { id: 'AR002', name: 'Arnis', barcode: 'AR002', status: 'available', lastRenter: '', currentRenter: '' },
+                { id: 'CALC001', name: 'Calculator', barcode: 'CALC001', status: 'available', lastRenter: '', currentRenter: '' },
+                { id: 'CALC002', name: 'Calculator', barcode: 'CALC002', status: 'available', lastRenter: '', currentRenter: '' }
+            ];
+            localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+        }
+
+        // Helper to sanitize group names for use as class names
+        function sanitizeGroupName(name) {
+            return name.replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
+        // Update inventory table
+        async function updateInventoryTable() {
+            // Load inventory items from Firebase if available
+            if (rentalFirebaseService) {
+                try {
+                    const firebaseItems = await rentalFirebaseService.getInventoryItems();
+                    if (firebaseItems && firebaseItems.length > 0) {
+                        inventoryItems = firebaseItems;
+                        console.log('Loaded inventory items from Firebase for table update:', firebaseItems.length);
+                    } else {
+                        // Fallback to localStorage if no Firebase items
+                        inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+                    }
+                } catch (error) {
+                    console.error('Error loading inventory items from Firebase:', error);
+                    // Fallback to localStorage
+                    inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+                }
+            } else {
+                // Fallback to localStorage if Firebase not available
+                inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+            }
+            
+            // Ensure all items have required fields
+            inventoryItems = inventoryItems.map(item => ({
+                ...item,
+                lastRenter: item.lastRenter || '',
+                currentRenter: item.currentRenter || '',
+                reservedBy: item.reservedBy || item.currentRenter || '', // Support reservedBy field
+                status: item.status || 'available', // Preserve status from Firebase
+                rentalStartTime: item.rentalStartTime || null, // Preserve rentalStartTime from Firebase
+                rentalEndTime: item.rentalEndTime || null, // Preserve rentalEndTime from Firebase
+                rentalHours: item.rentalHours || null // Preserve rentalHours from Firebase
+            }));
+            
+            // Only override status if Firebase status is not set and item is actively rented
+            // Firebase is the source of truth, so we trust its status field
+            // This allows reserved status from Android app to be displayed correctly
+            let rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            inventoryItems = inventoryItems.map(item => {
+                // Normalize status to lowercase for consistency
+                const currentStatus = (item.status || '').toLowerCase();
+                
+                // If Firebase already has a status (rented, reserved, etc.), use it
+                if (currentStatus && currentStatus !== 'available') {
+                    return {
+                        ...item,
+                        status: item.status // Keep original case from Firebase
+                    };
+                }
+                // Otherwise, check local rental records for active rentals
+                const isRented = rentalRecords.some(r => r.itemId === item.id && r.status === 'active');
+                return {
+                    ...item,
+                    status: isRented ? 'rented' : 'available'
+                };
+            });
+            
+            // Update localStorage for consistency (but Firebase is primary source)
+            localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+            
+            const tbody = document.getElementById('inventoryList');
+            tbody.innerHTML = '';
+            
+            // Group items by name
+            const groupedItems = inventoryItems.reduce((acc, item) => {
+                if (!acc[item.name]) {
+                    acc[item.name] = [];
+                }
+                acc[item.name].push(item);
+                return acc;
+            }, {});
+
+            // Update summary table
+            const summaryBody = document.getElementById('inventorySummary');
+            summaryBody.innerHTML = '';
+            Object.keys(groupedItems).sort().forEach(groupName => {
+                const items = groupedItems[groupName];
+                // Normalize status to lowercase for comparison
+                const available = items.filter(i => (i.status || '').toLowerCase() === 'available').length;
+                const rented = items.filter(i => (i.status || '').toLowerCase() === 'rented').length;
+                const reserved = items.filter(i => (i.status || '').toLowerCase() === 'reserved').length;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${groupName}</td>
+                    <td>${items.length}</td>
+                    <td>${available}</td>
+                    <td>${rented}</td>
+                    <td>${reserved}</td>
+                `;
+                summaryBody.appendChild(row);
+            });
+
+            // Sort group names
+            const sortedGroupNames = Object.keys(groupedItems).sort();
+
+            sortedGroupNames.forEach(groupName => {
+                const safeGroupName = sanitizeGroupName(groupName);
+                // Create group header row
+                const headerRow = document.createElement('tr');
+                headerRow.className = 'group-header';
+                headerRow.innerHTML = `
+                    <td colspan="8">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>${groupName}</strong>
+                            <button class="btn btn-sm btn-outline-secondary toggle-group" data-group="${safeGroupName}" onclick="toggleGroup('${safeGroupName}')">
+                                Show Items
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(headerRow);
+
+                // Create items container
+                const itemsContainer = document.createElement('tr');
+                itemsContainer.className = `group-items group-${safeGroupName}`;
+                itemsContainer.style.display = 'none';
+                
+                const itemsCell = document.createElement('td');
+                itemsCell.colSpan = 8;
+                
+                const itemsTable = document.createElement('table');
+                itemsTable.className = 'table table-sm mb-0';
+                itemsTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Barcode</th>
+                            <th>Last Renter</th>
+                            <th>Current Renter / Reserved By</th>
+                            <th>Status</th>
+                            <th>Rental Start Time</th>
+                            <th>Rental End Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${[...groupedItems[groupName]]
+                            .sort((a, b) => {
+                                const numA = parseInt(a.id.replace(/^[A-Z]+/i, ''), 10);
+                                const numB = parseInt(b.id.replace(/^[A-Z]+/i, ''), 10);
+                                return numA - numB;
+                            })
+                            .map(item => {
+                                // Helper function to format Firebase Timestamp or Date
+                                function formatDateTime(dateValue) {
+                                    if (!dateValue) return '';
+                                    
+                                    let date;
+                                    // Handle Firebase Timestamp object
+                                    if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+                                        date = dateValue.toDate();
+                                    } 
+                                    // Handle Firestore Timestamp with seconds/nanoseconds
+                                    else if (dateValue.seconds) {
+                                        date = new Date(dateValue.seconds * 1000 + (dateValue.nanoseconds || 0) / 1000000);
+                                    }
+                                    // Handle Date object or ISO string
+                                    else if (dateValue instanceof Date) {
+                                        date = dateValue;
+                                    }
+                                    else if (typeof dateValue === 'string') {
+                                        date = new Date(dateValue);
+                                    }
+                                    else {
+                                        return '';
+                                    }
+                                    
+                                    // Check if date is valid
+                                    if (isNaN(date.getTime())) {
+                                        return '';
+                                    }
+                                    
+                                    // Format: MM/DD/YYYY HH:MM AM/PM
+                                    const options = {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: true
+                                    };
+                                    return date.toLocaleString('en-US', options);
+                                }
+                                
+                                // Determine status badge
+                                const status = (item.status || 'available').toLowerCase();
+                                let statusBadge = '';
+                                let renterInfo = item.currentRenter || '';
+                                let rentalStartTime = '';
+                                let rentalEndTime = '';
+                                
+                                if (status === 'reserved' || status === 'rented') {
+                                    // Format rental times for reserved or rented items
+                                    rentalStartTime = formatDateTime(item.rentalStartTime);
+                                    rentalEndTime = formatDateTime(item.rentalEndTime);
+                                }
+                                
+                                if (status === 'reserved') {
+                                    statusBadge = '<span class="badge bg-warning text-dark">Reserved</span>';
+                                    // Show reservedBy if available, otherwise show currentRenter
+                                    renterInfo = item.reservedBy || item.currentRenter || 'Reserved';
+                                } else if (status === 'rented') {
+                                    statusBadge = '<span class="badge bg-danger">Rented</span>';
+                                    renterInfo = item.currentRenter || 'Rented';
+                                } else {
+                                    statusBadge = '<span class="badge bg-success">Available</span>';
+                                    renterInfo = '';
+                                }
+                                
+                                return `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.barcode}</td>
+                                <td>${item.lastRenter || ''}</td>
+                                <td>${renterInfo}</td>
+                                <td>${statusBadge}</td>
+                                <td>${rentalStartTime || '-'}</td>
+                                <td>${rentalEndTime || '-'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteItem('${item.id}')">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                            }).join('')}
+                    </tbody>
+                `;
+                
+                itemsCell.appendChild(itemsTable);
+                itemsContainer.appendChild(itemsCell);
+                tbody.appendChild(itemsContainer);
+            });
+        }
+
+        // Toggle group visibility
+        function toggleGroup(safeGroupName) {
+            const itemsContainer = document.querySelector(`.group-${safeGroupName}`);
+            const toggleButton = document.querySelector(`button.toggle-group[data-group='${safeGroupName}']`);
+            
+            if (itemsContainer.style.display === 'none') {
+                itemsContainer.style.display = 'table-row';
+                toggleButton.textContent = 'Hide Items';
+            } else {
+                itemsContainer.style.display = 'none';
+                toggleButton.textContent = 'Show Items';
+            }
+        }
+
+        // Delete item
+        function deleteItem(itemId) {
+            // Store the item to delete for the confirmation modal
+            window._itemToDelete = itemId;
+            
+            // Show confirmation modal
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteItemModal'));
+            document.getElementById('deleteItemConfirmInput').value = '';
+            document.getElementById('deleteItemConfirmError').style.display = 'none';
+            deleteModal.show();
+            
+            // Focus input when modal is shown
+            document.getElementById('deleteItemModal').addEventListener('shown.bs.modal', function () {
+                document.getElementById('deleteItemConfirmInput').focus();
+            }, { once: true });
+        }
+
+        // Initial table update
+        updateInventoryTable();
+    </script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Rental Firebase Service -->
+    <script src="rental-firebase-service.js"></script>
+    
+    <script>
+    // Firebase integration for inventory management
+    let rentalFirebaseService = null;
+    
+    // Initialize Firebase
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            if (window.firebaseDb) {
+                rentalFirebaseService = new RentalSystemFirebaseService();
+                console.log('Firebase connected for inventory management');
+                
+                // Load inventory items from Firebase
+                try {
+                    const firebaseItems = await rentalFirebaseService.getInventoryItems();
+                    if (firebaseItems && firebaseItems.length > 0) {
+                        inventoryItems = firebaseItems;
+                        console.log('Loaded inventory items from Firebase:', firebaseItems.length);
+                        await updateInventoryTable();
+                    } else {
+                        console.log('No inventory items found in Firebase, using localStorage');
+                        // Keep existing localStorage items
+                        await updateInventoryTable();
+                    }
+                } catch (error) {
+                    console.error('Error loading inventory items from Firebase:', error);
+                    // Keep existing localStorage items
+                    await updateInventoryTable();
+                }
+                
+                // Set up real-time listener for inventory items (to detect reservations from Android app)
+                try {
+                    rentalFirebaseService.listenToInventoryItems((items) => {
+                        console.log('Inventory items updated in real-time:', items.length);
+                        inventoryItems = items.map(item => ({
+                            ...item,
+                            lastRenter: item.lastRenter || '',
+                            currentRenter: item.currentRenter || '',
+                            reservedBy: item.reservedBy || item.currentRenter || '',
+                            status: item.status || 'available',
+                            rentalStartTime: item.rentalStartTime || null, // Preserve rentalStartTime from Firebase
+                            rentalEndTime: item.rentalEndTime || null, // Preserve rentalEndTime from Firebase
+                            rentalHours: item.rentalHours || null // Preserve rentalHours from Firebase
+                        }));
+                        updateInventoryTable();
+                    });
+                    console.log('Real-time listener set up for inventory items');
+                } catch (error) {
+                    console.error('Error setting up real-time listener:', error);
+                }
+            } else {
+                throw new Error('Firebase not available');
+            }
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+            // Keep using localStorage
+            await updateInventoryTable();
+        }
+    });
+    
+    // Inventory Delete Confirmation Handler
+    document.getElementById('deleteItemConfirmBtn').addEventListener('click', async function() {
+        const val = document.getElementById('deleteItemConfirmInput').value.trim();
+        if (val === 'Delete') {
+            const itemId = window._itemToDelete;
+            if (itemId) {
+                // Remove from Firebase first
+                if (rentalFirebaseService) {
+                    try {
+                        await rentalFirebaseService.deleteInventoryItem(itemId);
+                        console.log('Inventory item deleted from Firebase:', itemId);
+                    } catch (error) {
+                        console.error('Error deleting inventory item from Firebase:', error);
+                        // Still remove from local array even if Firebase fails
+                    }
+                }
+                
+                inventoryItems = inventoryItems.filter(item => item.id !== itemId);
+                
+                // Fallback to localStorage if Firebase not available
+                if (!rentalFirebaseService) {
+                    localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+                }
+                
+                await updateInventoryTable();
+                
+                // Hide modal
+                const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteItemModal'));
+                if (deleteModal) deleteModal.hide();
+            }
+        } else {
+            const err = document.getElementById('deleteItemConfirmError');
+            err.textContent = "You must type 'Delete' to confirm.";
+            err.style.display = 'block';
+        }
+    });
+    
+    // Inventory Delete Modal Enter key support
+    document.getElementById('deleteItemConfirmInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('deleteItemConfirmBtn').click();
+        }
+    });
+    </script>
+</body>
+</html>

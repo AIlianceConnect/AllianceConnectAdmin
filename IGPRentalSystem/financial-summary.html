@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Summary</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="welcome.html">Home</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid mt-4" style="margin-top: 120px !important;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Financial Summary</h1>
+            <div>
+                <a href="index.html" class="btn btn-outline-secondary me-2">Back to Rental System</a>
+                <a href="rental-history.html" class="btn btn-outline-info">Rental History</a>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="fsItemFilter" class="form-label">Filter by Item:</label>
+                        <select id="fsItemFilter" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fsStartDate" class="form-label">Start Date:</label>
+                        <input type="date" id="fsStartDate" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fsEndDate" class="form-label">End Date:</label>
+                        <input type="date" id="fsEndDate" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fsPaymentStatus" class="form-label">Payment Status:</label>
+                        <select id="fsPaymentStatus" class="form-select">
+                            <option value="">All</option>
+                            <option value="paid">Paid</option>
+                            <option value="unpaid">Unpaid</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button id="fsClearFilters" class="btn btn-secondary">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-success h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Profit</h5>
+                        <h3 id="fsTotalProfit">₱0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-danger h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Unpaid</h5>
+                        <h3 id="fsTotalUnpaid">₱0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-primary h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Transactions</h5>
+                        <h3 id="fsTotalTransactions">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-info h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Paid Transactions</h5>
+                        <h3 id="fsPaidTransactions">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-warning h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Unpaid Transactions</h5>
+                        <h3 id="fsUnpaidTransactions">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-secondary h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Transaction Value</h5>
+                        <h3 id="fsAvgPaid">₱0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-dark h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Highest Transaction</h5>
+                        <h3 id="fsHighest">₱0</h3>
+                        <div id="fsHighestStudent" style="font-size: 0.95em;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-dark h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Lowest Transaction</h5>
+                        <h3 id="fsLowest">₱0</h3>
+                        <div id="fsLowestStudent" style="font-size: 0.95em;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range Summary -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Date Range Summary</h5>
+                <p id="fsDateRange" class="mb-0">-</p>
+            </div>
+        </div>
+
+        <!-- All Transactions Table -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>All Transactions</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Item</th>
+                                <th>Rented By</th>
+                                <th>Section</th>
+                                <th>Processed By</th>
+                                <th>Returned By</th>
+                                <th>Base Cost</th>
+                                <th>Overtime</th>
+                                <th>Total Cost</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fsAllTransactions"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breakdown Tabs -->
+        <div class="card">
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3" id="fsBreakdownTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab">Monthly Breakdown</button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="monthly" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Total Profit</th>
+                                        <th>Total Unpaid</th>
+                                        <th>Transactions</th>
+                                        <th>Paid Transactions</th>
+                                        <th>Unpaid Transactions</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fsMonthlyBreakdown"></tbody>
+                            </table>
+                        </div>
+                        <div id="monthlyDetails" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script>
+    function formatPeso(val) {
+        return '₱' + (typeof val === 'number' ? val.toFixed(2) : '0.00');
+    }
+
+    function filterByDate(records, start, end) {
+        if (!start && !end) return records;
+        return records.filter(r => {
+            const d = r.returnDate ? new Date(r.returnDate) : (r.rentalDate ? new Date(r.rentalDate) : null);
+            if (!d) return false;
+            if (start && d < start) return false;
+            if (end && d > end) return false;
+            return true;
+        });
+    }
+
+    function getMonthKey(date) {
+        return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    }
+
+    function getWeekKey(date) {
+        const year = date.getFullYear();
+        const firstDay = new Date(date.getFullYear(), 0, 1);
+        const days = Math.floor((date - firstDay) / (24 * 60 * 60 * 1000));
+        const week = Math.ceil((days + firstDay.getDay() + 1) / 7);
+        return year + '-W' + String(week).padStart(2, '0');
+    }
+
+    // Helper to get week-of-month (1-based)
+    function getWeekOfMonth(date) {
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        const dayOfWeek = firstDay.getDay();
+        return Math.ceil((date.getDate() + dayOfWeek) / 7);
+    }
+
+    // Helper to get month name
+    function getMonthName(date) {
+        return date.toLocaleString('default', { month: 'long' });
+    }
+
+    // Helper to get ordinal suffix
+    function ordinal(n) {
+        if (n > 3 && n < 21) return n + 'th';
+        switch (n % 10) {
+            case 1: return n + 'st';
+            case 2: return n + 'nd';
+            case 3: return n + 'rd';
+            default: return n + 'th';
+        }
+    }
+
+    function loadFinancialSummary() {
+        const records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+        
+        // Populate filters
+        const itemFilter = document.getElementById('fsItemFilter');
+        const uniqueNames = Array.from(new Set(records.map(r => r.itemName || '-'))).sort();
+        if (itemFilter.innerHTML === '' || itemFilter.options.length !== uniqueNames.length + 1) {
+            itemFilter.innerHTML = '<option value="">All Items</option>' + uniqueNames.map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+
+        // Get filter values
+        const selectedItem = itemFilter.value;
+        const startInput = document.getElementById('fsStartDate');
+        const endInput = document.getElementById('fsEndDate');
+        const paymentStatus = document.getElementById('fsPaymentStatus').value;
+        
+        let start = startInput && startInput.value ? new Date(startInput.value) : null;
+        let end = endInput && endInput.value ? new Date(endInput.value) : null;
+        if (end) end.setHours(23,59,59,999);
+
+        // Apply filters
+        let filtered = filterByDate(records, start, end);
+        if (selectedItem) {
+            filtered = filtered.filter(r => (r.itemName || '-') === selectedItem);
+        }
+        if (paymentStatus) {
+            filtered = filtered.filter(r => r.paymentStatus === paymentStatus);
+        }
+
+        // Calculate metrics
+        let totalProfit = 0, totalUnpaid = 0, total = 0, paid = 0, unpaid = 0;
+        let paidValues = [], allValues = [];
+        let min = null, max = null;
+        let maxRecord = null, minRecord = null;
+        let minDate = null, maxDate = null;
+
+        filtered.forEach(r => {
+            const cost = r.totalCost || r.baseCost || 0;
+            if (typeof cost === 'number') {
+                allValues.push(cost);
+                if (min === null || cost < min) {
+                    min = cost;
+                    minRecord = r;
+                }
+                if (max === null || cost > max) {
+                    max = cost;
+                    maxRecord = r;
+                }
+            }
+
+            if (r.rentalDate) {
+                const d = new Date(r.rentalDate);
+                if (!minDate || d < minDate) minDate = d;
+                if (!maxDate || d > maxDate) maxDate = d;
+            }
+
+            if (r.paymentStatus === 'paid' && typeof cost === 'number') {
+                totalProfit += cost;
+                paid++;
+                paidValues.push(cost);
+            }
+            if (r.paymentStatus === 'unpaid' && typeof cost === 'number') {
+                totalUnpaid += cost;
+                unpaid++;
+            }
+            total++;
+        });
+
+        // Update summary cards
+        document.getElementById('fsTotalProfit').textContent = formatPeso(totalProfit);
+        document.getElementById('fsTotalUnpaid').textContent = formatPeso(totalUnpaid);
+        document.getElementById('fsTotalTransactions').textContent = total;
+        document.getElementById('fsPaidTransactions').textContent = paid;
+        document.getElementById('fsUnpaidTransactions').textContent = unpaid;
+        document.getElementById('fsAvgPaid').textContent = paidValues.length ? formatPeso(paidValues.reduce((a,b) => a+b, 0) / paidValues.length) : '₱0.00';
+        document.getElementById('fsHighest').textContent = max !== null ? formatPeso(max) : '₱0.00';
+        document.getElementById('fsHighestStudent').textContent = maxRecord ? `${maxRecord.renterName || '-'} (${maxRecord.renterId || '-'})` : '';
+        document.getElementById('fsLowest').textContent = min !== null ? formatPeso(min) : '₱0.00';
+        document.getElementById('fsLowestStudent').textContent = minRecord ? `${minRecord.renterName || '-'} (${minRecord.renterId || '-'})` : '';
+        document.getElementById('fsDateRange').textContent = (minDate && maxDate) ? 
+            `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}` : '-';
+
+        // Update all transactions table
+        const tbody = document.getElementById('fsAllTransactions');
+        tbody.innerHTML = '';
+        filtered.sort((a, b) => new Date(b.rentalDate) - new Date(a.rentalDate)).forEach(r => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(r.rentalDate).toLocaleDateString()}</td>
+                <td>${r.itemName || '-'}</td>
+                <td>${r.renterName || '-'} (${r.renterId || '-'})</td>
+                <td>${r.renterSection || '-'}</td>
+                <td>${r.officerName || '-'}</td>
+                <td>${r.returningOfficerName || '-'}</td>
+                <td>${formatPeso(r.baseCost || 0)}</td>
+                <td>${formatPeso(r.overtimeCost || 0)}</td>
+                <td>${formatPeso(r.totalCost || r.baseCost || 0)}</td>
+                <td>${r.status || '-'}</td>
+                <td>${r.paymentStatus || '-'}</td>
+                <td>
+                    ${(r.paymentStatus === 'unpaid' && r.status === 'returned') ? 
+                        `<button class="btn btn-success btn-sm" onclick="markAsPaid('${r.itemId}', '${r.returnDate}')">Mark as Paid</button>` : 
+                        '-'}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        // Update breakdowns
+        updateBreakdowns(filtered);
+    }
+
+    function updateBreakdowns(records) {
+        // Monthly breakdown
+        const monthly = {};
+        records.forEach(r => {
+            const d = r.returnDate ? new Date(r.returnDate) : (r.rentalDate ? new Date(r.rentalDate) : null);
+            if (!d) return;
+            const key = getMonthKey(d);
+            if (!monthly[key]) {
+                monthly[key] = {
+                    profit: 0,
+                    unpaid: 0,
+                    count: 0,
+                    paid: 0,
+                    unpaid: 0,
+                    weeks: {},
+                    items: {}
+                };
+            }
+            const cost = r.totalCost || r.baseCost || 0;
+            if (r.paymentStatus === 'paid') {
+                monthly[key].profit += cost;
+                monthly[key].paid++;
+            }
+            if (r.paymentStatus === 'unpaid') {
+                monthly[key].unpaid += cost;
+                monthly[key].unpaid++;
+            }
+            monthly[key].count++;
+
+            // Track weekly data
+            const weekKey = getWeekKey(d);
+            if (!monthly[key].weeks[weekKey]) {
+                monthly[key].weeks[weekKey] = {
+                    profit: 0,
+                    unpaid: 0,
+                    count: 0,
+                    paid: 0,
+                    unpaid: 0
+                };
+            }
+            if (r.paymentStatus === 'paid') {
+                monthly[key].weeks[weekKey].profit += cost;
+                monthly[key].weeks[weekKey].paid++;
+            }
+            if (r.paymentStatus === 'unpaid') {
+                monthly[key].weeks[weekKey].unpaid += cost;
+                monthly[key].weeks[weekKey].unpaid++;
+            }
+            monthly[key].weeks[weekKey].count++;
+
+            // Track item data
+            const itemName = r.itemName || '-';
+            if (!monthly[key].items[itemName]) {
+                monthly[key].items[itemName] = {
+                    profit: 0,
+                    unpaid: 0,
+                    count: 0,
+                    paid: 0,
+                    unpaid: 0
+                };
+            }
+            if (r.paymentStatus === 'paid') {
+                monthly[key].items[itemName].profit += cost;
+                monthly[key].items[itemName].paid++;
+            }
+            if (r.paymentStatus === 'unpaid') {
+                monthly[key].items[itemName].unpaid += cost;
+                monthly[key].items[itemName].unpaid++;
+            }
+            monthly[key].items[itemName].count++;
+        });
+
+        const monthlyTbody = document.getElementById('fsMonthlyBreakdown');
+        const monthlyDetails = document.getElementById('monthlyDetails');
+        monthlyTbody.innerHTML = '';
+        monthlyDetails.innerHTML = '';
+
+        Object.keys(monthly).sort().forEach(key => {
+            const m = monthly[key];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${key}</td>
+                <td>${formatPeso(m.profit)}</td>
+                <td>${formatPeso(m.unpaid)}</td>
+                <td>${m.count}</td>
+                <td>${m.paid}</td>
+                <td>${m.unpaid}</td>
+                <td>
+                    <button class="btn btn-info btn-sm" onclick="toggleMonthlyDetails('${key}', this)">
+                        Show Details
+                    </button>
+                </td>
+            `;
+            monthlyTbody.appendChild(row);
+
+            // Create details section for this month
+            const detailsDiv = document.createElement('div');
+            detailsDiv.id = `monthly-details-${key}`;
+            detailsDiv.className = 'monthly-details mb-4';
+            detailsDiv.style.display = 'none';
+
+            // Weekly breakdown for this month
+            const weeklyTable = document.createElement('div');
+            weeklyTable.className = 'card mb-3';
+            weeklyTable.innerHTML = `
+                <div class="card-header">
+                    <h6 class="mb-0">Weekly Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Week</th>
+                                    <th>Total Profit</th>
+                                    <th>Total Unpaid</th>
+                                    <th>Transactions</th>
+                                    <th>Paid</th>
+                                    <th>Unpaid</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.keys(m.weeks).sort().map(weekKey => {
+                                    const w = m.weeks[weekKey];
+                                    // Convert weekKey to human-friendly label
+                                    const [year, weekNum] = weekKey.split('-W');
+                                    const firstDayOfYear = new Date(Number(year), 0, 1);
+                                    const daysOffset = (Number(weekNum) - 1) * 7;
+                                    let weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+                                    weekDate.setDate(weekDate.getDate() - weekDate.getDay() + 1);
+                                    const weekOfMonth = getWeekOfMonth(weekDate);
+                                    const monthName = getMonthName(weekDate);
+                                    const weekLabel = `${monthName} - ${ordinal(weekOfMonth)} week`;
+                                    return `
+                                        <tr>
+                                            <td>${weekLabel}</td>
+                                            <td>${formatPeso(w.profit)}</td>
+                                            <td>${formatPeso(w.unpaid)}</td>
+                                            <td>${w.count}</td>
+                                            <td>${w.paid}</td>
+                                            <td>${w.unpaid}</td>
+                                            <td><button class="btn btn-info btn-sm" onclick="toggleMonthlyWeekDetails('${key}','${weekKey}', this)">Show Details</button></td>
+                                        </tr>
+                                        <tr id="monthly-week-details-row-${key}-${weekKey}" style="display:none;"><td colspan="7"><div id="monthly-week-details-${key}-${weekKey}"></div></td></tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // Item breakdown for this month
+            const itemTable = document.createElement('div');
+            itemTable.className = 'card';
+            itemTable.innerHTML = `
+                <div class="card-header">
+                    <h6 class="mb-0">Item Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Total Profit</th>
+                                    <th>Total Unpaid</th>
+                                    <th>Transactions</th>
+                                    <th>Paid</th>
+                                    <th>Unpaid</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.keys(m.items).sort().map(itemName => {
+                                    const i = m.items[itemName];
+                                    return `
+                                        <tr>
+                                            <td>${itemName}</td>
+                                            <td>${formatPeso(i.profit)}</td>
+                                            <td>${formatPeso(i.unpaid)}</td>
+                                            <td>${i.count}</td>
+                                            <td>${i.paid}</td>
+                                            <td>${i.unpaid}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            detailsDiv.appendChild(weeklyTable);
+            detailsDiv.appendChild(itemTable);
+            monthlyDetails.appendChild(detailsDiv);
+        });
+    }
+
+    function markAsPaid(itemId, returnDate) {
+        let records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+        const rental = records.find(record => record.itemId === itemId && record.returnDate === returnDate);
+        if (rental) {
+            rental.paymentStatus = 'paid';
+            localStorage.setItem('rentalRecords', JSON.stringify(records));
+            loadFinancialSummary();
+        }
+    }
+
+    function toggleMonthlyDetails(monthKey, btn) {
+        const detailsDiv = document.getElementById(`monthly-details-${monthKey}`);
+        if (detailsDiv.style.display === 'none') {
+            detailsDiv.style.display = 'block';
+            btn.textContent = 'Hide Details';
+            btn.classList.replace('btn-info', 'btn-secondary');
+        } else {
+            detailsDiv.style.display = 'none';
+            btn.textContent = 'Show Details';
+            btn.classList.replace('btn-secondary', 'btn-info');
+            
+            // Hide all child details
+            const weekDetails = detailsDiv.querySelectorAll('[id^="monthly-week-details-row-"]');
+            weekDetails.forEach(row => {
+                row.style.display = 'none';
+                const btn = row.previousElementSibling.querySelector('button');
+                if (btn) {
+                    btn.textContent = 'Show Details';
+                    btn.classList.replace('btn-secondary', 'btn-info');
+                }
+            });
+
+            const itemDetails = detailsDiv.querySelectorAll('[id^="item-transactions-row-"]');
+            itemDetails.forEach(row => {
+                row.style.display = 'none';
+                const btn = row.previousElementSibling.querySelector('button');
+                if (btn) {
+                    btn.textContent = 'Show Details';
+                    btn.classList.replace('btn-secondary', 'btn-info');
+                }
+            });
+        }
+    }
+
+    function toggleMonthlyWeekDetails(monthKey, weekKey, btn) {
+        const detailsRow = document.getElementById(`monthly-week-details-row-${monthKey}-${weekKey}`);
+        const detailsDiv = document.getElementById(`monthly-week-details-${monthKey}-${weekKey}`);
+        if (detailsRow.style.display === 'none') {
+            // Generate item breakdown for this week in this month
+            const records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            // Filter records for this month and week
+            const weekRecords = records.filter(r => {
+                const d = r.returnDate ? new Date(r.returnDate) : (r.rentalDate ? new Date(r.rentalDate) : null);
+                if (!d) return false;
+                return getMonthKey(d) === monthKey && getWeekKey(d) === weekKey;
+            });
+            // Build item breakdown
+            const items = {};
+            // For sorting: store latest transaction date for each item
+            const itemLatestDate = {};
+            weekRecords.forEach(r => {
+                const name = r.itemName || '-';
+                if (!items[name]) items[name] = { profit: 0, unpaid: 0, count: 0, paid: 0, unpaid: 0 };
+                const cost = r.totalCost || r.baseCost || 0;
+                if (r.paymentStatus === 'paid') {
+                    items[name].profit += cost;
+                    items[name].paid++;
+                }
+                if (r.paymentStatus === 'unpaid') {
+                    items[name].unpaid += cost;
+                    items[name].unpaid++;
+                }
+                items[name].count++;
+                // Track latest transaction date for sorting
+                const d = r.returnDate ? new Date(r.returnDate) : (r.rentalDate ? new Date(r.rentalDate) : null);
+                if (d) {
+                    if (!itemLatestDate[name] || d > itemLatestDate[name]) {
+                        itemLatestDate[name] = d;
+                    }
+                }
+            });
+            // Render item breakdown table
+            // Convert weekKey to human-friendly label
+            const [year, weekNum] = weekKey.split('-W');
+            const firstDayOfYear = new Date(Number(year), 0, 1);
+            const daysOffset = (Number(weekNum) - 1) * 7;
+            let weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+            weekDate.setDate(weekDate.getDate() - weekDate.getDay() + 1);
+            const weekOfMonth = getWeekOfMonth(weekDate);
+            const monthName = getMonthName(weekDate);
+            const weekLabel = `${monthName} - ${ordinal(weekOfMonth)} week`;
+            // Store weekRecords for transaction details
+            detailsDiv.innerHTML = `
+                <div class=\"card\">
+                    <div class=\"card-header\"><h6 class=\"mb-0\">Item Breakdown for ${weekLabel}</h6></div>
+                    <div class=\"card-body\">
+                        <div class=\"table-responsive\">
+                            <table class=\"table table-sm table-bordered\">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Total Profit</th>
+                                        <th>Total Unpaid</th>
+                                        <th>Transactions</th>
+                                        <th>Paid</th>
+                                        <th>Unpaid</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Object.keys(items).sort((a, b) => {
+                                        // Sort by latest transaction date, newest first
+                                        const da = itemLatestDate[a] ? itemLatestDate[a].getTime() : 0;
+                                        const db = itemLatestDate[b] ? itemLatestDate[b].getTime() : 0;
+                                        return db - da;
+                                    }).map(name => {
+                                        const i = items[name];
+                                        const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+                                        return `
+                                            <tr>
+                                                <td>${name}</td>
+                                                <td>${formatPeso(i.profit)}</td>
+                                                <td>${formatPeso(i.unpaid)}</td>
+                                                <td>${i.count}</td>
+                                                <td>${i.paid}</td>
+                                                <td>${i.unpaid}</td>
+                                                <td><button class=\"btn btn-info btn-sm\" onclick=\"toggleItemTransactions('${monthKey}','${weekKey}','${safeName}', this)\">Show Details</button></td>
+                                            </tr>
+                                            <tr id=\"item-transactions-row-${monthKey}-${weekKey}-${safeName}\" style=\"display:none;\"><td colspan=\"7\"><div id=\"item-transactions-${monthKey}-${weekKey}-${safeName}\"></div></td></tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            detailsRow.style.display = '';
+            btn.textContent = 'Hide Details';
+            btn.classList.replace('btn-info', 'btn-secondary');
+        } else {
+            detailsRow.style.display = 'none';
+            btn.textContent = 'Show Details';
+            btn.classList.replace('btn-secondary', 'btn-info');
+        }
+    }
+
+    function toggleItemTransactions(monthKey, weekKey, safeName, btn) {
+        const detailsRow = document.getElementById(`item-transactions-row-${monthKey}-${weekKey}-${safeName}`);
+        const detailsDiv = document.getElementById(`item-transactions-${monthKey}-${weekKey}-${safeName}`);
+        if (detailsRow.style.display === 'none') {
+            // Find the original item name from safeName
+            const records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            // Find the item name by matching safeName
+            let itemName = null;
+            for (const r of records) {
+                const n = (r.itemName || '-').replace(/[^a-zA-Z0-9_-]/g, '_');
+                if (n === safeName) { itemName = r.itemName || '-'; break; }
+            }
+            // Filter records for this month, week, and item
+            const weekRecords = records.filter(r => {
+                const d = r.returnDate ? new Date(r.returnDate) : (r.rentalDate ? new Date(r.rentalDate) : null);
+                if (!d) return false;
+                return getMonthKey(d) === monthKey && getWeekKey(d) === weekKey && (r.itemName || '-') === itemName;
+            });
+            // Render transactions table
+            detailsDiv.innerHTML = `
+                <div class=\"card\">
+                    <div class=\"card-header\"><h6 class=\"mb-0\">Transactions for ${itemName}</h6></div>
+                    <div class=\"card-body\">
+                        <div class=\"table-responsive\">
+                            <table class=\"table table-sm table-bordered\">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Rented By</th>
+                                        <th>Section</th>
+                                        <th>Processed By</th>
+                                        <th>Returned By</th>
+                                        <th>Base Cost</th>
+                                        <th>Overtime</th>
+                                        <th>Total Cost</th>
+                                        <th>Status</th>
+                                        <th>Payment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${weekRecords.map(r => `
+                                        <tr>
+                                            <td>${new Date(r.rentalDate).toLocaleDateString()}</td>
+                                            <td>${r.renterName || '-'}</td>
+                                            <td>${r.renterSection || '-'}</td>
+                                            <td>${r.officerName || '-'}</td>
+                                            <td>${r.returningOfficerName || '-'}</td>
+                                            <td>${formatPeso(r.baseCost || 0)}</td>
+                                            <td>${formatPeso(r.overtimeCost || 0)}</td>
+                                            <td>${formatPeso(r.totalCost || r.baseCost || 0)}</td>
+                                            <td>${r.status || '-'}</td>
+                                            <td>${r.paymentStatus || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            detailsRow.style.display = '';
+            btn.textContent = 'Hide Details';
+            btn.classList.replace('btn-info', 'btn-secondary');
+        } else {
+            detailsRow.style.display = 'none';
+            btn.textContent = 'Show Details';
+            btn.classList.replace('btn-secondary', 'btn-info');
+        }
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', loadFinancialSummary);
+    document.getElementById('fsStartDate').addEventListener('input', loadFinancialSummary);
+    document.getElementById('fsEndDate').addEventListener('input', loadFinancialSummary);
+    document.getElementById('fsItemFilter').addEventListener('change', loadFinancialSummary);
+    document.getElementById('fsPaymentStatus').addEventListener('change', loadFinancialSummary);
+    document.getElementById('fsClearFilters').addEventListener('click', function() {
+        document.getElementById('fsStartDate').value = '';
+        document.getElementById('fsEndDate').value = '';
+        document.getElementById('fsItemFilter').value = '';
+        document.getElementById('fsPaymentStatus').value = '';
+        loadFinancialSummary();
+    });
+    </script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Rental Firebase Service -->
+    <script src="rental-firebase-service.js"></script>
+    
+    <script>
+    // Firebase integration for financial summary
+    let rentalFirebaseService = null;
+    
+    // Initialize Firebase
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            if (window.firebaseDb) {
+                rentalFirebaseService = new RentalSystemFirebaseService();
+                console.log('Firebase connected for financial summary');
+            } else {
+                throw new Error('Firebase not available');
+            }
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+        }
+    });
+    
+    // Override loadFinancialSummary to use Firebase
+    async function loadFinancialSummary() {
+        try {
+            let rentalRecords = [];
+            
+            if (rentalFirebaseService) {
+                rentalRecords = await rentalFirebaseService.getRentalRecords();
+                console.log('Financial data loaded from Firebase');
+            } else {
+                // Fallback to localStorage
+                rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            }
+            
+            // Process the financial data (existing logic)
+            processFinancialData(rentalRecords);
+            
+        } catch (error) {
+            console.error('Error loading financial data:', error);
+            // Fallback to localStorage
+            const rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            processFinancialData(rentalRecords);
+        }
+    }
+    
+    // Extract the financial processing logic into a separate function
+    function processFinancialData(rentalRecords) {
+        // This contains the existing financial processing logic
+        // that was in the original loadFinancialSummary function
+        const startDate = document.getElementById('fsStartDate').value;
+        const endDate = document.getElementById('fsEndDate').value;
+        const itemFilter = document.getElementById('fsItemFilter').value;
+        const paymentStatus = document.getElementById('fsPaymentStatus').value;
+        
+        // Filter records based on criteria
+        let filteredRecords = rentalRecords;
+        
+        if (startDate) {
+            filteredRecords = filteredRecords.filter(record => 
+                new Date(record.rentalDate) >= new Date(startDate)
+            );
+        }
+        
+        if (endDate) {
+            filteredRecords = filteredRecords.filter(record => 
+                new Date(record.rentalDate) <= new Date(endDate)
+            );
+        }
+        
+        if (itemFilter && itemFilter !== 'all') {
+            filteredRecords = filteredRecords.filter(record => 
+                record.itemName === itemFilter
+            );
+        }
+        
+        if (paymentStatus && paymentStatus !== 'all') {
+            filteredRecords = filteredRecords.filter(record => 
+                record.paymentStatus === paymentStatus
+            );
+        }
+        
+        // Calculate totals
+        const totalRevenue = filteredRecords.reduce((sum, record) => {
+            const cost = typeof record.totalCost === 'number' ? record.totalCost : 
+                        (typeof record.baseCost === 'number' ? record.baseCost : 0);
+            return sum + cost;
+        }, 0);
+        
+        const paidRevenue = filteredRecords
+            .filter(record => record.paymentStatus === 'paid')
+            .reduce((sum, record) => {
+                const cost = typeof record.totalCost === 'number' ? record.totalCost : 
+                            (typeof record.baseCost === 'number' ? record.baseCost : 0);
+                return sum + cost;
+            }, 0);
+        
+        const unpaidRevenue = totalRevenue - paidRevenue;
+        
+        // Update display
+        document.getElementById('fsTotalRevenue').textContent = `₱${totalRevenue.toFixed(2)}`;
+        document.getElementById('fsPaidRevenue').textContent = `₱${paidRevenue.toFixed(2)}`;
+        document.getElementById('fsUnpaidRevenue').textContent = `₱${unpaidRevenue.toFixed(2)}`;
+        document.getElementById('fsTotalRecords').textContent = filteredRecords.length;
+        
+        // Update table
+        updateFinancialTable(filteredRecords);
+    }
+    </script>
+</body>
+</html> 
