@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capstone Project - Demo</title>
+    <script>
+        /**
+         * Main Entry Point - index.html
+         * Routes users to appropriate pages based on authentication
+         * Simulates PHP session_start() and authentication check
+         */
+        
+        // Check authentication status (simulating PHP $_SESSION)
+        // In demo mode, we use localStorage to simulate PHP sessions
+        const userId = localStorage.getItem('user_id');
+        const username = localStorage.getItem('username');
+        
+        if (userId && username) {
+            // User is logged in, go to dashboard
+            window.location.href = 'homepage/index.html';
+        } else {
+            // User not logged in, go to login
+            window.location.href = 'homepage/index.html';
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
