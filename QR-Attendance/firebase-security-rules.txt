@@ -1,0 +1,46 @@
+# Firebase Security Rules for QR Attendance System
+# Copy these rules to Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // AttendanceSystem collections - allow read/write for now
+    // In production, you should implement proper authentication
+    
+    // Students collection under AttendanceSystem
+    match /AttendanceSystem_students/{document} {
+      allow read, write: if true;
+    }
+    
+    // Attendance collection under AttendanceSystem
+    match /AttendanceSystem_attendance/{document} {
+      allow read, write: if true;
+    }
+    
+    // Events collection under AttendanceSystem
+    match /AttendanceSystem_events/{document} {
+      allow read, write: if true;
+    }
+    
+    // For production, replace with proper authentication:
+    // match /AttendanceSystem_students/{document} {
+    //   allow read, write: if request.auth != null;
+    // }
+    
+    // Deny access to root-level collections (old structure)
+    match /students/{document} {
+      allow read, write: if false;
+    }
+    
+    match /attendance/{document} {
+      allow read, write: if false;
+    }
+    
+    match /events/{document} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

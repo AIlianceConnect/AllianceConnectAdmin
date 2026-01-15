@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Collection Restructure Migration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .danger {
+            background-color: #ea4335;
+        }
+        .danger:hover {
+            background-color: #d33b2c;
+        }
+        .success {
+            background-color: #34a853;
+        }
+        .success:hover {
+            background-color: #2d8f47;
+        }
+        .warning {
+            background-color: #fbbc04;
+            color: #333;
+        }
+        .warning:hover {
+            background-color: #f9ab00;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Firebase Collection Restructure Migration</h1>
+        
+        <div class="section">
+            <h2>📋 Migration Overview</h2>
+            <p><strong>Current Structure:</strong></p>
+            <ul>
+                <li>📁 attendance (root level)</li>
+                <li>📁 events (root level)</li>
+                <li>📁 students (root level)</li>
+            </ul>
+            
+            <p><strong>New Structure:</strong></p>
+            <ul>
+                <li>📁 AttendanceSystem</li>
+                <li style="margin-left: 20px;">├── 📁 attendance</li>
+                <li style="margin-left: 20px;">├── 📁 events</li>
+                <li style="margin-left: 20px;">└── 📁 students</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Check Current Data</h2>
+            <p>First, let's see what data currently exists in your Firebase database:</p>
+            <button onclick="checkCurrentData()">Check Current Data</button>
+            <div id="currentDataStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>🚀 Migrate Data</h2>
+            <p><strong>⚠️ Warning:</strong> This will copy all your data to the new structure. Your original data will remain intact.</p>
+            <button onclick="migrateData()" class="warning">Start Migration</button>
+            <div id="migrationStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>🧹 Clean Up (Optional)</h2>
+            <p><strong>⚠️ Danger:</strong> This will permanently delete the old collections. Only do this after verifying the migration was successful!</p>
+            <button onclick="cleanupOldData()" class="danger">Delete Old Collections</button>
+            <div id="cleanupStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Migration Log</h2>
+            <div id="log" class="log"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js?v=2"></script>
+
+    <script>
+        console.log('Migration script loading...');
+        let migrationFirebaseDb;
+        let migrationStats = {
+            students: 0,
+            attendance: 0,
+            events: 0,
+            errors: 0
+        };
+
+        // Initialize Firebase
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                console.log('DOM loaded, initializing Firebase...');
+                // Wait for Firebase to be available
+                await new Promise(resolve => {
+                    const checkFirebase = () => {
+                        if (window.firebaseDb) {
+                            migrationFirebaseDb = window.firebaseDb;
+                            console.log('Firebase DB assigned to migrationFirebaseDb');
+                            resolve();
+                        } else {
+                            setTimeout(checkFirebase, 100);
+                        }
+                    };
+                    checkFirebase();
+                });
+                
+                log('✅ Firebase initialized successfully');
+            } catch (error) {
+                log('❌ Firebase initialization failed: ' + error.message);
+            }
+        });
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function setStatus(elementId, message, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkCurrentData() {
+            console.log('checkCurrentData called');
+            if (!migrationFirebaseDb) {
+                console.log('migrationFirebaseDb is not available');
+                setStatus('currentDataStatus', '❌ Firebase not initialized', 'error');
+                return;
+            }
+
+            try {
+                log('🔍 Checking current data...');
+                
+                // Check students
+                const studentsSnapshot = await migrationFirebaseDb.collection('students').get();
+                const studentsCount = studentsSnapshot.size;
+                log(`📚 Students: ${studentsCount} documents`);
+                
+                // Check attendance
+                const attendanceSnapshot = await migrationFirebaseDb.collection('attendance').get();
+                const attendanceCount = attendanceSnapshot.size;
+                log(`📝 Attendance: ${attendanceCount} documents`);
+                
+                // Check events
+                const eventsSnapshot = await migrationFirebaseDb.collection('events').get();
+                const eventsCount = eventsSnapshot.size;
+                log(`🎉 Events: ${eventsCount} documents`);
+                
+                const totalCount = studentsCount + attendanceCount + eventsCount;
+                
+                if (totalCount > 0) {
+                    setStatus('currentDataStatus', 
+                        `✅ Found ${totalCount} total documents (${studentsCount} students, ${attendanceCount} attendance, ${eventsCount} events)`, 
+                        'success');
+                } else {
+                    setStatus('currentDataStatus', 
+                        '⚠️ No data found in current collections', 
+                        'warning');
+                }
+                
+            } catch (error) {
+                log('❌ Error checking data: ' + error.message);
+                setStatus('currentDataStatus', '❌ Error checking data: ' + error.message, 'error');
+            }
+        }
+
+        async function migrateData() {
+            if (!migrationFirebaseDb) {
+                setStatus('migrationStatus', '❌ Firebase not initialized', 'error');
+                return;
+            }
+
+            try {
+                log('🚀 Starting migration...');
+                migrationStats = { students: 0, attendance: 0, events: 0, errors: 0 };
+                
+                // Migrate students
+                log('📚 Migrating students...');
+                const studentsSnapshot = await migrationFirebaseDb.collection('students').get();
+                for (const doc of studentsSnapshot.docs) {
+                    try {
+                        await migrationFirebaseDb.collection('AttendanceSystem/students').add(doc.data());
+                        migrationStats.students++;
+                        log(`✅ Migrated student: ${doc.data().name || doc.id}`);
+                    } catch (error) {
+                        migrationStats.errors++;
+                        log(`❌ Error migrating student ${doc.id}: ${error.message}`);
+                    }
+                }
+                
+                // Migrate attendance
+                log('📝 Migrating attendance...');
+                const attendanceSnapshot = await migrationFirebaseDb.collection('attendance').get();
+                for (const doc of attendanceSnapshot.docs) {
+                    try {
+                        await migrationFirebaseDb.collection('AttendanceSystem/attendance').add(doc.data());
+                        migrationStats.attendance++;
+                        log(`✅ Migrated attendance: ${doc.data().studentName || doc.id}`);
+                    } catch (error) {
+                        migrationStats.errors++;
+                        log(`❌ Error migrating attendance ${doc.id}: ${error.message}`);
+                    }
+                }
+                
+                // Migrate events
+                log('🎉 Migrating events...');
+                const eventsSnapshot = await migrationFirebaseDb.collection('events').get();
+                for (const doc of eventsSnapshot.docs) {
+                    try {
+                        await migrationFirebaseDb.collection('AttendanceSystem/events').add(doc.data());
+                        migrationStats.events++;
+                        log(`✅ Migrated event: ${doc.data().name || doc.id}`);
+                    } catch (error) {
+                        migrationStats.errors++;
+                        log(`❌ Error migrating event ${doc.id}: ${error.message}`);
+                    }
+                }
+                
+                const totalMigrated = migrationStats.students + migrationStats.attendance + migrationStats.events;
+                log(`🎉 Migration completed! ${totalMigrated} documents migrated, ${migrationStats.errors} errors`);
+                
+                if (migrationStats.errors === 0) {
+                    setStatus('migrationStatus', 
+                        `✅ Migration successful! ${totalMigrated} documents migrated (${migrationStats.students} students, ${migrationStats.attendance} attendance, ${migrationStats.events} events)`, 
+                        'success');
+                } else {
+                    setStatus('migrationStatus', 
+                        `⚠️ Migration completed with ${migrationStats.errors} errors. ${totalMigrated} documents migrated successfully.`, 
+                        'warning');
+                }
+                
+            } catch (error) {
+                log('❌ Migration failed: ' + error.message);
+                setStatus('migrationStatus', '❌ Migration failed: ' + error.message, 'error');
+            }
+        }
+
+        async function cleanupOldData() {
+            if (!migrationFirebaseDb) {
+                setStatus('cleanupStatus', '❌ Firebase not initialized', 'error');
+                return;
+            }
+
+            if (migrationStats.students + migrationStats.attendance + migrationStats.events === 0) {
+                setStatus('cleanupStatus', '⚠️ Please run migration first', 'warning');
+                return;
+            }
+
+            if (!confirm('⚠️ This will permanently delete all old collections. Are you sure?')) {
+                return;
+            }
+
+            try {
+                log('🧹 Starting cleanup...');
+                
+                // Delete old collections
+                const collections = ['students', 'attendance', 'events'];
+                
+                for (const collectionName of collections) {
+                    log(`🗑️ Deleting old ${collectionName} collection...`);
+                    const snapshot = await migrationFirebaseDb.collection(collectionName).get();
+                    
+                    const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
+                    await Promise.all(deletePromises);
+                    
+                    log(`✅ Deleted ${snapshot.size} documents from ${collectionName}`);
+                }
+                
+                log('🎉 Cleanup completed successfully!');
+                setStatus('cleanupStatus', '✅ Old collections deleted successfully!', 'success');
+                
+            } catch (error) {
+                log('❌ Cleanup failed: ' + error.message);
+                setStatus('cleanupStatus', '❌ Cleanup failed: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

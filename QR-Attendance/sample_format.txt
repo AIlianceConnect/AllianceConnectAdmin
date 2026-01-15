@@ -1,0 +1,31 @@
+Excel File Format Instructions for QR Code Generation
+
+1. Required Columns:
+   - Student ID (or StudentID, Student Id)
+   - Student Name (or StudentName, Name)
+   - Section
+
+2. Example Format:
+   | Student ID | Student Name | Section |
+   |------------|--------------|---------|
+   | 2024-001   | John Doe     | A1      |
+   | 2024-002   | Jane Smith   | A1      |
+   | 2024-003   | Bob Johnson  | B1      |
+
+3. Important Notes:
+   - First row must contain column headers
+   - All three columns are required for each student
+   - Empty rows will be skipped
+   - Column names are case-insensitive
+   - Column order doesn't matter
+
+4. Accepted Column Name Variations:
+   Student ID column: "Student ID", "StudentID", "Student Id"
+   Student Name column: "Student Name", "StudentName", "Name"
+   Section column: "Section"
+
+5. Tips:
+   - Make sure there are no extra spaces in the column names
+   - Each student should have all three pieces of information
+   - The system will generate QR codes only for complete rows
+   - You can have as many students as needed in the file 

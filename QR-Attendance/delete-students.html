@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete All Students - Firebase</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0">⚠️ Delete All Students Data</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <strong>Warning:</strong> This will permanently delete ALL student data from Firebase. This action cannot be undone!
+                        </div>
+                        
+                        <div id="status" class="mb-3"></div>
+                        
+                        <div class="d-grid gap-2">
+                            <button id="deleteBtn" class="btn btn-danger btn-lg">
+                                🗑️ Delete All Students
+                            </button>
+                            <button id="checkBtn" class="btn btn-info">
+                                📊 Check Current Students Count
+                            </button>
+                        </div>
+                        
+                        <div id="results" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let firebaseDb;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase
+            try {
+                firebaseDb = window.firebaseDb;
+                if (!firebaseDb) {
+                    throw new Error('Firebase not initialized');
+                }
+                updateStatus('✅ Firebase connected successfully', 'success');
+            } catch (error) {
+                updateStatus('❌ Firebase connection failed: ' + error.message, 'danger');
+                return;
+            }
+            
+            // Event listeners
+            document.getElementById('deleteBtn').addEventListener('click', deleteAllStudents);
+            document.getElementById('checkBtn').addEventListener('click', checkStudentsCount);
+        });
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+        
+        function updateResults(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += `<div class="alert alert-info">${message}</div>`;
+        }
+        
+        async function checkStudentsCount() {
+            try {
+                updateStatus('🔍 Checking students count...', 'info');
+                
+                const studentsSnapshot = await firebaseDb.collection('students').get();
+                const count = studentsSnapshot.size;
+                
+                updateStatus(`📊 Found ${count} students in the database`, 'info');
+                
+                if (count > 0) {
+                    updateResults(`Students found: ${count}`);
+                    updateResults('Click "Delete All Students" to remove them all.');
+                } else {
+                    updateResults('No students found in the database.');
+                }
+                
+            } catch (error) {
+                updateStatus('❌ Error checking students: ' + error.message, 'danger');
+            }
+        }
+        
+        async function deleteAllStudents() {
+            if (!confirm('⚠️ Are you absolutely sure you want to delete ALL students? This cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                updateStatus('🗑️ Deleting all students...', 'warning');
+                document.getElementById('deleteBtn').disabled = true;
+                
+                // Get all students
+                const studentsSnapshot = await firebaseDb.collection('students').get();
+                const students = studentsSnapshot.docs;
+                
+                if (students.length === 0) {
+                    updateStatus('ℹ️ No students found to delete', 'info');
+                    return;
+                }
+                
+                updateResults(`Found ${students.length} students to delete...`);
+                
+                // Delete in batches to avoid quota issues
+                const batchSize = 10;
+                let deletedCount = 0;
+                
+                for (let i = 0; i < students.length; i += batchSize) {
+                    const batch = students.slice(i, i + batchSize);
+                    
+                    // Delete batch
+                    const deletePromises = batch.map(doc => doc.ref.delete());
+                    await Promise.all(deletePromises);
+                    
+                    deletedCount += batch.length;
+                    updateResults(`Deleted ${deletedCount}/${students.length} students...`);
+                    
+                    // Small delay to avoid overwhelming Firebase
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                updateStatus(`✅ Successfully deleted ${deletedCount} students!`, 'success');
+                updateResults(`All ${deletedCount} students have been permanently removed from Firebase.`);
+                
+            } catch (error) {
+                updateStatus('❌ Error deleting students: ' + error.message, 'danger');
+                updateResults('Deletion failed. Please try again or delete manually from Firebase console.');
+            } finally {
+                document.getElementById('deleteBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
+

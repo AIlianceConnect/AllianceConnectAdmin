@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events - QR Attendance System</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation (matches merchandise header style) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="welcome.html">Home</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5" style="margin-top: 120px !important;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Events Overview</h1>
+            <div>
+                <span id="offlineStatus" class="badge me-2" style="display: none;"></span>
+                <span id="pendingSyncCount" class="badge bg-warning me-2" style="display: none;"></span>
+                <a href="welcome.html" class="btn btn-primary me-2">Create New Event</a>
+                <a href="index.html" class="btn btn-warning">Back to Scanner</a>
+            </div>
+        </div>
+
+        <!-- Events List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">All Events</h2>
+                <div>
+                    <input type="text" id="eventSearchInput" class="form-control form-control-sm me-2" placeholder="Search events..." style="display:inline-block; width:auto; min-width:200px;">
+                    <button id="deleteAllEvents" class="btn btn-danger btn-sm me-2">Delete All Events</button>
+                    <button id="exportAllEvents" class="btn btn-success btn-sm me-2">Export All Events</button>
+                    <button id="importEvents" class="btn btn-primary btn-sm">Import Events</button>
+                    <input type="file" id="importFile" accept=".xlsx" style="display: none;">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th>Total Attendance</th>
+                                <th>First Record</th>
+                                <th>Last Record</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsList">
+                            <!-- Events will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Details Modal -->
+        <div class="modal fade" id="eventDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Event Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 id="modalEventName" class="mb-0"></h6>
+                                <button class="btn btn-primary btn-sm" id="startEventAttendance">Start Attendance</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Student#</th>
+                                            <th>Name</th>
+                                            <th>Section</th>
+                                            <th>Date</th>
+                                            <th>Time-in</th>
+                                            <th>Time-out</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="modalEventRecords">
+                                        <!-- Event records will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="importEventDetails">Import Event Data</button>
+                        <button type="button" class="btn btn-success" id="exportEventDetails">Export Event Data</button>
+                        <input type="file" id="importEventFile" accept=".xlsx" style="display:none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Event Confirmation Modal -->
+        <div class="modal fade" id="deleteEventModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Event</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-danger">Warning: This action cannot be undone. The event and all its attendance records will be permanently deleted.</p>
+                        <p><strong>Event Name:</strong> <span id="deleteEventName"></span></p>
+                        <p>To confirm, please type "Delete" in the box below:</p>
+                        <input type="text" class="form-control" id="deleteEventConfirmation" placeholder="Type 'Delete' to confirm">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteEvent" disabled>Delete Event</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete All Confirmation Modal -->
+        <div class="modal fade" id="deleteAllModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete All Events</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-danger">Warning: This action cannot be undone. All events and their attendance records will be permanently deleted.</p>
+                        <p>To confirm, please type "Delete" in the box below:</p>
+                        <input type="text" class="form-control" id="deleteConfirmation" placeholder="Type 'Delete' to confirm">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteAll" disabled>Delete All Events</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="offline-sync-service.js"></script>
+    <script src="firebase-database-service.js"></script>
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script src="lib/xlsx.full.min.js"></script>
+    <script>
+        // Firebase database service
+        let firebaseDB = null;
+        let attendanceRecords = [];
+        let events = [];
+        let currentEventDetails = null;
+
+        // Helper function to normalize event names for consistent matching
+        function normalizeEventName(name) {
+            if (!name) return '';
+            return String(name).trim();
+        }
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            try {
+                firebaseDB = window.firebaseDB;
+                if (!firebaseDB) {
+                    console.error('Firebase not initialized. Please check firebase-config.js');
+                    return false;
+                }
+
+                // Load initial data
+                const allEvents = await firebaseDB.getEventsWithAttendanceCounts();
+                // Deduplicate events by name (keep the first occurrence)
+                const eventsMap = new Map();
+                allEvents.forEach(event => {
+                    const normalizedName = normalizeEventName(event.name);
+                    if (normalizedName && !eventsMap.has(normalizedName)) {
+                        eventsMap.set(normalizedName, event);
+                    }
+                });
+                events = Array.from(eventsMap.values());
+                attendanceRecords = await firebaseDB.getAttendanceRecords();
+
+                // Set up real-time listener for attendance records
+                firebaseDB.listenToAttendanceRecords((records) => {
+                    // Check if this is a deletion notification
+                    if (records && records.type === 'removed') {
+                        // Document was deleted in Firebase - remove from Local Storage
+                        if (window.offlineSync) {
+                            const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                            const deletedData = records.data;
+                            // Remove by Firebase ID or by matching fields
+                            const filtered = localRecords.filter(r => {
+                                if (r.id === records.id) return false; // Match by Firebase ID
+                                // Also match by studentId, date, and event if available
+                                if (deletedData && r.studentId === deletedData.studentId && 
+                                    r.date === deletedData.date && r.event === deletedData.event) {
+                                    return false;
+                                }
+                                return true;
+                            });
+                            localStorage.setItem(window.offlineSync.localStoragePrefix + 'attendance', JSON.stringify(filtered));
+                            localStorage.setItem('attendanceRecords', JSON.stringify(filtered));
+                            attendanceRecords = filtered;
+                            console.log('Removed attendance record from Local Storage:', records.id);
+                        }
+                        updateEventsList();
+                        return;
+                    }
+                    
+                    // Handle additions/updates
+                    if (Array.isArray(records)) {
+                        // Save Firebase records to Local Storage if they don't exist there
+                        if (window.offlineSync) {
+                            const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                            const localRecordKeys = new Set(localRecords.map(r => 
+                                `${r.studentId}_${r.date}_${r.event}`
+                            ));
+                            records.forEach(fbRecord => {
+                                const key = `${fbRecord.studentId}_${fbRecord.date}_${fbRecord.event}`;
+                                if (!localRecordKeys.has(key)) {
+                                    // Save to Local Storage
+                                    window.offlineSync.saveToLocalStorage('attendance', fbRecord, 'add');
+                                }
+                            });
+                        }
+                        // Merge with Local Storage data
+                        if (window.offlineSync) {
+                            const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                            attendanceRecords = window.offlineSync.mergeData(localRecords, records, 'studentId');
+                        } else {
+                            attendanceRecords = records;
+                        }
+                        updateEventsList();
+                    }
+                });
+                
+                // Set up real-time listener for events
+                firebaseDB.listenToEvents((eventList) => {
+                    // Check if this is a deletion notification
+                    if (eventList && eventList.type === 'removed') {
+                        // Document was deleted in Firebase - remove from Local Storage
+                        if (window.offlineSync) {
+                            const localEvents = window.offlineSync.getFromLocalStorage('events');
+                            const filtered = localEvents.filter(e => e.id !== eventList.id);
+                            localStorage.setItem(window.offlineSync.localStoragePrefix + 'events', JSON.stringify(filtered));
+                            
+                            // Also remove associated attendance records if event name is available
+                            const deletedData = eventList.data;
+                            if (deletedData && deletedData.name) {
+                                const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                                const filteredRecords = localRecords.filter(r => r.event !== deletedData.name);
+                                localStorage.setItem(window.offlineSync.localStoragePrefix + 'attendance', JSON.stringify(filteredRecords));
+                                localStorage.setItem('attendanceRecords', JSON.stringify(filteredRecords));
+                                attendanceRecords = filteredRecords;
+                            }
+                            
+                            events = filtered;
+                            console.log('Removed event from Local Storage:', eventList.id);
+                        }
+                        updateEventsList();
+                        return;
+                    }
+                    
+                    // Handle additions/updates
+                    if (Array.isArray(eventList)) {
+                        // Save Firebase events to Local Storage if they don't exist there
+                        if (window.offlineSync) {
+                            const localEvents = window.offlineSync.getFromLocalStorage('events');
+                            const localEventIds = new Set(localEvents.map(e => e.id));
+                            eventList.forEach(fbEvent => {
+                                if (fbEvent.id && !localEventIds.has(fbEvent.id)) {
+                                    // Save to Local Storage
+                                    window.offlineSync.saveToLocalStorage('events', fbEvent, 'add');
+                                }
+                            });
+                        }
+                        // Merge with Local Storage data and reload events with attendance counts
+                        if (window.offlineSync) {
+                            const localEvents = window.offlineSync.getFromLocalStorage('events');
+                            const mergedEvents = window.offlineSync.mergeData(localEvents, eventList, 'id');
+                            // Reload events with attendance counts
+                            firebaseDB.getEventsWithAttendanceCounts().then(allEvents => {
+                                const eventsMap = new Map();
+                                allEvents.forEach(event => {
+                                    const normalizedName = normalizeEventName(event.name);
+                                    if (normalizedName && !eventsMap.has(normalizedName)) {
+                                        eventsMap.set(normalizedName, event);
+                                    }
+                                });
+                                events = Array.from(eventsMap.values());
+                                updateEventsList();
+                            });
+                        } else {
+                            events = eventList;
+                            updateEventsList();
+                        }
+                    }
+                });
+
+                console.log('Firebase initialized successfully');
+                return true;
+            } catch (error) {
+                console.error('Error initializing Firebase:', error);
+                return false;
+            }
+        }
+
+        // Update offline status indicator (make it globally accessible)
+        window.updateOfflineStatus = function() {
+            const offlineStatusEl = document.getElementById('offlineStatus');
+            const pendingSyncCountEl = document.getElementById('pendingSyncCount');
+            
+            if (!offlineStatusEl || !window.offlineSync) return;
+            
+            const isOnline = window.offlineSync.isOnline;
+            const pendingCount = window.offlineSync.getPendingSyncCount();
+            
+            if (!isOnline) {
+                offlineStatusEl.textContent = '● Offline';
+                offlineStatusEl.className = 'badge bg-danger me-2';
+                offlineStatusEl.style.display = 'inline-block';
+            } else {
+                offlineStatusEl.textContent = '● Online';
+                offlineStatusEl.className = 'badge bg-success me-2';
+                offlineStatusEl.style.display = 'inline-block';
+            }
+            
+            if (pendingCount > 0) {
+                pendingSyncCountEl.textContent = `${pendingCount} pending`;
+                pendingSyncCountEl.style.display = 'inline-block';
+            } else {
+                pendingSyncCountEl.style.display = 'none';
+            }
+        };
+
+        // Listen for offline status changes
+        window.addEventListener('offlineStatusChanged', function(event) {
+            if (typeof updateOfflineStatus === 'function') {
+                updateOfflineStatus();
+            }
+        });
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize Firebase first
+            const firebaseInitialized = await initializeFirebase();
+            
+            // Always load from Local Storage first (for offline support)
+            // getEventsWithAttendanceCounts() and getAttendanceRecords() already save Firebase data to Local Storage
+            if (!firebaseInitialized) {
+                console.error('Failed to initialize Firebase. Falling back to localStorage.');
+                // Fallback to localStorage
+                if (window.offlineSync) {
+                    events = window.offlineSync.getFromLocalStorage('events');
+                    attendanceRecords = window.offlineSync.getFromLocalStorage('attendance');
+                } else {
+                    attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                    events = [];
+                }
+            } else {
+                // Refresh from Local Storage (which now includes Firebase data)
+                if (window.offlineSync) {
+                    events = window.offlineSync.getFromLocalStorage('events');
+                    attendanceRecords = window.offlineSync.getFromLocalStorage('attendance');
+                } else {
+                    // Fallback: reload from Firebase
+                    events = await firebaseDB.getEvents();
+                    attendanceRecords = await firebaseDB.getAttendanceRecords();
+                }
+            }
+            
+            // Update offline status indicator
+            updateOfflineStatus();
+            // Update every 5 seconds
+            setInterval(updateOfflineStatus, 5000);
+            
+            updateEventsList();
+            // Add search functionality
+            document.getElementById('eventSearchInput').addEventListener('input', function() {
+                updateEventsList();
+            });
+        });
+
+        // Update events list
+        function updateEventsList() {
+            const eventsList = document.getElementById('eventsList');
+            const eventsMap = new Map();
+            const searchTerm = (document.getElementById('eventSearchInput')?.value || '').toLowerCase();
+
+            // First, add all Firebase events (normalize names to avoid duplicates)
+            events.forEach(event => {
+                const normalizedName = normalizeEventName(event.name);
+                if (!normalizedName) return; // Skip events with empty names
+                
+                // Only add if not already in map (avoid duplicates)
+                if (!eventsMap.has(normalizedName)) {
+                    eventsMap.set(normalizedName, {
+                        id: event.id,
+                        name: normalizedName,
+                        description: event.description,
+                        status: event.status,
+                        createdAt: event.createdAt,
+                        records: [],
+                        firstDate: null,
+                        lastDate: null
+                    });
+                }
+            });
+
+            // Then, add attendance records to their respective events
+            attendanceRecords.forEach(record => {
+                if (!record.event) return;
+                const normalizedEventName = normalizeEventName(record.event);
+                if (!normalizedEventName) return;
+                
+                if (!eventsMap.has(normalizedEventName)) {
+                    // Create event from attendance record if it doesn't exist in Firebase
+                    eventsMap.set(normalizedEventName, {
+                        id: null,
+                        name: normalizedEventName,
+                        description: 'Event created from attendance records',
+                        status: 'active',
+                        createdAt: new Date(),
+                        records: [],
+                        firstDate: record.date,
+                        lastDate: record.date
+                    });
+                }
+                const event = eventsMap.get(normalizedEventName);
+                if (event) {
+                    event.records.push(record);
+                    // Update first and last dates
+                    if (!event.firstDate || new Date(record.date) < new Date(event.firstDate)) {
+                        event.firstDate = record.date;
+                    }
+                    if (!event.lastDate || new Date(record.date) > new Date(event.lastDate)) {
+                        event.lastDate = record.date;
+                    }
+                }
+            });
+
+            // Sort events by last date (most recent first)
+            let sortedEvents = Array.from(eventsMap.values()).sort((a, b) => {
+                if (!a.lastDate && !b.lastDate) return 0;
+                if (!a.lastDate) return 1;
+                if (!b.lastDate) return -1;
+                return new Date(b.lastDate) - new Date(a.lastDate);
+            });
+
+            // Filter by search term
+            if (searchTerm) {
+                sortedEvents = sortedEvents.filter(event => {
+                    // Gather all sections in this event
+                    const sections = new Set(event.records.map(r => r.section).filter(Boolean));
+                    // Check if search term matches event name, description, any section, first date, or last date
+                    return (
+                        event.name.toLowerCase().includes(searchTerm) ||
+                        (event.description && event.description.toLowerCase().includes(searchTerm)) ||
+                        Array.from(sections).some(section => section.toLowerCase().includes(searchTerm)) ||
+                        (event.firstDate && event.firstDate.toLowerCase().includes(searchTerm)) ||
+                        (event.lastDate && event.lastDate.toLowerCase().includes(searchTerm))
+                    );
+                });
+            }
+
+            // Populate the table
+            eventsList.innerHTML = '';
+            sortedEvents.forEach(event => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${event.name}</td>
+                    <td>${event.records.length}</td>
+                    <td>${event.firstDate || 'N/A'}</td>
+                    <td>${event.lastDate || 'N/A'}</td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-2">
+                            <button class="btn btn-sm btn-danger delete-event" data-event="${event.name || 'Unknown Event'}" data-event-id="${event.id || ''}">Delete</button>
+                            <button class="btn btn-sm btn-info view-event" data-event="${event.name || 'Unknown Event'}">View Details</button>
+                            <button class="btn btn-sm btn-primary start-event" data-event="${event.name || 'Unknown Event'}">Start Attendance</button>
+                        </div>
+                    </td>
+                `;
+                eventsList.appendChild(row);
+            });
+
+            // Add event listeners to view buttons
+            document.querySelectorAll('.view-event').forEach(button => {
+                button.addEventListener('click', function() {
+                    const eventName = this.getAttribute('data-event');
+                    showEventDetails(eventName);
+                });
+            });
+
+            // Add event listeners to start attendance buttons
+            document.querySelectorAll('.start-event').forEach(button => {
+                button.addEventListener('click', function() {
+                    const eventName = this.getAttribute('data-event');
+                    startEventAttendance(eventName);
+                });
+            });
+
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-event').forEach(button => {
+                button.addEventListener('click', function() {
+                    const eventName = this.getAttribute('data-event');
+                    const eventId = this.getAttribute('data-event-id');
+                    
+                    // Validate eventName
+                    if (!eventName || eventName === 'undefined' || eventName === 'null') {
+                        alert('Error: Event name is not valid. Cannot delete event.');
+                        return;
+                    }
+                    
+                    // Store the event to delete globally
+                    window.eventToDelete = {
+                        eventName: eventName,
+                        eventId: eventId
+                    };
+                    
+                    // Populate modal with event details
+                    document.getElementById('deleteEventName').textContent = eventName;
+                    const deleteEventConfirmationInput = document.getElementById('deleteEventConfirmation');
+                    if (deleteEventConfirmationInput) {
+                        deleteEventConfirmationInput.value = '';
+                    }
+                    document.getElementById('confirmDeleteEvent').disabled = true;
+                    
+                    // Show the modal
+                    deleteEventModal.show();
+                });
+            });
+        }
+
+        // Function to start attendance for an event
+        async function startEventAttendance(eventName) {
+            if (firebaseDB) {
+                await firebaseDB.setCurrentEvent(eventName);
+            } else {
+                localStorage.setItem('currentEvent', eventName);
+            }
+            window.location.href = 'index.html';
+        }
+
+        // Show event details in modal
+        function showEventDetails(eventName) {
+            const eventRecords = attendanceRecords.filter(r => r.event === eventName);
+            currentEventDetails = {
+                name: eventName,
+                records: eventRecords
+            };
+
+            document.getElementById('modalEventName').textContent = eventName;
+            const modalRecords = document.getElementById('modalEventRecords');
+            modalRecords.innerHTML = '';
+
+            // Get unique records (one per student per day)
+            const uniqueRecords = new Map();
+            eventRecords.forEach(record => {
+                const key = `${record.studentId}-${record.date}`;
+                if (!uniqueRecords.has(key)) {
+                    uniqueRecords.set(key, record);
+                }
+            });
+
+            Array.from(uniqueRecords.values()).forEach((record, idx) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td>${record.studentId}</td>
+                    <td>${record.studentName}</td>
+                    <td>${record.section}</td>
+                    <td>${record.date}</td>
+                    <td>${record.timeIn || ''}</td>
+                    <td>${record.timeOut || ''}</td>
+                `;
+                modalRecords.appendChild(row);
+            });
+
+            const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+            modal.show();
+        }
+
+        // Add event listener for modal start attendance button
+        document.getElementById('startEventAttendance').addEventListener('click', function() {
+            if (currentEventDetails) {
+                startEventAttendance(currentEventDetails.name);
+            }
+        });
+
+        // Export all events
+        document.getElementById('exportAllEvents').addEventListener('click', function() {
+            const events = new Map();
+            attendanceRecords.forEach(record => {
+                if (!record.event) return;
+                if (!events.has(record.event)) {
+                    events.set(record.event, []);
+                }
+                events.get(record.event).push(record);
+            });
+
+            const wb = XLSX.utils.book_new();
+            
+            // Create a summary sheet
+            const summaryData = [];
+            events.forEach((records, eventName) => {
+                const uniqueStudents = new Set(records.map(r => r.studentId));
+                const sections = new Set(records.map(r => r.section).filter(Boolean));
+                const dates = new Set(records.map(r => r.date));
+                
+                summaryData.push({
+                    'Event Name': eventName,
+                    'Total Records': records.length,
+                    'Unique Students': uniqueStudents.size,
+                    'Sections': sections.size,
+                    'Date Range': `${Math.min(...dates)} to ${Math.max(...dates)}`,
+                    'First Record': records[0].date,
+                    'Last Record': records[records.length - 1].date
+                });
+            });
+            const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+
+            // Create a sheet for each event
+            events.forEach((records, eventName) => {
+                // Sort records by date and time
+                records.sort((a, b) => {
+                    const dateCompare = new Date(a.date) - new Date(b.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    return (a.timeIn || '').localeCompare(b.timeIn || '');
+                });
+
+                // Attendance sheet
+                const exportData = records.map((record, idx) => ({
+                    '#': idx + 1,
+                    'Student#': record.studentId,
+                    'Name': record.studentName,
+                    'Section': record.section,
+                    'Date': record.date,
+                    'Time-in': record.timeIn || '',
+                    'Time-out': record.timeOut || '',
+                    'Duration': record.timeOut ? calculateDuration(record.timeIn, record.timeOut) : ''
+                }));
+
+                // Add summary row
+                const uniqueStudents = new Set(records.map(r => r.studentId));
+                exportData.push({
+                    '#': '',
+                    'Student#': 'Summary',
+                    'Name': `Total Records: ${records.length}`,
+                    'Section': `Unique Students: ${uniqueStudents.size}`,
+                    'Date': `Date Range: ${Math.min(...records.map(r => r.date))} to ${Math.max(...records.map(r => r.date))}`,
+                    'Time-in': '',
+                    'Time-out': '',
+                    'Duration': ''
+                });
+
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                XLSX.utils.book_append_sheet(wb, ws, eventName.substring(0, 31));
+
+                // Per-section sheet
+                const studentsBySection = {};
+                records.forEach(record => {
+                    if (!record.section) return;
+                    if (!studentsBySection[record.section]) studentsBySection[record.section] = {};
+                    const key = record.studentId + '|' + record.studentName;
+                    if (!studentsBySection[record.section][key]) {
+                        studentsBySection[record.section][key] = {
+                            'Student#': record.studentId,
+                            'Name': record.studentName,
+                            'Time-in': record.timeIn || '',
+                            'Time-out': record.timeOut || '',
+                            'Duration': record.timeOut ? calculateDuration(record.timeIn, record.timeOut) : ''
+                        };
+                    } else {
+                        // Update with latest time-out if exists
+                        if (record.timeOut) {
+                            studentsBySection[record.section][key]['Time-out'] = record.timeOut;
+                            studentsBySection[record.section][key]['Duration'] = calculateDuration(
+                                studentsBySection[record.section][key]['Time-in'],
+                                record.timeOut
+                            );
+                        }
+                    }
+                });
+
+                let exportStudents = [];
+                Object.keys(studentsBySection).sort().forEach(section => {
+                    exportStudents.push({ 'Section': section });
+                    const sectionStudents = Object.values(studentsBySection[section]);
+                    sectionStudents.sort((a, b) => a['Student#'].localeCompare(b['Student#']));
+                    exportStudents.push(...sectionStudents);
+                    exportStudents.push({
+                        'Student#': 'Section Total',
+                        'Name': `Students: ${sectionStudents.length}`,
+                        'Time-in': '',
+                        'Time-out': '',
+                        'Duration': ''
+                    });
+                    exportStudents.push({});
+                });
+
+                const ws2 = XLSX.utils.json_to_sheet(exportStudents);
+                XLSX.utils.book_append_sheet(wb, ws2, (eventName.substring(0, 23) + '_Sections').substring(0, 31));
+            });
+
+            // Use UTC+8 (Philippines) date for filename
+            const now = new Date();
+            const utc8 = new Date(now.getTime() + (8 * 60 + now.getTimezoneOffset()) * 60000);
+            const yyyy = utc8.getFullYear();
+            const mm = String(utc8.getMonth() + 1).padStart(2, '0');
+            const dd = String(utc8.getDate()).padStart(2, '0');
+            const fileName = 'Attendance_Report_' + yyyy + '-' + mm + '-' + dd + '.xlsx';
+            XLSX.writeFile(wb, fileName);
+        });
+
+        // Export single event details
+        document.getElementById('exportEventDetails').addEventListener('click', function() {
+            if (!currentEventDetails) return;
+
+            const wb = XLSX.utils.book_new();
+            const records = currentEventDetails.records;
+
+            // Sort records by date and time
+            records.sort((a, b) => {
+                const dateCompare = new Date(a.date) - new Date(b.date);
+                if (dateCompare !== 0) return dateCompare;
+                return (a.timeIn || '').localeCompare(b.timeIn || '');
+            });
+
+            // Attendance sheet
+            const exportData = records.map((record, idx) => ({
+                '#': idx + 1,
+                'Student#': record.studentId,
+                'Name': record.studentName,
+                'Section': record.section,
+                'Date': record.date,
+                'Time-in': record.timeIn || '',
+                'Time-out': record.timeOut || '',
+                'Duration': record.timeOut ? calculateDuration(record.timeIn, record.timeOut) : ''
+            }));
+
+            // Add summary row
+            const uniqueStudents = new Set(records.map(r => r.studentId));
+            exportData.push({
+                '#': '',
+                'Student#': 'Summary',
+                'Name': `Total Records: ${records.length}`,
+                'Section': `Unique Students: ${uniqueStudents.size}`,
+                'Date': `Date Range: ${Math.min(...records.map(r => r.date))} to ${Math.max(...records.map(r => r.date))}`,
+                'Time-in': '',
+                'Time-out': '',
+                'Duration': ''
+            });
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+
+            // Per-section sheet
+            const studentsBySection = {};
+            records.forEach(record => {
+                if (!record.section) return;
+                if (!studentsBySection[record.section]) studentsBySection[record.section] = {};
+                const key = record.studentId + '|' + record.studentName;
+                if (!studentsBySection[record.section][key]) {
+                    studentsBySection[record.section][key] = {
+                        'Student#': record.studentId,
+                        'Name': record.studentName,
+                        'Time-in': record.timeIn || '',
+                        'Time-out': record.timeOut || '',
+                        'Duration': record.timeOut ? calculateDuration(record.timeIn, record.timeOut) : ''
+                    };
+                } else {
+                    // Update with latest time-out if exists
+                    if (record.timeOut) {
+                        studentsBySection[record.section][key]['Time-out'] = record.timeOut;
+                        studentsBySection[record.section][key]['Duration'] = calculateDuration(
+                            studentsBySection[record.section][key]['Time-in'],
+                            record.timeOut
+                        );
+                    }
+                }
+            });
+
+            let exportStudents = [];
+            Object.keys(studentsBySection).sort().forEach(section => {
+                exportStudents.push({ 'Section': section });
+                const sectionStudents = Object.values(studentsBySection[section]);
+                sectionStudents.sort((a, b) => a['Student#'].localeCompare(b['Student#']));
+                exportStudents.push(...sectionStudents);
+                exportStudents.push({
+                    'Student#': 'Section Total',
+                    'Name': `Students: ${sectionStudents.length}`,
+                    'Time-in': '',
+                    'Time-out': '',
+                    'Duration': ''
+                });
+                exportStudents.push({});
+            });
+
+            const ws2 = XLSX.utils.json_to_sheet(exportStudents);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Sections');
+
+            // Use UTC+8 (Philippines) date for filename
+            const now = new Date();
+            const utc8 = new Date(now.getTime() + (8 * 60 + now.getTimezoneOffset()) * 60000);
+            const yyyy = utc8.getFullYear();
+            const mm = String(utc8.getMonth() + 1).padStart(2, '0');
+            const dd = String(utc8.getDate()).padStart(2, '0');
+            const fileName = currentEventDetails.name.replace(/[^a-z0-9]/gi, '_') + '_' + yyyy + '-' + mm + '-' + dd + '.xlsx';
+            XLSX.writeFile(wb, fileName);
+        });
+
+        // Import single event details (replace or upsert records for the event)
+        document.getElementById('importEventDetails').addEventListener('click', function() {
+            document.getElementById('importEventFile').click();
+        });
+
+        document.getElementById('importEventFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!currentEventDetails) {
+                alert('Open an event using View Details first.');
+                e.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = new Uint8Array(ev.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    // Prefer sheet named 'Attendance' if present, else first sheet
+                    let sheetName = workbook.SheetNames.includes('Attendance') ? 'Attendance' : workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet);
+
+                    // Build new records for this event
+                    const newEventRecords = [];
+                    rows.forEach(r => {
+                        if (r['Student#'] === 'Summary' || r['Student#'] === 'Section Total') return;
+                        if (!r['Student#']) return;
+                        newEventRecords.push({
+                            studentId: String(r['Student#']).trim(),
+                            studentName: (r['Name'] || '').trim(),
+                            section: (r['Section'] || '').trim(),
+                            event: currentEventDetails.name,
+                            date: (r['Date'] || '').trim(),
+                            timeIn: (r['Time-in'] || '').trim(),
+                            timeOut: (r['Time-out'] || '').trim(),
+                            checkInMs: Date.now()
+                        });
+                    });
+
+                    // Load all records, remove existing ones for this event, then merge new unique ones
+                    let all = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                    all = all.filter(r => r.event !== currentEventDetails.name);
+
+                    const uniqueMap = new Map();
+                    [...all, ...newEventRecords].forEach(rec => {
+                        const key = `${rec.studentId}-${rec.section}-${rec.event}-${rec.date}`;
+                        if (!uniqueMap.has(key)) uniqueMap.set(key, rec);
+                    });
+
+                    localStorage.setItem('attendanceRecords', JSON.stringify(Array.from(uniqueMap.values())));
+                    alert('Event data imported successfully.');
+                    location.reload();
+                } catch (err) {
+                    alert('Error importing event data: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            e.target.value = '';
+        });
+
+        // Helper function to calculate duration between time-in and time-out
+        function calculateDuration(timeIn, timeOut) {
+            if (!timeIn || !timeOut) return '';
+            const [inHours, inMinutes] = timeIn.split(':').map(Number);
+            const [outHours, outMinutes] = timeOut.split(':').map(Number);
+            const duration = (outHours * 60 + outMinutes) - (inHours * 60 + inMinutes);
+            const hours = Math.floor(duration / 60);
+            const minutes = duration % 60;
+            return `${hours}h ${minutes}m`;
+        }
+
+        // Delete Event functionality
+        const deleteEventModal = new bootstrap.Modal(document.getElementById('deleteEventModal'));
+        const deleteEventConfirmation = document.getElementById('deleteEventConfirmation');
+        const confirmDeleteEvent = document.getElementById('confirmDeleteEvent');
+        let eventToDelete = null;
+
+        deleteEventConfirmation.addEventListener('input', function() {
+            confirmDeleteEvent.disabled = this.value !== 'Delete';
+        });
+
+        // Allow pressing Enter to confirm deletion when the confirmation text is correct
+        deleteEventConfirmation.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (deleteEventConfirmation.value === 'Delete' && !confirmDeleteEvent.disabled) {
+                    confirmDeleteEvent.click();
+                }
+            }
+        });
+
+        confirmDeleteEvent.addEventListener('click', async function() {
+            if (deleteEventConfirmation.value === 'Delete' && window.eventToDelete) {
+                const { eventName, eventId } = window.eventToDelete;
+                
+                try {
+                    // Delete from Local Storage immediately (works offline)
+                    if (window.offlineSync) {
+                        const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                        const filtered = localRecords.filter(r => r.event !== eventName);
+                        localStorage.setItem(window.offlineSync.localStoragePrefix + 'attendance', JSON.stringify(filtered));
+                        localStorage.setItem('attendanceRecords', JSON.stringify(filtered));
+                        
+                        // Also delete event from Local Storage if it exists
+                        const localEvents = window.offlineSync.getFromLocalStorage('events');
+                        const filteredEvents = localEvents.filter(e => e.name !== eventName && e.id !== eventId);
+                        localStorage.setItem(window.offlineSync.localStoragePrefix + 'events', JSON.stringify(filteredEvents));
+                    } else {
+                        // Fallback to localStorage
+                        attendanceRecords = attendanceRecords.filter(record => record.event !== eventName);
+                        localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+                    }
+                    
+                    // Delete from Firebase if available (will queue for sync if offline)
+                    if (firebaseDB) {
+                        try {
+                            if (eventId && eventId !== 'undefined' && eventId !== 'null' && eventId !== '') {
+                                // Delete Firebase event (this will also delete attendance records and queue for sync if offline)
+                                // Pass eventName to ensure it works offline
+                                await firebaseDB.deleteEvent(eventId, eventName);
+                            } else {
+                                // Delete attendance records by event name (for events created from attendance records)
+                                await firebaseDB.deleteAttendanceRecordsByEvent(eventName);
+                            }
+                            // Reload events from Local Storage (which includes Firebase data)
+                            const allEvents = await firebaseDB.getEventsWithAttendanceCounts();
+                            // Deduplicate events by name (keep the first occurrence)
+                            const eventsMap = new Map();
+                            allEvents.forEach(event => {
+                                const normalizedName = normalizeEventName(event.name);
+                                if (normalizedName && !eventsMap.has(normalizedName)) {
+                                    eventsMap.set(normalizedName, event);
+                                }
+                            });
+                            events = Array.from(eventsMap.values());
+                        } catch (error) {
+                            console.error('Error deleting from Firebase:', error);
+                            // Continue - Local Storage is already updated and will sync when online
+                        }
+                    }
+                    
+                    // Refresh attendance records from Local Storage
+                    if (firebaseDB) {
+                        attendanceRecords = await firebaseDB.getAttendanceRecords();
+                    } else if (window.offlineSync) {
+                        attendanceRecords = window.offlineSync.getFromLocalStorage('attendance');
+                    } else {
+                        attendanceRecords = attendanceRecords.filter(record => record.event !== eventName);
+                    }
+                    
+                    // Hide modal and reset
+                    deleteEventModal.hide();
+                    window.eventToDelete = null;
+                    
+                    updateEventsList();
+                    alert(`Event "${eventName}" has been deleted successfully.`);
+                } catch (error) {
+                    console.error('Error deleting event:', error);
+                    alert('Error deleting event: ' + error.message);
+                }
+            }
+        });
+
+        // Delete All Events functionality
+        const deleteAllModal = new bootstrap.Modal(document.getElementById('deleteAllModal'));
+        const deleteConfirmation = document.getElementById('deleteConfirmation');
+        const confirmDeleteAll = document.getElementById('confirmDeleteAll');
+
+        document.getElementById('deleteAllEvents').addEventListener('click', function() {
+            deleteConfirmation.value = '';
+            confirmDeleteAll.disabled = true;
+            deleteAllModal.show();
+        });
+
+        deleteConfirmation.addEventListener('input', function() {
+            confirmDeleteAll.disabled = this.value !== 'Delete';
+        });
+
+        // Allow pressing Enter to confirm deletion when the confirmation text is correct
+        deleteConfirmation.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (deleteConfirmation.value === 'Delete' && !confirmDeleteAll.disabled) {
+                    confirmDeleteAll.click();
+                }
+            }
+        });
+
+        confirmDeleteAll.addEventListener('click', async function() {
+            if (deleteConfirmation.value === 'Delete') {
+                try {
+                    // Get all events and attendance records before clearing
+                    const allEvents = await firebaseDB.getEvents();
+                    const allRecords = await firebaseDB.getAttendanceRecords();
+                    
+                    // Get unique event names from attendance records (for events created from records)
+                    const eventNamesFromRecords = new Set();
+                    allRecords.forEach(record => {
+                        if (record.event) {
+                            eventNamesFromRecords.add(record.event);
+                        }
+                    });
+                    
+                    // Clear Local Storage first (works offline)
+                    if (window.offlineSync) {
+                        localStorage.removeItem(window.offlineSync.localStoragePrefix + 'attendance');
+                        localStorage.removeItem(window.offlineSync.localStoragePrefix + 'events');
+                        localStorage.removeItem('attendanceRecords');
+                    } else {
+                        localStorage.removeItem('attendanceRecords');
+                    }
+                    
+                    // Queue deletions for sync (works offline)
+                    if (window.offlineSync && firebaseDB) {
+                        // Queue each event deletion
+                        for (const event of allEvents) {
+                            if (event.id && event.id !== 'undefined' && event.id !== 'null' && event.id !== '') {
+                                window.offlineSync.addToPendingQueue({
+                                    type: 'deleteEvent',
+                                    data: { 
+                                        eventId: event.id, 
+                                        eventName: event.name || event.eventName 
+                                    }
+                                });
+                            } else if (event.name) {
+                                // Event without Firebase ID - queue by name
+                                window.offlineSync.addToPendingQueue({
+                                    type: 'deleteAttendanceRecordsByEvent',
+                                    data: { eventName: event.name }
+                                });
+                            }
+                        }
+                        
+                        // Queue attendance record deletions by event name (for events created from records)
+                        eventNamesFromRecords.forEach(eventName => {
+                            // Check if this event wasn't already queued
+                            const eventExists = allEvents.find(e => e.name === eventName || e.eventName === eventName);
+                            if (!eventExists) {
+                                window.offlineSync.addToPendingQueue({
+                                    type: 'deleteAttendanceRecordsByEvent',
+                                    data: { eventName: eventName }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Clear Firebase if online
+                    if (firebaseDB && window.offlineSync && window.offlineSync.isOnline) {
+                        try {
+                            // Delete all events
+                            for (const event of allEvents) {
+                                if (event.id && event.id !== 'undefined' && event.id !== 'null' && event.id !== '') {
+                                    await firebaseDB.deleteEvent(event.id, event.name || event.eventName);
+                                }
+                            }
+                            
+                            // Delete attendance records by event name (for events created from records)
+                            for (const eventName of eventNamesFromRecords) {
+                                const eventExists = allEvents.find(e => e.name === eventName || e.eventName === eventName);
+                                if (!eventExists) {
+                                    await firebaseDB.deleteAttendanceRecordsByEvent(eventName);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error clearing Firebase:', error);
+                            // Continue even if Firebase fails - Local Storage is already cleared and queued for sync
+                        }
+                    }
+                    
+                    // Clear local arrays
+                    attendanceRecords = [];
+                    events = [];
+                    
+                    deleteAllModal.hide();
+                    updateEventsList();
+                    alert('All events have been deleted successfully.');
+                } catch (error) {
+                    console.error('Error clearing all events:', error);
+                    alert('Error clearing all events. Please try again.');
+                }
+            }
+        });
+
+        // Import Events functionality
+        document.getElementById('importEvents').addEventListener('click', function() {
+            document.getElementById('importFile').click();
+        });
+
+        document.getElementById('importFile').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get the first sheet (Summary sheet)
+                    const summarySheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const summaryData = XLSX.utils.sheet_to_json(summarySheet);
+                    
+                    // Process each event sheet
+                    const importedRecords = [];
+                    workbook.SheetNames.forEach(sheetName => {
+                        // Skip the summary sheet and section sheets
+                        if (sheetName === 'Summary' || sheetName.endsWith('_Sections')) return;
+                        
+                        const sheet = workbook.Sheets[sheetName];
+                        const records = XLSX.utils.sheet_to_json(sheet);
+                        
+                        // Process each record
+                        records.forEach(record => {
+                            // Skip summary rows
+                            if (record['Student#'] === 'Summary' || record['Student#'] === 'Section Total') return;
+                            
+                            // Create attendance record
+                            const attendanceRecord = {
+                                studentId: record['Student#'],
+                                studentName: record['Name'],
+                                section: record['Section'],
+                                event: sheetName,
+                                date: record['Date'],
+                                timeIn: record['Time-in'],
+                                timeOut: record['Time-out'],
+                                checkInMs: Date.now() // Set current timestamp for sorting
+                            };
+                            importedRecords.push(attendanceRecord);
+                        });
+                    });
+
+                    // Merge with existing records
+                    const existingRecords = firebaseDB ? await firebaseDB.getAttendanceRecords() : JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                    const mergedRecords = [...existingRecords, ...importedRecords];
+                    
+                    // Remove duplicates (keep existing records if there's a conflict)
+                    const uniqueRecords = new Map();
+                    mergedRecords.forEach(record => {
+                        const key = `${record.studentId}-${record.section}-${record.event}-${record.date}`;
+                        if (!uniqueRecords.has(key)) {
+                            uniqueRecords.set(key, record);
+                        }
+                    });
+
+                    // Save to Firebase or localStorage
+                    if (firebaseDB) {
+                        // Add new records to Firebase
+                        for (const record of Array.from(uniqueRecords.values())) {
+                            try {
+                                await firebaseDB.addAttendanceRecord(record);
+                            } catch (error) {
+                                console.warn(`Failed to import record for ${record.studentId}:`, error);
+                            }
+                        }
+                    } else {
+                        // Fallback to localStorage
+                        localStorage.setItem('attendanceRecords', JSON.stringify(Array.from(uniqueRecords.values())));
+                    }
+                    
+                    // Refresh the page
+                    location.reload();
+                } catch (error) {
+                    alert('Error importing events: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            
+            // Clear the file input
+            e.target.value = '';
+        });
+    </script>
+</body>
+</html> 

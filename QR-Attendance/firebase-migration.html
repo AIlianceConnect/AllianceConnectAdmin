@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Migration - QR Attendance System</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="welcome.html">Home</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5" style="margin-top: 120px !important;">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h1 class="h3 mb-0">Firebase Migration</h1>
+                        <p class="text-muted mb-0">Migrate your local data to Firebase Cloud Database</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Firebase Configuration Section -->
+                        <div class="mb-4">
+                            <h4>Step 1: Configure Firebase</h4>
+                            <p class="text-muted">First, you need to set up your Firebase project and update the configuration.</p>
+                            <div class="alert alert-info">
+                                <h6>Instructions:</h6>
+                                <ol>
+                                    <li>Go to <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
+                                    <li>Create a new project or select an existing one</li>
+                                    <li>Enable Firestore Database</li>
+                                    <li>Go to Project Settings → General → Your apps</li>
+                                    <li>Add a web app and copy the configuration</li>
+                                    <li>Update the <code>firebase-config.js</code> file with your configuration</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Data Migration Section -->
+                        <div class="mb-4">
+                            <h4>Step 2: Migrate Data</h4>
+                            <p class="text-muted">Migrate your existing localStorage data to Firebase.</p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6>Students Database</h6>
+                                            <p class="small text-muted">Migrate student records</p>
+                                            <div id="studentsStatus" class="mb-2">
+                                                <span class="badge bg-secondary">Not checked</span>
+                                            </div>
+                                            <button id="migrateStudents" class="btn btn-primary btn-sm" disabled>Migrate Students</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6>Attendance Records</h6>
+                                            <p class="small text-muted">Migrate attendance data</p>
+                                            <div id="attendanceStatus" class="mb-2">
+                                                <span class="badge bg-secondary">Not checked</span>
+                                            </div>
+                                            <button id="migrateAttendance" class="btn btn-primary btn-sm" disabled>Migrate Attendance</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button id="migrateAll" class="btn btn-success" disabled>Migrate All Data</button>
+                                <button id="checkData" class="btn btn-info">Check Local Data</button>
+                            </div>
+                        </div>
+
+                        <!-- Migration Status -->
+                        <div class="mb-4">
+                            <h4>Migration Status</h4>
+                            <div id="migrationLog" class="bg-light p-3 rounded" style="height: 200px; overflow-y: auto;">
+                                <p class="text-muted">Migration log will appear here...</p>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="text-center">
+                            <a href="welcome.html" class="btn btn-secondary me-2">Back to Home</a>
+                            <button id="clearLocalData" class="btn btn-danger" disabled>Clear Local Data</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN (Compatible Version) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-database-service.js"></script>
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script>
+        let firebaseDB = null;
+        let migrationLog = document.getElementById('migrationLog');
+        let studentsCount = 0;
+        let attendanceCount = 0;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `mb-1 text-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'muted'}`;
+            logEntry.innerHTML = `<small>[${timestamp}]</small> ${message}`;
+            migrationLog.appendChild(logEntry);
+            migrationLog.scrollTop = migrationLog.scrollHeight;
+        }
+
+        async function initializeFirebase() {
+            try {
+                firebaseDB = window.firebaseDB;
+                if (!firebaseDB) {
+                    log('Firebase not initialized. Please check firebase-config.js', 'error');
+                    return false;
+                }
+                log('Firebase initialized successfully', 'success');
+                return true;
+            } catch (error) {
+                log(`Error initializing Firebase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        function checkLocalData() {
+            log('Checking local data...');
+            
+            // Check students
+            const students = JSON.parse(localStorage.getItem('barcodeStudents')) || [];
+            studentsCount = students.length;
+            const studentsStatus = document.getElementById('studentsStatus');
+            if (studentsCount > 0) {
+                studentsStatus.innerHTML = `<span class="badge bg-warning">${studentsCount} records found</span>`;
+                log(`Found ${studentsCount} student records in localStorage`);
+            } else {
+                studentsStatus.innerHTML = '<span class="badge bg-secondary">No data found</span>';
+                log('No student records found in localStorage');
+            }
+
+            // Check attendance
+            const attendance = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            attendanceCount = attendance.length;
+            const attendanceStatus = document.getElementById('attendanceStatus');
+            if (attendanceCount > 0) {
+                attendanceStatus.innerHTML = `<span class="badge bg-warning">${attendanceCount} records found</span>`;
+                log(`Found ${attendanceCount} attendance records in localStorage`);
+            } else {
+                attendanceStatus.innerHTML = '<span class="badge bg-secondary">No data found</span>';
+                log('No attendance records found in localStorage');
+            }
+
+            // Enable migration buttons if Firebase is ready and data exists
+            const firebaseReady = firebaseDB !== null;
+            const hasData = studentsCount > 0 || attendanceCount > 0;
+            
+            document.getElementById('migrateStudents').disabled = !firebaseReady || studentsCount === 0;
+            document.getElementById('migrateAttendance').disabled = !firebaseReady || attendanceCount === 0;
+            document.getElementById('migrateAll').disabled = !firebaseReady || !hasData;
+            document.getElementById('clearLocalData').disabled = !hasData;
+
+            if (!firebaseReady) {
+                log('Firebase not ready. Please check your configuration.', 'error');
+            } else if (!hasData) {
+                log('No local data found to migrate.', 'info');
+            } else {
+                log('Ready to migrate data to Firebase', 'success');
+            }
+        }
+
+        async function migrateStudents() {
+            if (!firebaseDB) {
+                log('Firebase not initialized', 'error');
+                return;
+            }
+
+            try {
+                log('Starting student migration...');
+                const students = JSON.parse(localStorage.getItem('barcodeStudents')) || [];
+                
+                let migrated = 0;
+                let errors = 0;
+                
+                for (const student of students) {
+                    try {
+                        await firebaseDB.addStudent(student);
+                        migrated++;
+                        log(`Migrated student: ${student.studentName} (${student.studentId})`);
+                    } catch (error) {
+                        errors++;
+                        log(`Error migrating student ${student.studentId}: ${error.message}`, 'error');
+                    }
+                }
+                
+                log(`Student migration completed: ${migrated} migrated, ${errors} errors`, errors > 0 ? 'error' : 'success');
+                
+                // Update status
+                document.getElementById('studentsStatus').innerHTML = '<span class="badge bg-success">Migrated</span>';
+                document.getElementById('migrateStudents').disabled = true;
+                
+            } catch (error) {
+                log(`Student migration failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function migrateAttendance() {
+            if (!firebaseDB) {
+                log('Firebase not initialized', 'error');
+                return;
+            }
+
+            try {
+                log('Starting attendance migration...');
+                const attendance = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                
+                let migrated = 0;
+                let errors = 0;
+                
+                for (const record of attendance) {
+                    try {
+                        await firebaseDB.addAttendanceRecord(record);
+                        migrated++;
+                        log(`Migrated attendance: ${record.studentName} - ${record.event}`);
+                    } catch (error) {
+                        errors++;
+                        log(`Error migrating attendance for ${record.studentId}: ${error.message}`, 'error');
+                    }
+                }
+                
+                log(`Attendance migration completed: ${migrated} migrated, ${errors} errors`, errors > 0 ? 'error' : 'success');
+                
+                // Update status
+                document.getElementById('attendanceStatus').innerHTML = '<span class="badge bg-success">Migrated</span>';
+                document.getElementById('migrateAttendance').disabled = true;
+                
+            } catch (error) {
+                log(`Attendance migration failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function migrateAll() {
+            log('Starting complete migration...');
+            await migrateStudents();
+            await migrateAttendance();
+            log('Complete migration finished', 'success');
+            
+            // Update buttons
+            document.getElementById('migrateAll').disabled = true;
+            document.getElementById('clearLocalData').disabled = false;
+        }
+
+        function clearLocalData() {
+            if (confirm('Are you sure you want to clear all local data? This action cannot be undone.')) {
+                localStorage.removeItem('barcodeStudents');
+                localStorage.removeItem('attendanceRecords');
+                log('Local data cleared', 'success');
+                checkLocalData();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeFirebase();
+            checkLocalData();
+        });
+
+        // Event listeners
+        document.getElementById('checkData').addEventListener('click', checkLocalData);
+        document.getElementById('migrateStudents').addEventListener('click', migrateStudents);
+        document.getElementById('migrateAttendance').addEventListener('click', migrateAttendance);
+        document.getElementById('migrateAll').addEventListener('click', migrateAll);
+        document.getElementById('clearLocalData').addEventListener('click', clearLocalData);
+    </script>
+</body>
+</html>

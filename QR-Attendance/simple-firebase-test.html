@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Firebase Test</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Simple Firebase Test</h3>
+                    </div>
+                    <div class="card-body">
+                        <button id="testFirebase" class="btn btn-primary">Test Firebase</button>
+                        <div id="status" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN (Compatible Version) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `mb-1 text-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'muted'}`;
+            logEntry.innerHTML = `<small>[${timestamp}]</small> ${message}`;
+            statusDiv.appendChild(logEntry);
+        }
+
+        async function testFirebase() {
+            log('Testing Firebase...');
+            
+            try {
+                // Check if Firebase is loaded
+                if (typeof firebase === 'undefined') {
+                    log('Firebase CDN not loaded', 'error');
+                    return;
+                }
+                
+                log('Firebase CDN loaded successfully', 'success');
+                
+                // Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBQVVgVkUtG_8rGdVLSnbNcA64wXgDAZH8",
+                    authDomain: "allianceapp-2791e.firebaseapp.com",
+                    projectId: "allianceapp-2791e",
+                    storageBucket: "allianceapp-2791e.firebasestorage.app",
+                    messagingSenderId: "853647741869",
+                    appId: "1:853647741869:web:c6bf95a9bdfc5b21e58724",
+                    measurementId: "G-5C9BEL5SR9"
+                };
+                
+                // Initialize Firebase
+                const app = firebase.initializeApp(firebaseConfig);
+                const db = firebase.firestore();
+                
+                log('Firebase initialized successfully', 'success');
+                log(`App name: ${app.name}`, 'info');
+                
+                // Test adding a document
+                const testData = {
+                    studentId: 'TEST001',
+                    studentName: 'Test Student',
+                    section: 'Test Section',
+                    timestamp: new Date()
+                };
+                
+                const docRef = await db.collection('test').add(testData);
+                log(`Document added successfully! ID: ${docRef.id}`, 'success');
+                
+                // Clean up
+                await db.collection('test').doc(docRef.id).delete();
+                log('Test document cleaned up', 'info');
+                
+                log('Firebase test completed successfully!', 'success');
+                
+            } catch (error) {
+                log(`Firebase test failed: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        // Event listener
+        document.getElementById('testFirebase').addEventListener('click', testFirebase);
+    </script>
+</body>
+</html>

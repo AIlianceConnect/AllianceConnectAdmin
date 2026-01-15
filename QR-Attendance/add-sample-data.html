@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Sample Data - Firebase Test</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Add Sample Data to Firebase</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>This will add sample students to Firebase for testing.</p>
+                        <button id="addSampleStudents" class="btn btn-primary">Add Sample Students</button>
+                        <button id="addSampleAttendance" class="btn btn-success">Add Sample Attendance</button>
+                        <div id="status" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="firebase-database-service.js"></script>
+    <script>
+        let firebaseDB = null;
+        const statusDiv = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `mb-1 text-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'muted'}`;
+            logEntry.innerHTML = `<small>[${timestamp}]</small> ${message}`;
+            statusDiv.appendChild(logEntry);
+        }
+
+        async function initializeFirebase() {
+            try {
+                firebaseDB = window.firebaseDB;
+                if (!firebaseDB) {
+                    log('Firebase not initialized', 'error');
+                    return false;
+                }
+                log('Firebase initialized successfully', 'success');
+                return true;
+            } catch (error) {
+                log(`Error initializing Firebase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function addSampleStudents() {
+            const sampleStudents = [
+                { studentId: '2023001', studentName: 'Alice Smith', section: 'BSIS-AIS 3-1' },
+                { studentId: '2023002', studentName: 'Bob Johnson', section: 'BSIS-AIS 3-1' },
+                { studentId: '2023003', studentName: 'Charlie Lee', section: 'BSIS-AIS 3-2' },
+                { studentId: '2023004', studentName: 'Diana King', section: 'BSIS-AIS 3-2' },
+                { studentId: '2023005', studentName: 'Evan Wright', section: 'BSAIS 2-1' },
+                { studentId: '2023006', studentName: 'Fiona Brown', section: 'BSAIS 2-1' },
+                { studentId: '2023007', studentName: 'George Davis', section: 'BSIS-AIS 4-1' },
+                { studentId: '2023008', studentName: 'Hannah Wilson', section: 'BSIS-AIS 4-1' }
+            ];
+
+            log('Adding sample students...');
+            let added = 0;
+            let errors = 0;
+
+            for (const student of sampleStudents) {
+                try {
+                    await firebaseDB.addStudent(student);
+                    added++;
+                    log(`Added: ${student.studentName} (${student.studentId})`);
+                } catch (error) {
+                    errors++;
+                    log(`Error adding ${student.studentId}: ${error.message}`, 'error');
+                }
+            }
+
+            log(`Sample students added: ${added} successful, ${errors} errors`, errors > 0 ? 'error' : 'success');
+        }
+
+        async function addSampleAttendance() {
+            const today = new Date().toLocaleDateString();
+            const currentTime = new Date().toLocaleTimeString();
+            
+            const sampleAttendance = [
+                {
+                    studentId: '2023001',
+                    studentName: 'Alice Smith',
+                    section: 'BSIS-AIS 3-1',
+                    event: 'Sample Event',
+                    date: today,
+                    timeIn: '08:00:00',
+                    timeOut: '12:00:00',
+                    checkInMs: Date.now()
+                },
+                {
+                    studentId: '2023002',
+                    studentName: 'Bob Johnson',
+                    section: 'BSIS-AIS 3-1',
+                    event: 'Sample Event',
+                    date: today,
+                    timeIn: '08:15:00',
+                    timeOut: '12:30:00',
+                    checkInMs: Date.now()
+                },
+                {
+                    studentId: '2023003',
+                    studentName: 'Charlie Lee',
+                    section: 'BSIS-AIS 3-2',
+                    event: 'Sample Event',
+                    date: today,
+                    timeIn: '08:30:00',
+                    timeOut: '',
+                    checkInMs: Date.now()
+                }
+            ];
+
+            log('Adding sample attendance records...');
+            let added = 0;
+            let errors = 0;
+
+            for (const record of sampleAttendance) {
+                try {
+                    await firebaseDB.addAttendanceRecord(record);
+                    added++;
+                    log(`Added attendance: ${record.studentName} - ${record.event}`);
+                } catch (error) {
+                    errors++;
+                    log(`Error adding attendance for ${record.studentId}: ${error.message}`, 'error');
+                }
+            }
+
+            log(`Sample attendance added: ${added} successful, ${errors} errors`, errors > 0 ? 'error' : 'success');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeFirebase();
+        });
+
+        // Event listeners
+        document.getElementById('addSampleStudents').addEventListener('click', addSampleStudents);
+        document.getElementById('addSampleAttendance').addEventListener('click', addSampleAttendance);
+    </script>
+</body>
+</html>
+
