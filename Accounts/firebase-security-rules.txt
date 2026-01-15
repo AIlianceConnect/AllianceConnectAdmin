@@ -1,0 +1,99 @@
+// Firebase Security Rules for Accounts System
+// Copy these rules to your Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Accounts System Collections
+    match /AccountsSystem_studentNumbers/{document} {
+      allow read, write: if true; // Allow all operations for now
+      // In production, you should restrict this to authenticated admin users:
+      // allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /AccountsSystem_pendingRequests/{document} {
+      allow read, write: if true; // Allow all operations for now
+      // In production, you should restrict this to authenticated admin users:
+      // allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /AccountsSystem_studentAccounts/{document} {
+      allow read, write: if true; // Allow all operations for now
+      // In production, you should restrict this to authenticated admin users:
+      // allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Existing Attendance System Collections (if you want to keep them)
+    match /AttendanceSystem_students/{document} {
+      allow read, write: if true;
+    }
+    
+    match /AttendanceSystem_attendance/{document} {
+      allow read, write: if true;
+    }
+    
+    match /AttendanceSystem_events/{document} {
+      allow read, write: if true;
+    }
+    
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// Production Security Rules (Recommended)
+// Uncomment and use these rules for production deployment:
+
+/*
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Accounts System Collections - Admin only
+    match /AccountsSystem_studentNumbers/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /AccountsSystem_pendingRequests/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /AccountsSystem_studentAccounts/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Attendance System Collections - Admin only
+    match /AttendanceSystem_students/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /AttendanceSystem_attendance/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /AttendanceSystem_events/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+*/
+
+

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Numbers Management</title>
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation (matches merchandise header style) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Account Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="student-numbers.html">Student Numbers</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5" style="margin-top: 120px !important;">
+        <!-- Toasts -->
+        <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Student Numbers Management</h1>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentNumberModal">Add Student Number</button>
+                <button class="btn btn-outline-success" onclick="importStudentNumbers()">Import XLSX</button>
+                <button class="btn btn-outline-info" onclick="exportStudentNumbers()">Export XLSX</button>
+            </div>
+        </div>
+        
+        <!-- Current Status Display -->
+        <div class="alert alert-info mb-4" id="currentStatusDisplay">
+            System Status: <span id="statusDisplay">Ready</span> | 
+            Total Student Numbers: <span id="totalStudentCount">0</span>
+        </div>
+
+        <!-- Student Numbers Management Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Student Numbers Database</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="searchStudentNumbers" placeholder="Search by student number, name, or section...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="sectionFilter" class="form-select">
+                            <option value="all">All Sections</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-secondary" onclick="clearFilters()">Clear Filters</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Student Number</th>
+                                <th>Name</th>
+                                <th>Section</th>
+                                <th>Added Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentNumbersTable">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No student numbers added yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Number Modal -->
+    <div class="modal fade" id="addStudentNumberModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="addStudentNumberForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add Student Number</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="newStudentId" class="form-label">Student Number *</label>
+                                    <input type="text" class="form-control" id="newStudentId" required autocomplete="off" autofocus>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newStudentName" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="newStudentName" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="newCourse" class="form-label">Course</label>
+                                    <select class="form-select" id="newCourse">
+                                        <option value="">Select Course (Optional)</option>
+                                        <option value="BSIS-AIS">BSIS-AIS</option>
+                                        <option value="BSAIS">BSAIS</option>
+                                        <option value="BSIT">BSIT</option>
+                                        <option value="BSCS">BSCS</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newYearSection" class="form-label">Year-Section</label>
+                                    <input type="text" class="form-control" id="newYearSection" placeholder="e.g., 3-3 or 1-2" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="newEmail" autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPhone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="newPhone" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Student Number</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Number Modal -->
+    <div class="modal fade" id="editStudentNumberModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="editStudentNumberForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Student Number</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editStudentId" name="studentId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editStudentNumber" class="form-label">Student Number *</label>
+                                    <input type="text" class="form-control" id="editStudentNumber" required autocomplete="off">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editStudentName" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="editStudentName" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editCourse" class="form-label">Course *</label>
+                                    <select class="form-select" id="editCourse" required>
+                                        <option value="">Select Course</option>
+                                        <option value="BSIS-AIS">BSIS-AIS</option>
+                                        <option value="BSAIS">BSAIS</option>
+                                        <option value="BSIT">BSIT</option>
+                                        <option value="BSCS">BSCS</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editYearSection" class="form-label">Year-Section *</label>
+                                    <input type="text" class="form-control" id="editYearSection" placeholder="e.g., 3-3 or 1-2" required autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="editEmail" autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="editPhone" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Student Number</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import XLSX Modal -->
+    <div class="modal fade" id="importCSVModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Student Numbers from XLSX</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Select XLSX File</label>
+                        <input type="file" class="form-control" id="csvFile" accept=".xlsx,.xls" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>XLSX Format:</strong><br>
+                        <strong>Format 1 (Recommended):</strong> uniqueId, studentId, studentName, section<br>
+                        <strong>Format 2 (Alternative):</strong> StudentNumber, Name, Course, YearSection, Email, Phone<br>
+                        The first row should contain column headers. Example:<br>
+                        uniqueId | studentId | studentName | section
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="processXLSXImport()">Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-database-service.js"></script>
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script src="student-numbers.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test</title>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <div id="status">Testing...</div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testPendingRequests()">Test Pending Requests</button>
+    <button onclick="addTestRequest()">Add Test Request</button>
+    <div id="results"></div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-database-service.js"></script>
+    
+    <script>
+        let firebaseService = null;
+        
+        // Wait for Firebase to initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            const checkService = setInterval(() => {
+                if (window.accountsFirebaseService) {
+                    clearInterval(checkService);
+                    firebaseService = window.accountsFirebaseService;
+                    document.getElementById('status').textContent = 'Firebase Service Ready';
+                    console.log('Firebase service ready');
+                }
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(checkService);
+                if (!firebaseService) {
+                    document.getElementById('status').textContent = 'Firebase Service Failed';
+                }
+            }, 5000);
+        });
+        
+        async function testConnection() {
+            if (!firebaseService) {
+                document.getElementById('results').innerHTML = '<p>Firebase service not ready</p>';
+                return;
+            }
+            
+            try {
+                const stats = await firebaseService.getCollectionStats();
+                document.getElementById('results').innerHTML = `
+                    <h3>Collection Stats:</h3>
+                    <p>Student Numbers: ${stats.studentNumbers}</p>
+                    <p>Pending Requests: ${stats.pendingRequests}</p>
+                    <p>Student Accounts: ${stats.studentAccounts}</p>
+                `;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testPendingRequests() {
+            if (!firebaseService) {
+                document.getElementById('results').innerHTML = '<p>Firebase service not ready</p>';
+                return;
+            }
+            
+            try {
+                const requests = await firebaseService.getPendingRequests();
+                document.getElementById('results').innerHTML = `
+                    <h3>Pending Requests (${requests.length}):</h3>
+                    <pre>${JSON.stringify(requests, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function addTestRequest() {
+            if (!firebaseService) {
+                document.getElementById('results').innerHTML = '<p>Firebase service not ready</p>';
+                return;
+            }
+            
+            try {
+                const testData = {
+                    studentId: 'TEST-001',
+                    name: 'Test Student',
+                    email: 'test@example.com',
+                    password: 'testpass123'
+                };
+                
+                const requestId = await firebaseService.addPendingRequest(testData);
+                document.getElementById('results').innerHTML = `<p>Test request added with ID: ${requestId}</p>`;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+
+

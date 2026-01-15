@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+:root {
+    --gold: #FFD700;
+    --gold-dark: #FFC107;
+    --black: #181818;
+    --white: #fff;
+}
+
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+#qrCode {
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+#scanner {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.btn {
+    padding: 8px 20px;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-warning:hover {
+    background-color: #ffbf00 !important;
+    border-color: #b38600 !important;
+    color: rgb(0, 0, 0) !important;
+} 
+
+/* Merchandise-like header theme */
+.navbar {
+    background: var(--black) !important;
+    height: 70px;
+}
+
+.navbar-brand span {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+}
+
+.btn-primary {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    font-weight: 700;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background: var(--black);
+    color: var(--gold);
+}
+
+.card-header h1, .card-header h2, .card-header h3 {
+    font-family: 'Montserrat', Arial, sans-serif;
+    color: var(--black);
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 90px; /* below fixed navbar */
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1080;
+    pointer-events: none; /* allow clicks through except the toasts */
+}
+
+.toast-notification {
+    min-width: 280px;
+    max-width: 360px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 160ms ease, transform 160ms ease;
+    pointer-events: auto;
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-notification .toast-title {
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.toast-notification .toast-close {
+    margin-left: auto;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.toast-success { background-color: #198754; }
+.toast-error { background-color: #dc3545; }
+.toast-warning { background-color: #fd7e14; }
