@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test - MerchandiseTracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    <script src="firebase-database-service.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Firebase Connection Test - MerchandiseTracker</h1>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Connection Status</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Firebase App:</strong> <span id="firebaseStatus">Checking...</span></p>
+                <p><strong>Firestore:</strong> <span id="firestoreStatus">Checking...</span></p>
+                <p><strong>Service:</strong> <span id="serviceStatus">Checking...</span></p>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Test Operations</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary me-2" onclick="testAddInProcess()">Test Add to In-Process</button>
+                <button class="btn btn-secondary me-2" onclick="testGetInProcess()">Test Get In-Process</button>
+                <button class="btn btn-info me-2" onclick="testAddHistory()">Test Add to History</button>
+                <button class="btn btn-success me-2" onclick="testGetHistory()">Test Get History</button>
+                <button class="btn btn-warning me-2" onclick="testAddDeleted()">Test Add to Deleted</button>
+                <button class="btn btn-dark me-2" onclick="testGetDeleted()">Test Get Deleted</button>
+                <button class="btn btn-danger mt-2" onclick="testClearAll()">Clear All Data</button>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Test Results</h5>
+            </div>
+            <div class="card-body">
+                <pre id="testResults" style="max-height: 400px; overflow-y: auto;">No tests run yet...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let service = null;
+
+        function log(message) {
+            const results = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            results.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+
+        function checkStatus() {
+            // Check Firebase App
+            if (window.firebaseApp) {
+                document.getElementById('firebaseStatus').textContent = '✓ Connected';
+                document.getElementById('firebaseStatus').className = 'text-success';
+            } else {
+                document.getElementById('firebaseStatus').textContent = '✗ Not Connected';
+                document.getElementById('firebaseStatus').className = 'text-danger';
+            }
+
+            // Check Firestore
+            if (window.firebaseDb) {
+                document.getElementById('firestoreStatus').textContent = '✓ Connected';
+                document.getElementById('firestoreStatus').className = 'text-success';
+            } else {
+                document.getElementById('firestoreStatus').textContent = '✗ Not Connected';
+                document.getElementById('firestoreStatus').className = 'text-danger';
+            }
+
+            // Check Service
+            if (window.merchandiseFirebaseService) {
+                service = window.merchandiseFirebaseService;
+                document.getElementById('serviceStatus').textContent = '✓ Ready';
+                document.getElementById('serviceStatus').className = 'text-success';
+            } else {
+                document.getElementById('serviceStatus').textContent = '✗ Not Ready';
+                document.getElementById('serviceStatus').className = 'text-danger';
+            }
+        }
+
+        // Check status every second
+        setInterval(checkStatus, 1000);
+        checkStatus();
+
+        async function testAddInProcess() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                const testOrder = {
+                    studentNumber: 'TEST-' + Date.now(),
+                    studentName: 'Test Student',
+                    email: 'test@example.com',
+                    itemName: 'Test Item',
+                    quantity: 1,
+                    price: 100,
+                    gcashReference: 'TEST-REF',
+                    paymentMode: 'GCash',
+                    paymentStatus: 'paid',
+                    timestamp: new Date().toISOString(),
+                    date: new Date().toISOString()
+                };
+
+                log('Adding test order to in-process...');
+                const id = await service.addToInProcess(testOrder);
+                log(`SUCCESS: Order added with ID: ${id}`);
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        async function testGetInProcess() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                log('Fetching in-process orders...');
+                const orders = await service.getInProcessOrders();
+                log(`SUCCESS: Found ${orders.length} in-process orders`);
+                log(JSON.stringify(orders, null, 2));
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        async function testAddHistory() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                const testOrder = {
+                    studentNumber: 'HIST-' + Date.now(),
+                    studentName: 'Test History Student',
+                    email: 'history@example.com',
+                    itemName: 'History Item',
+                    quantity: 1,
+                    price: 200,
+                    gcashReference: 'HIST-REF',
+                    paymentMode: 'GCash',
+                    paymentStatus: 'paid',
+                    timestamp: new Date().toISOString(),
+                    date: new Date().toISOString(),
+                    claimDate: new Date().toISOString()
+                };
+
+                log('Adding test order to history...');
+                const id = await service.addToOrderHistory(testOrder);
+                log(`SUCCESS: Order added to history with ID: ${id}`);
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        async function testGetHistory() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                log('Fetching order history...');
+                const orders = await service.getOrderHistory();
+                log(`SUCCESS: Found ${orders.length} history orders`);
+                log(JSON.stringify(orders, null, 2));
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        async function testAddDeleted() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                const testOrder = {
+                    studentNumber: 'DEL-' + Date.now(),
+                    studentName: 'Test Deleted Student',
+                    email: 'deleted@example.com',
+                    itemName: 'Deleted Item',
+                    quantity: 1,
+                    price: 300,
+                    gcashReference: 'DEL-REF',
+                    paymentMode: 'Cash',
+                    paymentStatus: 'unpaid',
+                    timestamp: new Date().toISOString(),
+                    date: new Date().toISOString()
+                };
+
+                log('Adding test order to deleted...');
+                const id = await service.addToDeletedOrders(testOrder);
+                log(`SUCCESS: Order added to deleted with ID: ${id}`);
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        async function testGetDeleted() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                log('Fetching deleted orders...');
+                const orders = await service.getDeletedOrders();
+                log(`SUCCESS: Found ${orders.length} deleted orders`);
+                log(JSON.stringify(orders, null, 2));
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        async function testClearAll() {
+            try {
+                if (!service) {
+                    log('ERROR: Service not ready');
+                    return;
+                }
+
+                if (!confirm('This will delete all test data. Continue?')) {
+                    return;
+                }
+
+                log('Clearing all Firebase data...');
+                await service.clearAllData();
+                log('SUCCESS: All data cleared');
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+            }
+        }
+
+        log('Firebase test page loaded. Waiting for services to initialize...');
+    </script>
+</body>
+</html>
+

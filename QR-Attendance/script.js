@@ -498,43 +498,24 @@ function getStudentsBySectionFromStudents(students, section) {
     return students.filter(s => s.section === section);
 }
 
-// Populate section dropdown and student list from barcodeStudents
+// Populate section dropdown and student list from attendance records for current event
 function updateSectionDropdownAndStudentList() {
     const dropdown = document.getElementById('sectionDropdown');
     if (!dropdown) return;
     
-    // Refresh students from Local Storage (which includes Firebase data)
-    if (window.offlineSync) {
-        students = window.offlineSync.getFromLocalStorage('students');
-    } else if (firebaseDB) {
-        // Refresh from Firebase if available
-        firebaseDB.getStudents().then(s => {
-            students = s;
-            updateSectionDropdownAndStudentList();
-        }).catch(err => {
-            console.error('Error refreshing students:', err);
-        });
+    // Get the current event (not the event filter)
+    const currentEvent = localStorage.getItem('currentEvent');
+    if (!currentEvent) {
+        dropdown.innerHTML = '';
+        document.getElementById('studentListBySection').innerHTML = '';
+        return;
     }
     
-    // Get unique sections from BOTH students database AND attendance records
+    // Only get sections from attendance records for the current event
     const sections = new Set();
     
-    // Add sections from students database
-    students.forEach(student => {
-        if (student.section && student.section !== 'undefined') {
-            sections.add(student.section);
-        }
-    });
-    
-    // Also add sections from attendance records (for students who may not be in database yet)
-    let filteredRecords = attendanceRecords;
-    const eventFilter = document.getElementById('eventFilter');
-    const selectedEvent = eventFilter ? eventFilter.value : localStorage.getItem('currentEvent');
-    
-    // Filter attendance records by event if not 'all'
-    if (selectedEvent !== 'all') {
-        filteredRecords = attendanceRecords.filter(r => r.event === selectedEvent);
-    }
+    // Filter attendance records by current event only
+    const filteredRecords = attendanceRecords.filter(r => r.event === currentEvent);
     
     filteredRecords.forEach(record => {
         if (record.section && record.section !== 'undefined') {
@@ -567,44 +548,33 @@ function updateStudentListBySection(section) {
     const tbody = document.getElementById('studentListBySection');
     if (!tbody) return;
     
-    // Refresh students from Local Storage (which includes Firebase data)
-    if (window.offlineSync) {
-        students = window.offlineSync.getFromLocalStorage('students');
+    // Get the current event (not the event filter)
+    const currentEvent = localStorage.getItem('currentEvent');
+    if (!currentEvent) {
+        tbody.innerHTML = '';
+        return;
     }
     
-    // Get students from the students database for this section
-    const studentsInSection = students.filter(s => s.section === section);
+    // Only show students who have attendance records for the current event and selected section
+    const filteredRecords = attendanceRecords.filter(r => 
+        r.section === section && 
+        r.event === currentEvent
+    );
     
-    // Also get students from attendance records who may not be in the database yet
-    let filteredRecords = attendanceRecords;
-    const eventFilter = document.getElementById('eventFilter');
-    const selectedEvent = eventFilter ? eventFilter.value : localStorage.getItem('currentEvent');
-    
-    // Filter attendance records by section and event
-    filteredRecords = filteredRecords.filter(r => r.section === section && (selectedEvent === 'all' || r.event === selectedEvent));
-    
-    // Combine students from database and attendance records
+    // Get unique students from attendance records only
     const uniqueStudents = new Map();
     
-    // First, add all students from the database
-    studentsInSection.forEach(student => {
-        if (student.studentId) {
-            uniqueStudents.set(student.studentId, {
-                studentId: student.studentId,
-                studentName: student.studentName || student.name || '',
-                section: student.section
-            });
-        }
-    });
-    
-    // Then, add students from attendance records who may not be in the database
     filteredRecords.forEach(r => {
-        if (r.studentId && !uniqueStudents.has(r.studentId)) {
-            uniqueStudents.set(r.studentId, {
-                studentId: r.studentId,
-                studentName: r.studentName || '',
-                section: r.section
-            });
+        if (r.studentId) {
+            // Use the most recent record for each student (in case of duplicates)
+            const key = r.studentId;
+            if (!uniqueStudents.has(key)) {
+                uniqueStudents.set(key, {
+                    studentId: r.studentId,
+                    studentName: r.studentName || '',
+                    section: r.section
+                });
+            }
         }
     });
     
