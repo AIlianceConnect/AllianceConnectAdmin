@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,13 @@
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
-                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo"
+                    style="height:48px;width:auto;margin-right:12px;">
                 <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -45,12 +48,15 @@
             <div class="card-body">
                 <div class="mb-3">
                     <div class="btn-group mb-2" role="group">
-                        <button id="activateScan" class="btn btn-success btn-sm" type="button">Activate Scanning</button>
-                        <button id="deactivateScan" class="btn btn-secondary btn-sm" type="button">Deactivate Scanning</button>
+                        <button id="activateScan" class="btn btn-success btn-sm" type="button">Activate
+                            Scanning</button>
+                        <button id="deactivateScan" class="btn btn-secondary btn-sm" type="button">Deactivate
+                            Scanning</button>
                     </div>
                     <div class="mb-2">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="scanMode" id="rentMode" value="rent" checked>
+                            <input class="form-check-input" type="radio" name="scanMode" id="rentMode" value="rent"
+                                checked>
                             <label class="form-check-label" for="rentMode">Rent Item</label>
                         </div>
                         <div class="form-check form-check-inline">
@@ -69,15 +75,19 @@
                     <!-- Barcode Input -->
                     <div id="barcodeInputSection">
                         <label for="barcodeInput" class="form-label">Scan Barcode (Auto-focus)</label>
-                        <input type="text" class="form-control" id="barcodeInput" autofocus autocomplete="off" placeholder="Scan barcode here...">
-                        <small class="form-text text-muted" id="scanInstructions">In Rent mode: First scan student ID, then scan officer ID to verify, then scan item. <br>In Return mode: First scan officer ID, then scan item.</small>
+                        <input type="text" class="form-control" id="barcodeInput" autofocus autocomplete="off"
+                            placeholder="Scan barcode here...">
+                        <small class="form-text text-muted" id="scanInstructions">In Rent mode: First scan student ID,
+                            then scan officer ID to verify, then scan item. <br>In Return mode: First scan officer ID,
+                            then scan item.</small>
                     </div>
                     <!-- Manual Input -->
                     <div id="manualInputSection" style="display: none;">
                         <div id="manualStudentInputs">
                             <div class="mb-3">
                                 <label for="studentName" class="form-label">Student Name</label>
-                                <input type="text" class="form-control" id="studentName" placeholder="Enter student name">
+                                <input type="text" class="form-control" id="studentName"
+                                    placeholder="Enter student name">
                             </div>
                             <div class="mb-3">
                                 <label for="studentId" class="form-label">Student ID</label>
@@ -90,23 +100,29 @@
                         </div>
                         <div class="mb-3">
                             <label for="barcodeInputOfficer" class="form-label">Scan Officer Barcode</label>
-                            <input type="text" class="form-control" id="barcodeInputOfficer" placeholder="Scan officer barcode here...">
-                            <small class="form-text text-muted">Scan officer's barcode to verify and process the transaction</small>
+                            <input type="text" class="form-control" id="barcodeInputOfficer"
+                                placeholder="Scan officer barcode here...">
+                            <small class="form-text text-muted">Scan officer's barcode to verify and process the
+                                transaction</small>
                         </div>
                         <div class="mb-3">
                             <label for="itemSelect" class="form-label">Select Item</label>
                             <select class="form-select" id="itemSelect">
                                 <option value="">Choose an item...</option>
                             </select>
-                             <div class="mt-2">
-                                 <label for="barcodeInputItemManual" class="form-label">Scan Item Barcode (optional)</label>
-                                 <input type="text" class="form-control" id="barcodeInputItemManual" placeholder="Scan item barcode here...">
-                                 <small class="form-text text-muted">Scanning here will auto-select the matching item</small>
-                             </div>
+                            <div class="mt-2">
+                                <label for="barcodeInputItemManual" class="form-label">Scan Item Barcode
+                                    (optional)</label>
+                                <input type="text" class="form-control" id="barcodeInputItemManual"
+                                    placeholder="Scan item barcode here...">
+                                <small class="form-text text-muted">Scanning here will auto-select the matching
+                                    item</small>
+                            </div>
                         </div>
 
                     </div>
-                    <br><button id="cancelTransaction" class="btn btn-warning btn-sm mt-2" type="button">Cancel Transaction</button>
+                    <br><button id="cancelTransaction" class="btn btn-warning btn-sm mt-2" type="button">Cancel
+                        Transaction</button>
                 </div>
                 <div class="result-box mb-3">
                     <h3 class="h6">Last Scan Result:</h3>
@@ -155,7 +171,8 @@
                     <div class="col-md-6">
                         <h3 class="h6">Current Rentals</h3>
                         <div class="mb-3">
-                            <input type="text" class="form-control" id="rentalSearch" placeholder="Search rentals by ID, name, or renter...">
+                            <input type="text" class="form-control" id="rentalSearch"
+                                placeholder="Search rentals by ID, name, or renter...">
                         </div>
                         <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                             <table class="table">
@@ -187,39 +204,43 @@
     <script src="lib/encoder.js"></script>
     <script src="script.js"></script>
     <script>
-    // Filtering and sorting for Available Items
-    document.addEventListener('DOMContentLoaded', function() {
-        const filter = document.getElementById('itemFilter');
-        if (filter) {
-            filter.addEventListener('change', updateAvailableItemsTable);
-        }
+        // Filtering and sorting for Available Items
+        document.addEventListener('DOMContentLoaded', function () {
+            const filter = document.getElementById('itemFilter');
+            if (filter) {
+                filter.addEventListener('change', updateAvailableItemsTable);
+            }
 
-        // Search functionality for Current Rentals
-        const rentalSearch = document.getElementById('rentalSearch');
-        if (rentalSearch) {
-            rentalSearch.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('#rentalRecords tr');
-                
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+            // Search functionality for Current Rentals
+            const rentalSearch = document.getElementById('rentalSearch');
+            if (rentalSearch) {
+                rentalSearch.addEventListener('input', function () {
+                    const searchTerm = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#rentalRecords tr');
+
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
                 });
-            });
-        }
-    });
+            }
+        });
     </script>
-    
+
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
+
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
-    
+
+    <!-- Offline Queue Service (must load before Firebase service) -->
+    <script src="offline-queue-service.js"></script>
+
     <!-- Rental Firebase Service -->
     <script src="rental-firebase-service.js"></script>
-    
+
     <audio id="beepSound" src="Barcode scanner beep sound (sound effect).mp3" preload="auto"></audio>
 </body>
-</html> 
+
+</html>

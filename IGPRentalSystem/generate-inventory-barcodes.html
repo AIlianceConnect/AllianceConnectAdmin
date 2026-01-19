@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,19 +8,44 @@
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-        .barcode-img { margin: 0 10px 10px 0; }
-        .item-card { border: 1px solid #ccc; border-radius: 6px; padding: 16px; margin-bottom: 12px; background: #f8f9fa; }
-        .category-title { margin-top: 32px; }
-        .barcode-container { text-align: center; margin-bottom: 10px; }
-        .barcode-container svg { max-width: 100%; height: auto; }
-        .download-btn { margin-top: 10px; }
+        .barcode-img {
+            margin: 0 10px 10px 0;
+        }
+
+        .item-card {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+        }
+
+        .category-title {
+            margin-top: 32px;
+        }
+
+        .barcode-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .barcode-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .download-btn {
+            margin-top: 10px;
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
-                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo"
+                    style="height:48px;width:auto;margin-right:12px;">
                 <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -75,7 +101,8 @@
         <!-- Search -->
         <div class="mb-3">
             <div class="input-group">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by ID, name, or barcode...">
+                <input type="text" id="searchInput" class="form-control"
+                    placeholder="Search by ID, name, or barcode...">
                 <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
             </div>
         </div>
@@ -95,21 +122,24 @@
                 <div class="modal-body">
                     <p>Are you sure you want to delete all inventory items? This action cannot be undone.</p>
                     <p>Type <strong>"Delete"</strong> to confirm:</p>
-                    <input type="text" class="form-control" id="deleteConfirmInput" placeholder="Type Delete to confirm">
+                    <input type="text" class="form-control" id="deleteConfirmInput"
+                        placeholder="Type Delete to confirm">
                     <div id="deleteConfirmError" class="text-danger mt-2" style="display: none;">
                         Please type "Delete" exactly to confirm.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteAll" disabled>Delete All Items</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteAll" disabled>Delete All
+                        Items</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Delete Item Confirmation Modal -->
-    <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -119,7 +149,8 @@
                 <div class="modal-body">
                     <p>Are you sure you want to delete this inventory item? This action cannot be undone.</p>
                     <p>Type <strong>"Delete"</strong> to confirm:</p>
-                    <input type="text" class="form-control" id="deleteItemConfirmInput" placeholder="Type Delete to confirm">
+                    <input type="text" class="form-control" id="deleteItemConfirmInput"
+                        placeholder="Type Delete to confirm">
                     <div id="deleteItemConfirmError" class="text-danger mt-2" style="display: none;">
                         Please type "Delete" exactly to confirm.
                     </div>
@@ -166,32 +197,32 @@
             // Create a canvas element
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
+
             // Create an image from the SVG
             const img = new Image();
             const svgData = new XMLSerializer().serializeToString(svgElement);
-            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
             const url = URL.createObjectURL(svgBlob);
-            
-            img.onload = function() {
+
+            img.onload = function () {
                 // Set canvas size
                 canvas.width = img.width;
                 canvas.height = img.height;
-                
+
                 // Draw the image on canvas
                 ctx.drawImage(img, 0, 0);
-                
+
                 // Convert to PNG and download
                 const pngFile = canvas.toDataURL('image/png');
                 const downloadLink = document.createElement('a');
                 downloadLink.download = filename;
                 downloadLink.href = pngFile;
                 downloadLink.click();
-                
+
                 // Clean up
                 URL.revokeObjectURL(url);
             };
-            
+
             img.src = url;
         }
 
@@ -202,20 +233,20 @@
         function generateBarcodes() {
             const displayDiv = document.getElementById('barcodeDisplay');
             displayDiv.innerHTML = '';
-            
+
             // Get search term
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
+
             // Filter items based on search term
             let filteredItems = inventoryItems;
             if (searchTerm) {
-                filteredItems = inventoryItems.filter(item => 
+                filteredItems = inventoryItems.filter(item =>
                     item.id.toLowerCase().includes(searchTerm) ||
                     item.name.toLowerCase().includes(searchTerm) ||
                     item.barcode.toLowerCase().includes(searchTerm)
                 );
             }
-            
+
             const categories = groupByCategory(filteredItems);
             Object.keys(categories).sort().forEach(category => {
                 const categoryDiv = document.createElement('div');
@@ -250,10 +281,10 @@
                         `;
                         categoryDiv.appendChild(card);
                         setTimeout(() => {
-                            JsBarcode(`#barcode-${sanitizeBarcode(item.barcode)}`, sanitizeBarcode(item.barcode), { 
-                                format: "CODE128", 
-                                width: 2, 
-                                height: 60, 
+                            JsBarcode(`#barcode-${sanitizeBarcode(item.barcode)}`, sanitizeBarcode(item.barcode), {
+                                format: "CODE128",
+                                width: 2,
+                                height: 60,
                                 displayValue: true,
                                 fontSize: 12,
                                 margin: 10
@@ -265,22 +296,22 @@
 
             // Attach delete handlers
             document.querySelectorAll('.delete-item').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const category = this.getAttribute('data-category');
                     const idx = parseInt(this.getAttribute('data-index'));
                     const categoryItems = categories[category];
                     const itemToDelete = categoryItems[idx];
-                    
+
                     // Store the item to delete for the confirmation modal
                     window._itemToDelete = itemToDelete;
-                    
+
                     // Show confirmation modal
                     const deleteModal = new bootstrap.Modal(document.getElementById('deleteItemModal'));
                     document.getElementById('deleteItemConfirmInput').value = '';
                     document.getElementById('deleteItemConfirmError').style.display = 'none';
                     document.getElementById('confirmDeleteItem').disabled = true;
                     deleteModal.show();
-                    
+
                     // Focus input when modal is shown
                     document.getElementById('deleteItemModal').addEventListener('shown.bs.modal', function () {
                         document.getElementById('deleteItemConfirmInput').focus();
@@ -290,7 +321,7 @@
 
             // Attach download handlers for individual barcodes
             document.querySelectorAll('.download-single').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const barcode = this.getAttribute('data-barcode');
                     const sanitized = sanitizeBarcode(barcode);
                     const svgElement = document.getElementById(`barcode-${sanitized}`);
@@ -302,9 +333,9 @@
         }
 
         // Add new item
-        document.getElementById('addItemForm').addEventListener('submit', async function(e) {
+        document.getElementById('addItemForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const itemName = document.getElementById('itemName').value;
             const itemId = document.getElementById('itemId').value;
             const barcode = document.getElementById('barcode').value;
@@ -350,13 +381,13 @@
 
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', generateBarcodes);
-        document.getElementById('clearSearch').addEventListener('click', function() {
+        document.getElementById('clearSearch').addEventListener('click', function () {
             document.getElementById('searchInput').value = '';
             generateBarcodes();
         });
 
         // Download all barcodes
-        document.getElementById('downloadAll').addEventListener('click', function() {
+        document.getElementById('downloadAll').addEventListener('click', function () {
             const zip = new JSZip();
             const promises = [];
 
@@ -372,19 +403,19 @@
                             const ctx = canvas.getContext('2d');
                             const img = new Image();
                             const svgData = new XMLSerializer().serializeToString(svg);
-                            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
                             const url = URL.createObjectURL(svgBlob);
-                            
-                            img.onload = function() {
+
+                            img.onload = function () {
                                 canvas.width = img.width;
                                 canvas.height = img.height;
                                 ctx.drawImage(img, 0, 0);
                                 const pngData = canvas.toDataURL('image/png').split(',')[1];
-                                zip.file(filename, pngData, {base64: true});
+                                zip.file(filename, pngData, { base64: true });
                                 URL.revokeObjectURL(url);
                                 resolve();
                             };
-                            
+
                             img.src = url;
                         })
                     );
@@ -393,7 +424,7 @@
 
             // Create and download zip when all barcodes are processed
             Promise.all(promises).then(() => {
-                zip.generateAsync({type: 'blob'}).then(function(content) {
+                zip.generateAsync({ type: 'blob' }).then(function (content) {
                     const downloadLink = document.createElement('a');
                     downloadLink.download = 'inventory_barcodes.zip';
                     downloadLink.href = URL.createObjectURL(content);
@@ -404,26 +435,26 @@
         });
 
         // Import Excel functionality
-        document.getElementById('importExcel').addEventListener('click', function() {
+        document.getElementById('importExcel').addEventListener('click', function () {
             document.getElementById('excelInput').click();
         });
 
         // Excel import handler
-        document.getElementById('excelInput').addEventListener('change', async function(e) {
+        document.getElementById('excelInput').addEventListener('change', async function (e) {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
-            reader.onload = async function(evt) {
+            reader.onload = async function (evt) {
                 const data = new Uint8Array(evt.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                
+
                 // Get column headers
                 const header = rows[0].map(h => h ? h.toLowerCase() : '');
                 const newItems = [];
-                
+
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
                     // Try different column header variations
@@ -431,7 +462,7 @@
                     let itemName = row[header.indexOf('name')] || row[header.indexOf('item name')] || row[header.indexOf('itemname')];
                     let barcode = row[header.indexOf('barcode')] || row[header.indexOf('barcode id')];
                     let status = row[header.indexOf('status')] || 'available';
-                    
+
                     if (itemId && itemName && barcode) {
                         newItems.push({
                             id: String(itemId),
@@ -441,7 +472,7 @@
                         });
                     }
                 }
-                
+
                 // Add to Firebase first
                 if (rentalFirebaseService) {
                     try {
@@ -454,31 +485,31 @@
                         // Still add to local array even if Firebase fails
                     }
                 }
-                
+
                 // Merge: update existing or add new
                 const itemMap = {};
                 inventoryItems.forEach(item => { itemMap[item.id] = item; });
                 newItems.forEach(item => { itemMap[item.id] = item; });
                 inventoryItems = Object.values(itemMap);
-                
+
                 // Fallback to localStorage if Firebase not available
                 if (!rentalFirebaseService) {
                     localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
                 }
-                
+
                 generateBarcodes();
-                
+
                 // Show success message
                 alert(`Successfully imported ${newItems.length} items from Excel file.`);
             };
             reader.readAsArrayBuffer(file);
-            
+
             // Clear the file input
             e.target.value = '';
         });
 
         // Export to Excel
-        document.getElementById('exportExcel').addEventListener('click', function() {
+        document.getElementById('exportExcel').addEventListener('click', function () {
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(inventoryItems.map(item => ({
                 'Item ID': item.id,
@@ -497,28 +528,28 @@
         const confirmDeleteAllBtn = document.getElementById('confirmDeleteAll');
         const deleteConfirmError = document.getElementById('deleteConfirmError');
 
-        deleteAllBtn.addEventListener('click', function() {
+        deleteAllBtn.addEventListener('click', function () {
             deleteConfirmInput.value = '';
             confirmDeleteAllBtn.disabled = true;
             deleteConfirmError.style.display = 'none';
             deleteAllModal.show();
         });
 
-        deleteConfirmInput.addEventListener('input', function() {
+        deleteConfirmInput.addEventListener('input', function () {
             const isValid = this.value === 'Delete';
             confirmDeleteAllBtn.disabled = !isValid;
             deleteConfirmError.style.display = isValid ? 'none' : 'block';
         });
 
         // Handle Enter key for delete confirmation
-        deleteConfirmInput.addEventListener('keydown', function(e) {
+        deleteConfirmInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && this.value === 'Delete') {
                 e.preventDefault();
                 confirmDeleteAllBtn.click();
             }
         });
 
-        confirmDeleteAllBtn.addEventListener('click', async function() {
+        confirmDeleteAllBtn.addEventListener('click', async function () {
             if (deleteConfirmInput.value === 'Delete') {
                 // Delete all from Firebase first
                 if (rentalFirebaseService) {
@@ -534,21 +565,21 @@
                         // Still clear local array even if Firebase fails
                     }
                 }
-                
+
                 // Clear all inventory items
                 inventoryItems = [];
-                
+
                 // Fallback to localStorage if Firebase not available
                 if (!rentalFirebaseService) {
                     localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
                 }
-                
+
                 // Update display
                 generateBarcodes();
-                
+
                 // Close modal
                 deleteAllModal.hide();
-                
+
                 // Show success message
                 alert('All inventory items have been deleted successfully.');
             }
@@ -561,14 +592,14 @@
         const deleteItemConfirmError = document.getElementById('deleteItemConfirmError');
 
         // Enable/disable delete button based on input
-        deleteItemConfirmInput.addEventListener('input', function() {
+        deleteItemConfirmInput.addEventListener('input', function () {
             const isValid = this.value === 'Delete';
             confirmDeleteItemBtn.disabled = !isValid;
             deleteItemConfirmError.style.display = isValid ? 'none' : 'block';
         });
 
         // Handle Enter key for delete confirmation
-        deleteItemConfirmInput.addEventListener('keydown', function(e) {
+        deleteItemConfirmInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && this.value === 'Delete') {
                 e.preventDefault();
                 confirmDeleteItemBtn.click();
@@ -576,7 +607,7 @@
         });
 
         // Individual Delete Item Confirmation Handler
-        confirmDeleteItemBtn.addEventListener('click', async function() {
+        confirmDeleteItemBtn.addEventListener('click', async function () {
             if (deleteItemConfirmInput.value === 'Delete') {
                 const itemToDelete = window._itemToDelete;
                 if (itemToDelete) {
@@ -590,16 +621,16 @@
                             // Still remove from local array even if Firebase fails
                         }
                     }
-                    
+
                     inventoryItems = inventoryItems.filter(item => item.id !== itemToDelete.id);
-                    
+
                     // Fallback to localStorage if Firebase not available
                     if (!rentalFirebaseService) {
                         localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
                     }
-                    
+
                     generateBarcodes();
-                    
+
                     // Close modal
                     deleteItemModal.hide();
                 }
@@ -609,7 +640,7 @@
         // Initial render
         generateBarcodes();
     </script>
-    
+
     <!-- Firebase CDN (conditional loading) -->
     <script>
         // Only load Firebase CDN if not already loaded
@@ -618,112 +649,119 @@
             document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"><\/script>');
         }
     </script>
-    
+
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
-    
+
+    <!-- Offline Queue Service (must load before Firebase service) -->
+    <script src="offline-queue-service.js"></script>
+
     <!-- Rental Firebase Service -->
     <script src="rental-firebase-service.js"></script>
-    
+
     <script>
-    // Firebase integration for barcode generation
-    let rentalFirebaseService = null;
-    
-    // Initialize Firebase
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            if (window.firebaseDb) {
-                rentalFirebaseService = new RentalSystemFirebaseService();
-                console.log('Firebase connected for barcode generation');
-                
-                // Load inventory items from Firebase
-                try {
-                    const firebaseItems = await rentalFirebaseService.getInventoryItems();
-                    if (firebaseItems && firebaseItems.length > 0) {
-                        inventoryItems = firebaseItems;
-                        console.log('Loaded inventory items from Firebase:', firebaseItems.length);
-                    } else {
-                        console.log('No inventory items found in Firebase, using localStorage');
-                        // Keep existing localStorage items
-                    }
-                } catch (error) {
-                    console.error('Error loading inventory items from Firebase:', error);
-                    // Keep existing localStorage items
-                }
-                
-                // Update display with loaded items
-                generateBarcodes();
-                
-                // Set up real-time listener for inventory updates
-                setupInventoryListener();
-            } else {
-                throw new Error('Firebase not available');
-            }
-        } catch (error) {
-            console.error('Firebase initialization failed:', error);
-            // Keep using localStorage
-        }
-    });
-    
-    // Set up real-time listener for inventory updates
-    function setupInventoryListener() {
-        if (!rentalFirebaseService || !window.firebaseDb) {
-            console.log('Firebase service not available for real-time listener');
-            return;
-        }
-        
-        try {
-            // Listen to changes in the inventory collection
-            window.firebaseDb.collection('RentalSystem_inventory').onSnapshot((snapshot) => {
-                console.log('Inventory updated in Firebase');
-                
-                // Update the local inventoryItems array
-                inventoryItems = [];
-                snapshot.forEach((doc) => {
-                    inventoryItems.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Update the display
-                generateBarcodes();
-                
-                console.log(`Updated inventory items: ${inventoryItems.length} items`);
-            }, (error) => {
-                console.error('Error listening to inventory updates:', error);
-            });
-            
-            console.log('Real-time listener for inventory set up');
-        } catch (error) {
-            console.error('Error setting up inventory listener:', error);
-        }
-    }
-    
-    // Override updateInventoryDatabase to use Firebase
-    async function updateInventoryDatabase(items) {
-        if (rentalFirebaseService) {
+        // Firebase integration for barcode generation
+        let rentalFirebaseService = null;
+
+        // Initialize Firebase
+        document.addEventListener('DOMContentLoaded', async function () {
+            // 1. Render immediately from localStorage
+            inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+            generateBarcodes();
+
             try {
-                for (const item of items) {
-                    await rentalFirebaseService.addInventoryItem(item);
+                if (window.firebaseDb) {
+                    rentalFirebaseService = new RentalSystemFirebaseService();
+                    console.log('Firebase connected for barcode generation');
+
+                    // 2. Load inventory items from Firebase (Background update)
+                    try {
+                        const firebaseItems = await rentalFirebaseService.getInventoryItems();
+                        if (firebaseItems && firebaseItems.length > 0) {
+                            inventoryItems = firebaseItems;
+                            console.log('Loaded inventory items from Firebase:', firebaseItems.length);
+                        }
+                    } catch (error) {
+                        console.error('Error loading inventory items from Firebase:', error);
+                    }
+
+                    // Update display with loaded items
+                    generateBarcodes();
+
+                    // Set up real-time listener for inventory updates
+                    setupInventoryListener();
+                } else {
+                    throw new Error('Firebase not available');
                 }
-                console.log('Inventory items added to Firebase');
-                alert(`Successfully added ${items.length} inventory items to Firebase!`);
             } catch (error) {
-                console.error('Error adding inventory items to Firebase:', error);
+                console.error('Firebase initialization failed:', error);
+                // Keep using localStorage
+            }
+        });
+
+        // Set up real-time listener for inventory updates
+        function setupInventoryListener() {
+            if (!rentalFirebaseService || !window.firebaseDb) {
+                console.log('Firebase service not available for real-time listener');
+                return;
+            }
+
+            try {
+                // Listen to changes in the inventory collection
+                window.firebaseDb.collection('RentalSystem_inventory').onSnapshot((snapshot) => {
+                    console.log('Inventory updated in Firebase');
+
+                    // Update the local inventoryItems array
+                    inventoryItems = [];
+                    snapshot.forEach((doc) => {
+                        inventoryItems.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    // Save to localStorage
+                    localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+
+                    // Update the display
+                    generateBarcodes();
+
+                    console.log(`Updated inventory items: ${inventoryItems.length} items`);
+                }, (error) => {
+                    console.error('Error listening to inventory updates:', error);
+                });
+
+                console.log('Real-time listener for inventory set up');
+            } catch (error) {
+                console.error('Error setting up inventory listener:', error);
+            }
+        }
+
+        // Override updateInventoryDatabase to use Firebase
+        async function updateInventoryDatabase(items) {
+            if (rentalFirebaseService) {
+                try {
+                    for (const item of items) {
+                        await rentalFirebaseService.addInventoryItem(item);
+                    }
+                    console.log('Inventory items added to Firebase');
+                    alert(`Successfully added ${items.length} inventory items to Firebase!`);
+                } catch (error) {
+                    console.error('Error adding inventory items to Firebase:', error);
+                    // Fallback to localStorage
+                    const existingItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+                    const updatedItems = [...existingItems, ...items];
+                    localStorage.setItem('inventoryItems', JSON.stringify(updatedItems));
+                    alert(`Successfully added ${items.length} inventory items to localStorage!`);
+                }
+            } else {
                 // Fallback to localStorage
                 const existingItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
                 const updatedItems = [...existingItems, ...items];
                 localStorage.setItem('inventoryItems', JSON.stringify(updatedItems));
                 alert(`Successfully added ${items.length} inventory items to localStorage!`);
             }
-        } else {
-            // Fallback to localStorage
-            const existingItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
-            const updatedItems = [...existingItems, ...items];
-            localStorage.setItem('inventoryItems', JSON.stringify(updatedItems));
-            alert(`Successfully added ${items.length} inventory items to localStorage!`);
         }
-    }
     </script>
-    
+
     <script src="lib/jszip.min.js"></script>
 </body>
-</html> 
+
+</html>

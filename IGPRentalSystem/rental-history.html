@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,13 @@
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
-                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
+                <img src="../merchandise/Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo"
+                    style="height:48px;width:auto;margin-right:12px;">
                 <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -31,17 +34,20 @@
             <h1 class="mb-0">Rental History</h1>
             <div>
                 <a href="index.html" class="btn btn-outline-secondary me-2">Back to Rental System</a>
-                <button class="btn btn-outline-success nav-secure-btn me-2" data-target="financial-summary.html">Financial Summary</button>
+                <button class="btn btn-outline-success nav-secure-btn me-2"
+                    data-target="financial-summary.html">Financial Summary</button>
                 <button id="clearHistory" class="btn btn-danger me-2">Clear History</button>
                 <button id="exportExcel" class="btn btn-success me-2">Export to Excel</button>
-                <input type="file" id="importExcel" accept=".xlsx" style="display:inline-block; width:auto;" class="form-control form-control-sm" />
+                <input type="file" id="importExcel" accept=".xlsx" style="display:inline-block; width:auto;"
+                    class="form-control form-control-sm" />
             </div>
         </div>
         <div class="card">
             <div class="card-header">
                 <div class="d-flex align-items-center">
                     <label for="historyDateFilter" class="form-label mb-0 me-2">Filter by Date:</label>
-                    <input type="date" id="historyDateFilter" class="form-control form-control-sm" style="max-width:200px;display:inline-block;">
+                    <input type="date" id="historyDateFilter" class="form-control form-control-sm"
+                        style="max-width:200px;display:inline-block;">
                     <button id="showMonthBtn" class="btn btn-secondary btn-sm ms-2">Show Month</button>
                     <button id="showAllDatesBtn" class="btn btn-info btn-sm ms-2">Show All Dates</button>
                 </div>
@@ -49,7 +55,8 @@
             <div class="card-body">
                 <div class="mb-3">
                     <h5>Total Profit: <span id="totalProfit">₱0</span></h5>
-                    <button id="payAllBtn" class="btn btn-warning btn-sm ms-3" style="display:none;">Mark All as Paid</button>
+                    <button id="payAllBtn" class="btn btn-warning btn-sm ms-3" style="display:none;">Mark All as
+                        Paid</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table">
@@ -84,7 +91,8 @@
         </div>
     </div>
     <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -93,7 +101,8 @@
                 </div>
                 <div class="modal-body">
                     <p>Type <strong>Delete</strong> to confirm clearing all rental history. This cannot be undone.</p>
-                    <input type="text" class="form-control" id="deleteConfirmInput" placeholder="Type 'Delete' to confirm">
+                    <input type="text" class="form-control" id="deleteConfirmInput"
+                        placeholder="Type 'Delete' to confirm">
                     <div id="deleteConfirmError" class="text-danger mt-2" style="display:none;"></div>
                 </div>
                 <div class="modal-footer">
@@ -104,7 +113,8 @@
         </div>
     </div>
     <!-- Individual Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteRecordModal" tabindex="-1" aria-labelledby="deleteRecordModalLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteRecordModal" tabindex="-1" aria-labelledby="deleteRecordModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -113,7 +123,8 @@
                 </div>
                 <div class="modal-body">
                     <p>Type <strong>Delete</strong> to confirm deleting this rental record. This cannot be undone.</p>
-                    <input type="text" class="form-control" id="deleteRecordConfirmInput" placeholder="Type 'Delete' to confirm">
+                    <input type="text" class="form-control" id="deleteRecordConfirmInput"
+                        placeholder="Type 'Delete' to confirm">
                     <div id="deleteRecordConfirmError" class="text-danger mt-2" style="display:none;"></div>
                 </div>
                 <div class="modal-footer">
@@ -124,58 +135,77 @@
         </div>
     </div>
     <!-- Officer Verification Modal (copied from welcome.html for security) -->
-    <div class="modal fade" id="officerVerifyModal" tabindex="-1" aria-labelledby="officerVerifyModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="officerVerifyModalLabel">Officer Verification</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Scan Officer Barcode</label>
-              <div id="scannedBarcodeDisplay" class="form-control bg-light" style="height:38px; line-height:38px; font-size:1.1em; user-select:all;">Waiting for scan...</div>
+    <div class="modal fade" id="officerVerifyModal" tabindex="-1" aria-labelledby="officerVerifyModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="officerVerifyModalLabel">Officer Verification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Scan Officer Barcode</label>
+                        <div id="scannedBarcodeDisplay" class="form-control bg-light"
+                            style="height:38px; line-height:38px; font-size:1.1em; user-select:all;">Waiting for scan...
+                        </div>
+                    </div>
+                    <div class="text-center mb-2">or</div>
+                    <div class="mb-3">
+                        <label for="officerPasswordInput" class="form-label">Enter Password</label>
+                        <input type="password" class="form-control" id="officerPasswordInput"
+                            placeholder="Enter password...">
+                    </div>
+                    <div id="officerVerifyError" class="text-danger mb-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="officerVerifyBtn">Verify</button>
+                </div>
             </div>
-            <div class="text-center mb-2">or</div>
-            <div class="mb-3">
-              <label for="officerPasswordInput" class="form-label">Enter Password</label>
-              <input type="password" class="form-control" id="officerPasswordInput" placeholder="Enter password...">
-            </div>
-            <div id="officerVerifyError" class="text-danger mb-2" style="display:none;"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="officerVerifyBtn">Verify</button>
-          </div>
         </div>
-      </div>
     </div>
     <script src="lib/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
     <script src="lib/xlsx.full.min.js"></script>
     <script src="lib/encoder.js"></script>
+    <!-- Offline queue helper must load before Firebase service -->
+    <script src="offline-queue-service.js"></script>
     <script>
         // Initialize Firebase
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
+            // 1. Render immediately from localStorage
+            rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            updateRentalHistoryTableStandalone();
+
             try {
                 if (window.firebaseDb) {
                     rentalFirebaseService = new RentalSystemFirebaseService();
-                    rentalRecords = await rentalFirebaseService.getRentalRecords();
-                    console.log('Rental history loaded from Firebase');
-                    
+
+                    // 2. Load from Firebase (Background update)
+                    try {
+                        const records = await rentalFirebaseService.getRentalRecords();
+                        if (records && records.length > 0) {
+                            rentalRecords = records;
+                            console.log('Rental history loaded from Firebase');
+                            updateRentalHistoryTableStandalone();
+                        }
+                    } catch (fetchError) {
+                        console.error('Error fetching history:', fetchError);
+                    }
+
                     // Set up real-time listener for rental records
                     setupRentalRecordsListener();
                 } else {
-                    throw new Error('Firebase not available');
+                    console.warn('Firebase not available, using local data only');
                 }
             } catch (error) {
-                console.error('Firebase initialization failed, falling back to localStorage:', error);
-                rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+                console.error('Firebase initialization error:', error);
             }
-            
+
             // Initialize the page
             updateRentalHistoryTableStandalone();
-            
+
             // Set up event listeners after DOM is ready
             setTimeout(() => {
                 console.log('About to call setupEventListeners...');
@@ -187,7 +217,7 @@
                 }
             }, 100);
         });
-        
+
         function updateRentalHistoryTableStandalone() {
             const tbody = document.getElementById('rentalHistoryRecords');
             if (!tbody) return;
@@ -198,7 +228,7 @@
             let totalProfit = 0;
             let totalUnpaid = 0;
             let hasUnpaid = false;
-            
+
             // Filter records by date if a filter is selected, otherwise show all records
             let filteredRecords = rentalRecords;
             if (filterDate) {
@@ -209,14 +239,14 @@
                     return recordDateStr === filterDateStr;
                 });
             }
-            
+
             // Sort: non-returned first, then returned, newest first within each group
             filteredRecords = filteredRecords.sort((a, b) => {
                 if (a.status === 'returned' && b.status !== 'returned') return 1;
                 if (a.status !== 'returned' && b.status === 'returned') return -1;
                 return new Date(b.rentalDate) - new Date(a.rentalDate);
             });
-            
+
             filteredRecords.forEach(record => {
                 const rentalDateObj = new Date(record.rentalDate);
                 const rentalDate = rentalDateObj.toLocaleDateString();
@@ -238,10 +268,10 @@
                     <td>${timeRented}</td>
                     <td>${expectedReturn}</td>
                     <td>${timeReturned}</td>
-                    <td>${record.returnDate && record.dueDate ? 
-                        (new Date(record.returnDate) > new Date(record.dueDate) ? 
-                            formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) : 
-                            '-') : 
+                    <td>${record.returnDate && record.dueDate ?
+                        (new Date(record.returnDate) > new Date(record.dueDate) ?
+                            formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) :
+                            '-') :
                         '-'}</td>
                     <td>${record.status}</td>
                     <td>${record.officerName ? record.officerName : ''}</td>
@@ -272,9 +302,9 @@
                 `;
                 tbody.appendChild(row);
                 let price = (typeof record.totalCost === 'number') ? record.totalCost
-                        : (typeof record.baseCost === 'number') ? record.baseCost
+                    : (typeof record.baseCost === 'number') ? record.baseCost
                         : (typeof record.cost === 'number') ? record.cost
-                        : 0;
+                            : 0;
                 if (record.paymentStatus === 'paid' && price) {
                     totalProfit += price;
                 }
@@ -289,16 +319,16 @@
             document.getElementById('payAllBtn').style.display = hasUnpaid ? '' : 'none';
             setupDeleteRecordButtons(); // Call setupDeleteRecordButtons after table is populated
         }
-        
+
         function setupEventListeners() {
             console.log('Setting up event listeners...');
-            
+
             // Check if buttons exist
             console.log('clearHistory button:', document.getElementById('clearHistory'));
             console.log('exportExcel button:', document.getElementById('exportExcel'));
             console.log('showMonthBtn button:', document.getElementById('showMonthBtn'));
             console.log('showAllDatesBtn button:', document.getElementById('showAllDatesBtn'));
-            
+
             // Date filter change - listen to both input and change events
             const dateFilter = document.getElementById('historyDateFilter');
             if (dateFilter) {
@@ -308,11 +338,11 @@
             } else {
                 console.log('Date filter not found');
             }
-            
+
             // Show month button
             const showMonthBtn = document.getElementById('showMonthBtn');
             if (showMonthBtn) {
-                showMonthBtn.addEventListener('click', function() {
+                showMonthBtn.addEventListener('click', function () {
                     console.log('Show month button clicked');
                     const dateInput = document.getElementById('historyDateFilter');
                     if (!dateInput.value) return;
@@ -356,10 +386,10 @@
                             <td>${timeRented}</td>
                             <td>${expectedReturn}</td>
                             <td>${timeReturned}</td>
-                            <td>${record.returnDate && record.dueDate ? 
-                                (new Date(record.returnDate) > new Date(record.dueDate) ? 
-                                    formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) : 
-                                    '-') : 
+                            <td>${record.returnDate && record.dueDate ?
+                                (new Date(record.returnDate) > new Date(record.dueDate) ?
+                                    formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) :
+                                    '-') :
                                 '-'}</td>
                             <td>${record.status}</td>
                             <td>${record.officerName ? record.officerName : ''}</td>
@@ -390,9 +420,9 @@
                         `;
                         tbody.appendChild(row);
                         let price = (typeof record.totalCost === 'number') ? record.totalCost
-                                : (typeof record.baseCost === 'number') ? record.baseCost
+                            : (typeof record.baseCost === 'number') ? record.baseCost
                                 : (typeof record.cost === 'number') ? record.cost
-                                : 0;
+                                    : 0;
                         if (record.paymentStatus === 'paid' && price) {
                             totalProfit += price;
                         }
@@ -408,53 +438,53 @@
                 });
                 console.log('Show month button listener added');
             }
-            
+
             // Show all dates button
             const showAllDatesBtn = document.getElementById('showAllDatesBtn');
             if (showAllDatesBtn) {
-                showAllDatesBtn.addEventListener('click', function() {
+                showAllDatesBtn.addEventListener('click', function () {
                     console.log('Show all dates button clicked');
                     document.getElementById('historyDateFilter').value = '';
                     updateRentalHistoryTableStandalone();
                 });
                 console.log('Show all dates button listener added');
             }
-            
+
             // Clear History button
             const clearHistoryBtn = document.getElementById('clearHistory');
             if (clearHistoryBtn) {
                 console.log('Found clearHistory button, adding listener...');
-                clearHistoryBtn.addEventListener('click', function() {
+                clearHistoryBtn.addEventListener('click', function () {
                     console.log('Clear history button clicked');
-            // Show modal for delete confirmation
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-            document.getElementById('deleteConfirmInput').value = '';
-            document.getElementById('deleteConfirmError').style.display = 'none';
-            deleteModal.show();
-            // Focus input when modal is shown
-            document.getElementById('deleteConfirmModal').addEventListener('shown.bs.modal', function () {
-                document.getElementById('deleteConfirmInput').focus();
-            }, { once: true });
-                    document.getElementById('deleteConfirmBtn').onclick = async function() {
-                const val = document.getElementById('deleteConfirmInput').value.trim();
-                if (val === 'Delete') {
+                    // Show modal for delete confirmation
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+                    document.getElementById('deleteConfirmInput').value = '';
+                    document.getElementById('deleteConfirmError').style.display = 'none';
+                    deleteModal.show();
+                    // Focus input when modal is shown
+                    document.getElementById('deleteConfirmModal').addEventListener('shown.bs.modal', function () {
+                        document.getElementById('deleteConfirmInput').focus();
+                    }, { once: true });
+                    document.getElementById('deleteConfirmBtn').onclick = async function () {
+                        const val = document.getElementById('deleteConfirmInput').value.trim();
+                        if (val === 'Delete') {
                             // Clear from Firebase first
                             if (rentalFirebaseService && window.firebaseDb) {
                                 try {
                                     console.log('Starting Firebase deletion...');
-                                    
+
                                     // First, try to use the current rentalRecords array (already loaded with Firebase IDs)
                                     let recordsToDelete = rentalRecords.filter(record => record.id);
-                                    
+
                                     // If no records have IDs, fetch from Firebase to get the IDs
                                     if (recordsToDelete.length === 0 && rentalRecords.length > 0) {
                                         console.log('Local records missing IDs, fetching from Firebase...');
                                         recordsToDelete = await rentalFirebaseService.getRentalRecords();
                                     }
-                                    
+
                                     if (recordsToDelete.length > 0) {
                                         console.log(`Deleting ${recordsToDelete.length} records from Firebase...`);
-                                        
+
                                         // Delete records in parallel for better performance
                                         // Each promise handles its own errors, so Promise.all will wait for all to complete
                                         const deletePromises = recordsToDelete.map(async (record) => {
@@ -472,13 +502,13 @@
                                                 return { success: false, id: record.id, error: error.message };
                                             }
                                         });
-                                        
+
                                         const results = await Promise.all(deletePromises);
                                         const successCount = results.filter(r => r.success).length;
                                         const failCount = results.filter(r => !r.success).length;
-                                        
+
                                         console.log(`Firebase deletion complete: ${successCount} succeeded, ${failCount} failed`);
-                                        
+
                                         if (failCount > 0) {
                                             console.warn('Some records failed to delete from Firebase:', results.filter(r => !r.success));
                                         }
@@ -493,38 +523,38 @@
                             } else {
                                 console.log('Firebase service not available, skipping Firebase deletion');
                             }
-                            
+
                             // Clear from localStorage
-                    localStorage.removeItem('rentalRecords');
-                            
+                            localStorage.removeItem('rentalRecords');
+
                             // Clear the local array
                             rentalRecords = [];
-                            
-                    // Update the table display
-                    updateRentalHistoryTableStandalone();
-                    
-                    // Hide the modal
-                    deleteModal.hide();
-                    
-                    // Show success message
-                    alert('All rental history has been cleared successfully!');
-                } else {
-                    const err = document.getElementById('deleteConfirmError');
-                    err.textContent = "You must type 'Delete' to confirm.";
-                    err.style.display = 'block';
-                }
-            };
-        });
+
+                            // Update the table display
+                            updateRentalHistoryTableStandalone();
+
+                            // Hide the modal
+                            deleteModal.hide();
+
+                            // Show success message
+                            alert('All rental history has been cleared successfully!');
+                        } else {
+                            const err = document.getElementById('deleteConfirmError');
+                            err.textContent = "You must type 'Delete' to confirm.";
+                            err.style.display = 'block';
+                        }
+                    };
+                });
                 console.log('Clear history button listener added');
             } else {
                 console.log('Clear history button not found');
             }
-            
+
             // Export to Excel button
             const exportExcelBtn = document.getElementById('exportExcel');
             if (exportExcelBtn) {
                 console.log('Found exportExcel button, adding listener...');
-                exportExcelBtn.addEventListener('click', function() {
+                exportExcelBtn.addEventListener('click', function () {
                     console.log('Export to Excel button clicked');
                     setupExportToExcel();
                 });
@@ -532,9 +562,9 @@
             } else {
                 console.log('Export to Excel button not found');
             }
-            
+
             console.log('All event listeners set up');
-            
+
             // Test if buttons can be clicked manually
             console.log('Testing button clicks...');
             setTimeout(() => {
@@ -548,39 +578,42 @@
                 }
             }, 200);
         }
-        
+
         // Set up real-time listener for rental records
         function setupRentalRecordsListener() {
             if (!rentalFirebaseService) {
                 console.log('Firebase service not available for real-time listener');
                 return;
             }
-            
+
             try {
                 // Listen to changes in the rental records collection
                 window.firebaseDb.collection('RentalSystem_rentalRecords').onSnapshot((snapshot) => {
                     console.log('Rental records updated in Firebase');
-                    
+
                     // Update the local rentalRecords array
                     rentalRecords = [];
                     snapshot.forEach((doc) => {
                         rentalRecords.push({ id: doc.id, ...doc.data() });
                     });
-                    
+
+                    // Save to localStorage
+                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+
                     // Update the table display
                     updateRentalHistoryTableStandalone();
-                    
+
                     console.log(`Updated rental records: ${rentalRecords.length} records`);
                 }, (error) => {
                     console.error('Error listening to rental records:', error);
                 });
-                
+
                 console.log('Real-time listener for rental records set up');
             } catch (error) {
                 console.error('Error setting up rental records listener:', error);
             }
         }
-        
+
         // Export to Excel
         function setupExportToExcel() {
             if (!rentalRecords.length) {
@@ -607,7 +640,7 @@
                 const monthRecords = recordsByMonth[monthYear];
                 const [year, month] = monthYear.split('-');
                 const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
-                
+
                 // Group records by week
                 const recordsByWeek = {};
                 monthRecords.forEach(record => {
@@ -624,7 +657,7 @@
                     const weekRecords = recordsByWeek[weekNumber];
                     const exportData = [
                         [
-                            'Item ID', 'Name', 'Rented By', 'Section', 'Rental Date', 'Time Rented', 
+                            'Item ID', 'Name', 'Rented By', 'Section', 'Rental Date', 'Time Rented',
                             'Expected Return', 'Time Returned', 'Overdue Time', 'Status',
                             'Processed By', 'Returned By', 'Price', 'Payment Status'
                         ]
@@ -644,7 +677,7 @@
                         }
                         const dueDate = r.dueDate ? new Date(r.dueDate) : null;
                         let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
-                        
+
                         let overdueTime = '-';
                         if (r.returnDate && r.dueDate) {
                             const returnDate = new Date(r.returnDate);
@@ -670,8 +703,8 @@
                             (() => {
                                 let price = (typeof r.totalCost === 'number') ? r.totalCost
                                     : (typeof r.baseCost === 'number') ? r.baseCost
-                                    : (typeof r.cost === 'number') ? r.cost
-                                    : 0;
+                                        : (typeof r.cost === 'number') ? r.cost
+                                            : 0;
                                 if (r.paymentStatus === 'paid') {
                                     weekTotalProfit += price;
                                 } else if (r.paymentStatus === 'unpaid') {
@@ -691,7 +724,7 @@
 
                     // Create worksheet
                     const ws = XLSX.utils.aoa_to_sheet(exportData);
-                    
+
                     // Set column widths for better spacing
                     ws['!cols'] = [
                         { wch: 12 },  // Item ID
@@ -709,7 +742,7 @@
                         { wch: 10 },  // Price
                         { wch: 14 }   // Payment Status
                     ];
-                    
+
                     // Add the worksheet to the workbook
                     const sheetName = `${monthName} Week ${weekNumber}`;
                     XLSX.utils.book_append_sheet(wb, ws, sheetName);
@@ -722,11 +755,11 @@
             XLSX.writeFile(wb, `rental-history-${dateStr}.xlsx`);
         }
         // Import from Excel
-        document.getElementById('importExcel').addEventListener('change', function(e) {
+        document.getElementById('importExcel').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = function (evt) {
                 const data = new Uint8Array(evt.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -825,37 +858,66 @@
         async function markAsPaid(itemId, returnDate) {
             const rental = rentalRecords.find(record => record.itemId === itemId && record.returnDate === returnDate);
             if (rental) {
+                // Store the old payment status for rollback if needed
+                const oldPaymentStatus = rental.paymentStatus;
                 rental.paymentStatus = 'paid';
-                
-                // Save to Firebase or localStorage
-                if (rentalFirebaseService) {
-                    try {
+
+                try {
+                    // Always update localStorage first
+                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+
+                    // Then update Firebase if available
+                    if (rentalFirebaseService && rental.id) {
                         await rentalFirebaseService.updateRentalRecord(rental.id, rental);
                         console.log('Payment status updated in Firebase');
-                    } catch (error) {
-                        console.error('Error updating payment in Firebase:', error);
-                        // Fallback to localStorage
-                localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                    } else if (rentalFirebaseService && !rental.id) {
+                        console.warn('Rental record missing Firebase ID, cannot update Firebase directly');
+                        // Try to find the record in Firebase by matching fields
+                        try {
+                            const firebaseRecords = await rentalFirebaseService.getRentalRecords();
+                            const firebaseRecord = firebaseRecords.find(fr =>
+                                fr.itemId === itemId &&
+                                fr.returnDate === returnDate
+                            );
+                            if (firebaseRecord) {
+                                await rentalFirebaseService.updateRentalRecord(firebaseRecord.id, { ...firebaseRecord, paymentStatus: 'paid' });
+                                console.log('Payment status updated in Firebase (found by matching)');
+                                // Update the local record with the Firebase ID
+                                rental.id = firebaseRecord.id;
+                                localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                            } else {
+                                console.warn('Could not find matching record in Firebase');
+                            }
+                        } catch (findError) {
+                            console.error('Error finding record in Firebase:', findError);
+                        }
                     }
-                } else {
-                    // Fallback to localStorage
+                } catch (error) {
+                    console.error('Error updating payment status:', error);
+                    // Rollback the change if Firebase update failed
+                    rental.paymentStatus = oldPaymentStatus;
                     localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                    alert('Failed to update payment status. Please try again.');
+                    return;
                 }
-                
+
                 // Refresh the table
                 if (typeof updateRentalHistoryTableStandalone === 'function') {
                     updateRentalHistoryTableStandalone();
                 }
+            } else {
+                console.error('Rental record not found for itemId:', itemId, 'returnDate:', returnDate);
+                alert('Rental record not found. Please refresh the page and try again.');
             }
         }
         // Pay All button logic
-        document.getElementById('payAllBtn').onclick = async function() {
+        document.getElementById('payAllBtn').onclick = async function () {
             let changed = false;
             for (const record of rentalRecords) {
                 if (record.paymentStatus === 'unpaid') {
                     record.paymentStatus = 'paid';
                     changed = true;
-                    
+
                     // Save to Firebase
                     if (rentalFirebaseService) {
                         try {
@@ -866,11 +928,11 @@
                     }
                 }
             }
-            
+
             if (changed) {
                 // Fallback to localStorage if Firebase not available
                 if (!rentalFirebaseService) {
-                localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
                 }
                 updateRentalHistoryTableStandalone();
                 alert('All unpaid records marked as paid!');
@@ -879,103 +941,103 @@
             }
         };
         // Officer/Password Security for All Nav Buttons
-        document.addEventListener('DOMContentLoaded', function() {
-          const navSecureBtns = document.querySelectorAll('.nav-secure-btn');
-          const officerVerifyModalEl = document.getElementById('officerVerifyModal');
-          const officerVerifyModal = new bootstrap.Modal(officerVerifyModalEl);
-          const passwordInput = document.getElementById('officerPasswordInput');
-          const errorDiv = document.getElementById('officerVerifyError');
-          const verifyBtn = document.getElementById('officerVerifyBtn');
-          const scannedBarcodeDisplay = document.getElementById('scannedBarcodeDisplay');
-          let barcodeBuffer = '';
-          let barcodeTimer = null;
-          let modalOpen = false;
-          let navTarget = null;
+        document.addEventListener('DOMContentLoaded', function () {
+            const navSecureBtns = document.querySelectorAll('.nav-secure-btn');
+            const officerVerifyModalEl = document.getElementById('officerVerifyModal');
+            const officerVerifyModal = new bootstrap.Modal(officerVerifyModalEl);
+            const passwordInput = document.getElementById('officerPasswordInput');
+            const errorDiv = document.getElementById('officerVerifyError');
+            const verifyBtn = document.getElementById('officerVerifyBtn');
+            const scannedBarcodeDisplay = document.getElementById('scannedBarcodeDisplay');
+            let barcodeBuffer = '';
+            let barcodeTimer = null;
+            let modalOpen = false;
+            let navTarget = null;
 
-          function updateBarcodeDisplayMasked() {
-            scannedBarcodeDisplay.textContent = barcodeBuffer.length > 0 ? '*'.repeat(barcodeBuffer.length) : 'Waiting for scan...';
-          }
+            function updateBarcodeDisplayMasked() {
+                scannedBarcodeDisplay.textContent = barcodeBuffer.length > 0 ? '*'.repeat(barcodeBuffer.length) : 'Waiting for scan...';
+            }
 
-          navSecureBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-              errorDiv.style.display = 'none';
-              passwordInput.value = '';
-              scannedBarcodeDisplay.textContent = 'Waiting for scan...';
-              barcodeBuffer = '';
-              navTarget = btn.getAttribute('data-target');
-              officerVerifyModal.show();
+            navSecureBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    errorDiv.style.display = 'none';
+                    passwordInput.value = '';
+                    scannedBarcodeDisplay.textContent = 'Waiting for scan...';
+                    barcodeBuffer = '';
+                    navTarget = btn.getAttribute('data-target');
+                    officerVerifyModal.show();
+                });
             });
-          });
 
-          officerVerifyModalEl.addEventListener('shown.bs.modal', function () {
-            modalOpen = true;
-            scannedBarcodeDisplay.textContent = 'Waiting for scan...';
-            barcodeBuffer = '';
-          });
-          officerVerifyModalEl.addEventListener('hidden.bs.modal', function () {
-            modalOpen = false;
-            barcodeBuffer = '';
-            navTarget = null;
-          });
+            officerVerifyModalEl.addEventListener('shown.bs.modal', function () {
+                modalOpen = true;
+                scannedBarcodeDisplay.textContent = 'Waiting for scan...';
+                barcodeBuffer = '';
+            });
+            officerVerifyModalEl.addEventListener('hidden.bs.modal', function () {
+                modalOpen = false;
+                barcodeBuffer = '';
+                navTarget = null;
+            });
 
-          function verifyOfficerAccess(barcodeOverride) {
-            const barcode = (barcodeOverride !== undefined ? barcodeOverride : '').trim();
-            const password = passwordInput.value.trim();
-            if (!navTarget) return;
-            // Check password first
-            if (password === 'AISERS2025') {
-              window.location.href = navTarget;
-              return;
+            function verifyOfficerAccess(barcodeOverride) {
+                const barcode = (barcodeOverride !== undefined ? barcodeOverride : '').trim();
+                const password = passwordInput.value.trim();
+                if (!navTarget) return;
+                // Check password first
+                if (password === 'AISERS2025') {
+                    window.location.href = navTarget;
+                    return;
+                }
+                // Check barcode against officer database
+                let officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
+                if (barcode) {
+                    let found = officers.find(officer => encodeStudentData(officer.officerId) === barcode || officer.officerId === barcode);
+                    if (found) {
+                        window.location.href = navTarget;
+                        return;
+                    }
+                    errorDiv.textContent = 'Invalid barcode or password.';
+                    errorDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = 'Please scan a barcode or enter the password.';
+                    errorDiv.style.display = 'block';
+                }
             }
-            // Check barcode against officer database
-            let officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
-            if (barcode) {
-              let found = officers.find(officer => encodeStudentData(officer.officerId) === barcode || officer.officerId === barcode);
-              if (found) {
-                window.location.href = navTarget;
-                return;
-              }
-              errorDiv.textContent = 'Invalid barcode or password.';
-              errorDiv.style.display = 'block';
-            } else {
-              errorDiv.textContent = 'Please scan a barcode or enter the password.';
-              errorDiv.style.display = 'block';
-            }
-          }
 
-          verifyBtn.addEventListener('click', function() {
-            verifyOfficerAccess(barcodeBuffer);
-          });
-          passwordInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') verifyOfficerAccess(barcodeBuffer);
-          });
-
-          // Global key listener for barcode scanning
-          document.addEventListener('keydown', function(e) {
-            if (!modalOpen) return;
-            // Ignore if password input is focused
-            if (document.activeElement === passwordInput) return;
-            if (e.key === 'Enter') {
-              if (barcodeBuffer.length > 0) {
-                updateBarcodeDisplayMasked();
+            verifyBtn.addEventListener('click', function () {
                 verifyOfficerAccess(barcodeBuffer);
-                barcodeBuffer = '';
-              }
-              e.preventDefault();
-              return;
-            }
-            // Ignore special keys
-            if (e.key.length === 1) {
-              barcodeBuffer += e.key;
-              updateBarcodeDisplayMasked();
-              // Reset buffer if no input for 100ms (barcode scanners are fast)
-              if (barcodeTimer) clearTimeout(barcodeTimer);
-              barcodeTimer = setTimeout(() => {
-                barcodeBuffer = '';
-                updateBarcodeDisplayMasked();
-              }, 100);
-            }
-          });
+            });
+            passwordInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') verifyOfficerAccess(barcodeBuffer);
+            });
+
+            // Global key listener for barcode scanning
+            document.addEventListener('keydown', function (e) {
+                if (!modalOpen) return;
+                // Ignore if password input is focused
+                if (document.activeElement === passwordInput) return;
+                if (e.key === 'Enter') {
+                    if (barcodeBuffer.length > 0) {
+                        updateBarcodeDisplayMasked();
+                        verifyOfficerAccess(barcodeBuffer);
+                        barcodeBuffer = '';
+                    }
+                    e.preventDefault();
+                    return;
+                }
+                // Ignore special keys
+                if (e.key.length === 1) {
+                    barcodeBuffer += e.key;
+                    updateBarcodeDisplayMasked();
+                    // Reset buffer if no input for 100ms (barcode scanners are fast)
+                    if (barcodeTimer) clearTimeout(barcodeTimer);
+                    barcodeTimer = setTimeout(() => {
+                        barcodeBuffer = '';
+                        updateBarcodeDisplayMasked();
+                    }, 100);
+                }
+            });
         });
         function formatMsToHHMMSS(ms) {
             let totalSeconds = Math.floor(ms / 1000);
@@ -986,7 +1048,7 @@
         }
         function setupDeleteRecordButtons() {
             document.querySelectorAll('.delete-record-btn').forEach(btn => {
-                btn.onclick = function() {
+                btn.onclick = function () {
                     const itemId = btn.getAttribute('data-itemid');
                     const returnDate = btn.getAttribute('data-returndate');
                     // Store for modal
@@ -1001,16 +1063,16 @@
                 };
             });
         }
-        document.getElementById('deleteRecordConfirmBtn').onclick = async function() {
+        document.getElementById('deleteRecordConfirmBtn').onclick = async function () {
             const val = document.getElementById('deleteRecordConfirmInput').value.trim();
             if (val === 'Delete') {
                 const { itemId, returnDate } = window._deleteRecordTarget || {};
                 if (itemId) {
                     // Find the record to delete
-                    const recordToDelete = rentalRecords.find(record => 
+                    const recordToDelete = rentalRecords.find(record =>
                         record.itemId === itemId && record.returnDate === returnDate
                     );
-                    
+
                     // Remove from Firebase first
                     if (rentalFirebaseService && recordToDelete) {
                         try {
@@ -1021,17 +1083,17 @@
                             // Still remove from local array even if Firebase fails
                         }
                     }
-                    
+
                     // Remove from local array
-                    rentalRecords = rentalRecords.filter(record => 
+                    rentalRecords = rentalRecords.filter(record =>
                         !(record.itemId === itemId && record.returnDate === returnDate)
                     );
-                    
+
                     // Fallback to localStorage if Firebase not available
                     if (!rentalFirebaseService) {
-                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
+                        localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
                     }
-                    
+
                     updateRentalHistoryTableStandalone();
                     const deleteRecordModal = bootstrap.Modal.getInstance(document.getElementById('deleteRecordModal'));
                     if (deleteRecordModal) deleteRecordModal.hide();
@@ -1043,27 +1105,28 @@
             }
         };
         // Individual record delete modal Enter key support
-        document.getElementById('deleteRecordConfirmInput').addEventListener('keydown', function(e) {
+        document.getElementById('deleteRecordConfirmInput').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 document.getElementById('deleteRecordConfirmBtn').click();
             }
         });
         // Clear-all history modal Enter key support
-        document.getElementById('deleteConfirmInput').addEventListener('keydown', function(e) {
+        document.getElementById('deleteConfirmInput').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 document.getElementById('deleteConfirmBtn').click();
             }
         });
     </script>
-    
+
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
+
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
-    
+
     <!-- Rental Firebase Service -->
     <script src="rental-firebase-service.js"></script>
 </body>
-</html> 
+
+</html>

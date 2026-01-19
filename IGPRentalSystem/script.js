@@ -15,39 +15,53 @@ let html5Qrcode = null;
 let lastBeepTime = 0;
 
 // Initialize the system
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
+    // 1. Load from localStorage FIRST (for instant display & offline support)
+    rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+    inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
+    students = JSON.parse(localStorage.getItem('barcodeStudents')) || [];
+    officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
+
     // Initialize Firebase
     try {
         if (window.firebaseDb) {
             rentalFirebaseService = new RentalSystemFirebaseService();
-            
-            // Load data from Firebase
-            rentalRecords = await rentalFirebaseService.getRentalRecords();
-            inventoryItems = await rentalFirebaseService.getInventoryItems();
-            students = await rentalFirebaseService.getStudents();
-            officers = await rentalFirebaseService.getOfficers();
-            
-            console.log('Firebase data loaded successfully');
-            
+
+            // 2. Sync with Firebase in BACKGROUND (updates localStorage + UI)
+            Promise.all([
+                rentalFirebaseService.getRentalRecords(),
+                rentalFirebaseService.getInventoryItems(),
+                rentalFirebaseService.getStudents(),
+                rentalFirebaseService.getOfficers()
+            ]).then(([records, items, studentList, officerList]) => {
+                rentalRecords = records;
+                inventoryItems = items;
+                students = studentList;
+                officers = officerList;
+
+                console.log('Firebase data synced & saved to localStorage');
+
+                // Update tables with fresh data
+                updateAvailableItemsTable();
+                updateRentalRecordsTable();
+                updateRentalHistoryTable();
+            }).catch(err => {
+                console.warn('Background sync failed, staying with local data:', err);
+            });
+
             // Set up real-time listeners
             setupRealtimeListeners();
         } else {
-            throw new Error('Firebase not available');
+            console.warn('Firebase not available, running in offline mode');
         }
     } catch (error) {
-        console.error('Firebase initialization failed, falling back to localStorage:', error);
-        
-        // Fallback to localStorage
-        rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
-        inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
-        students = JSON.parse(localStorage.getItem('barcodeStudents')) || [];
-        officers = JSON.parse(localStorage.getItem('barcodeOfficers')) || [];
+        console.error('Firebase initialization error:', error);
     }
     // Initialize inventory if empty
     if (inventoryItems.length === 0) {
         initializeDefaultInventory();
     }
-    
+
     // Initialize officers if empty
     if (officers.length === 0) {
         initializeDefaultOfficers();
@@ -61,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (scanMode && manualMode) {
         // Toggle between scan and manual input modes
-        scanMode.addEventListener('change', function() {
+        scanMode.addEventListener('change', function () {
             if (this.checked) {
                 barcodeInputSection.style.display = 'block';
                 manualInputSection.style.display = 'none';
@@ -71,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
-        manualMode.addEventListener('change', function() {
+        manualMode.addEventListener('change', function () {
             if (this.checked) {
                 barcodeInputSection.style.display = 'none';
                 manualInputSection.style.display = 'block';
@@ -93,14 +107,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         const manualStudentInputs = document.getElementById('manualStudentInputs');
 
         if (rentMode && returnMode && manualStudentInputs) {
-            rentMode.addEventListener('change', function() {
+            rentMode.addEventListener('change', function () {
                 if (this.checked && manualMode.checked) {
                     manualStudentInputs.style.display = 'block';
                     populateDropdowns('rent');
                 }
             });
 
-            returnMode.addEventListener('change', function() {
+            returnMode.addEventListener('change', function () {
                 if (this.checked && manualMode.checked) {
                     manualStudentInputs.style.display = 'none';
                     populateDropdowns('return');
@@ -111,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Add officer barcode scanning functionality
         const barcodeInputOfficer = document.getElementById('barcodeInputOfficer');
         if (barcodeInputOfficer) {
-            barcodeInputOfficer.addEventListener('input', function(e) {
+            barcodeInputOfficer.addEventListener('input', function (e) {
                 const scannedValue = e.target.value.trim();
                 if (!scannedValue) return;
 
@@ -120,8 +134,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (beep) { beep.currentTime = 0; beep.play(); }
 
                 // Look for officer
-                const foundOfficer = officers.find(officer => 
-                    encodeStudentData(officer.officerId) === scannedValue || 
+                const foundOfficer = officers.find(officer =>
+                    encodeStudentData(officer.officerId) === scannedValue ||
                     officer.officerId === scannedValue
                 );
 
@@ -129,11 +143,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (foundOfficer) {
                     sessionStorage.setItem('tempOfficer', JSON.stringify(foundOfficer));
                     scanResult.innerHTML = `<span class='info'>✓ Officer verified: ${foundOfficer.officerName}</span>`;
-                    
+
                     // Automatically process the transaction
                     const scanMode = document.querySelector('input[name="scanMode"]:checked').value;
                     const itemSelect = document.getElementById('itemSelect');
-                    
+
                     if (!itemSelect.value) {
                         scanResult.innerHTML = '<span class="error">✗ Please select an item first</span>';
                         return;
@@ -187,11 +201,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
     }
-    
+
     // Manual item barcode input to auto-select item in dropdown
     const barcodeInputItemManual = document.getElementById('barcodeInputItemManual');
     if (barcodeInputItemManual) {
-        barcodeInputItemManual.addEventListener('input', function(e) {
+        barcodeInputItemManual.addEventListener('input', function (e) {
             const scannedValueRaw = e.target.value.trim();
             if (!scannedValueRaw) return;
             const scannedValue = normalizeBarcode(scannedValueRaw);
@@ -218,23 +232,23 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Validate eligibility for current mode
             const itemStatus = (foundItem.status || 'available').toLowerCase();
             const currentlyRented = isItemRented(foundItem);
-            
+
             if (mode === 'rent') {
                 // Get current student info if available
                 const tempRenter = JSON.parse(sessionStorage.getItem('tempRenter') || 'null');
                 const currentStudentId = tempRenter ? tempRenter.studentId : '';
-                
+
                 // Check if item is reserved
                 if (itemStatus === 'reserved') {
                     const reservedBy = foundItem.reservedBy || foundItem.currentRenter || '';
-                    
+
                     // Extract student ID from reservedBy
                     let reservedStudentId = '';
                     if (reservedBy) {
                         const match = reservedBy.match(/\(([^)]+)\)/);
                         reservedStudentId = match ? match[1].trim() : reservedBy.trim();
                     }
-                    
+
                     // If reserved by someone else, block immediately
                     if (reservedStudentId && currentStudentId && reservedStudentId !== currentStudentId) {
                         if (scanResult) scanResult.innerHTML = `<span class='error'>✗ Item ${foundItem.name} (${foundItem.id}) is reserved by ${reservedBy} and cannot be rented by other students</span>`;
@@ -243,7 +257,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                     // If reserved by current student or no student ID available, allow to proceed (will be validated in handleRental)
                 }
-                
+
                 // Block rented items or items with invalid status
                 if (itemStatus === 'rented' || (itemStatus !== 'reserved' && itemStatus !== 'available') || currentlyRented) {
                     if (scanResult) scanResult.innerHTML = `<span class='error'>✗ Item ${foundItem.name} (${foundItem.id}) is not available for rental (Status: ${itemStatus})</span>`;
@@ -286,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             setTimeout(() => { e.target.value = ''; }, 200);
         });
     }
-    
+
     // Barcode input logic
     const barcodeInput = document.getElementById('barcodeInput');
     const scanResult = document.getElementById('scanResult');
@@ -297,7 +311,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (barcodeInput) {
         barcodeInput.focus();
         barcodeInput.disabled = false;
-        barcodeInput.addEventListener('input', function(e) {
+        barcodeInput.addEventListener('input', function (e) {
             // Prevent scan logic if input is disabled or a modal is open
             if (barcodeInput.disabled || document.querySelector('.modal.show')) {
                 barcodeInput.value = '';
@@ -309,15 +323,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Play beep sound
             const beep = document.getElementById('beepSound');
             if (beep) { beep.currentTime = 0; beep.play(); }
-            
+
             // Get current scan mode
             const scanMode = document.querySelector('input[name="scanMode"]:checked').value;
-            
+
             if (scanMode === 'rent') {
                 // Check scanning state
                 const tempRenter = sessionStorage.getItem('tempRenter');
                 const tempOfficer = sessionStorage.getItem('tempOfficer');
-                
+
                 if (!tempRenter) {
                     // First scan: look for student
                     const foundStudent = students.find(student => encodeStudentData(student.studentId) === scannedValue || student.studentId === scannedValue);
@@ -356,7 +370,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 } else {
                     // Third scan: look for item and process rental
-                    let foundItem = inventoryItems.find(item => 
+                    let foundItem = inventoryItems.find(item =>
                         normalizeBarcode(item.barcode) === normalizeBarcode(scannedValue) ||
                         normalizeBarcode(item.id) === normalizeBarcode(scannedValue)
                     );
@@ -367,14 +381,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                             const tempRenterObj = JSON.parse(tempRenter);
                             const currentStudentId = tempRenterObj ? tempRenterObj.studentId : '';
                             const reservedBy = foundItem.reservedBy || foundItem.currentRenter || '';
-                            
+
                             // Extract student ID from reservedBy
                             let reservedStudentId = '';
                             if (reservedBy) {
                                 const match = reservedBy.match(/\(([^)]+)\)/);
                                 reservedStudentId = match ? match[1].trim() : reservedBy.trim();
                             }
-                            
+
                             // Block if reserved by someone else
                             if (reservedStudentId && currentStudentId && reservedStudentId !== currentStudentId) {
                                 scanResult.innerHTML = `<span class='error'>✗ Item ${foundItem.name} (${foundItem.id}) is reserved by ${reservedBy} and cannot be rented by other students</span>`;
@@ -385,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 return;
                             }
                         }
-                        
+
                         scanResult.innerHTML = '';
                         handleRental(foundItem);
                         return; // Prevent error message after modal
@@ -407,7 +421,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 } else {
                     // Second scan: look for item and ask confirmation before processing return
-                    let foundItem = inventoryItems.find(item => 
+                    let foundItem = inventoryItems.find(item =>
                         normalizeBarcode(item.barcode) === normalizeBarcode(scannedValue) ||
                         normalizeBarcode(item.id) === normalizeBarcode(scannedValue)
                     );
@@ -426,27 +440,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         // Keep focus on input
-        document.addEventListener('click', function() {
+        document.addEventListener('click', function () {
             if (!barcodeInput.disabled) barcodeInput.focus();
         });
     }
 
     if (activateScanBtn) {
-        activateScanBtn.addEventListener('click', function() {
+        activateScanBtn.addEventListener('click', function () {
             barcodeInput.disabled = false;
             barcodeInput.focus();
         });
     }
 
     if (deactivateScanBtn) {
-        deactivateScanBtn.addEventListener('click', function() {
+        deactivateScanBtn.addEventListener('click', function () {
             barcodeInput.blur();
             barcodeInput.disabled = true;
         });
     }
 
     if (cancelTransactionBtn) {
-        cancelTransactionBtn.addEventListener('click', function() {
+        cancelTransactionBtn.addEventListener('click', function () {
             sessionStorage.removeItem('tempRenter');
             sessionStorage.removeItem('tempOfficer');
             if (scanResult) scanResult.innerHTML = 'Transaction cancelled. Ready for new scan.';
@@ -467,7 +481,7 @@ function setupRealtimeListeners() {
         console.log('Firebase service not available for real-time listeners');
         return;
     }
-    
+
     try {
         // Listen to inventory changes
         window.firebaseDb.collection('RentalSystem_inventory').onSnapshot((snapshot) => {
@@ -476,8 +490,8 @@ function setupRealtimeListeners() {
             snapshot.forEach((doc) => {
                 const itemData = doc.data();
                 // Preserve all fields including rental times and reservation info
-                inventoryItems.push({ 
-                    id: doc.id, 
+                inventoryItems.push({
+                    id: doc.id,
                     ...itemData,
                     rentalStartTime: itemData.rentalStartTime || null,
                     rentalEndTime: itemData.rentalEndTime || null,
@@ -487,11 +501,13 @@ function setupRealtimeListeners() {
                 });
             });
             updateAvailableItemsTable();
+            // Save to localStorage
+            localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
             console.log(`Updated inventory: ${inventoryItems.length} items`);
         }, (error) => {
             console.error('Error listening to inventory:', error);
         });
-        
+
         // Listen to rental records changes
         window.firebaseDb.collection('RentalSystem_rentalRecords').onSnapshot((snapshot) => {
             console.log('Rental records updated in Firebase');
@@ -500,12 +516,15 @@ function setupRealtimeListeners() {
                 rentalRecords.push({ id: doc.id, ...doc.data() });
             });
             updateRentalRecordsTable();
+            updateRentalRecordsTable();
             updateRentalHistoryTable();
+            // Save to localStorage
+            localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
             console.log(`Updated rental records: ${rentalRecords.length} records`);
         }, (error) => {
             console.error('Error listening to rental records:', error);
         });
-        
+
         console.log('Real-time listeners set up successfully');
     } catch (error) {
         console.error('Error setting up real-time listeners:', error);
@@ -549,7 +568,7 @@ async function checkUnpaidTransactions(studentId) {
     if (!studentId) {
         return false;
     }
-    
+
     try {
         // Check Firebase first if available
         if (rentalFirebaseService && window.firebaseDb) {
@@ -560,20 +579,20 @@ async function checkUnpaidTransactions(studentId) {
                 const querySnapshot = await window.firebaseDb.collection('RentalSystem_rentalRecords')
                     .where('renterId', '==', studentId)
                     .get();
-                
+
                 // Check if any returned records have paymentStatus === 'unpaid'
                 let hasUnpaid = false;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const status = (data.status || '').toLowerCase().trim();
                     const paymentStatus = (data.paymentStatus || '').toLowerCase().trim();
-                    
+
                     // Check if record is returned and unpaid
                     if (status === 'returned' && paymentStatus === 'unpaid') {
                         hasUnpaid = true;
                     }
                 });
-                
+
                 if (hasUnpaid) {
                     return true;
                 }
@@ -582,19 +601,19 @@ async function checkUnpaidTransactions(studentId) {
                 // If Firebase query fails (e.g., no index), fall through to localStorage check
             }
         }
-        
+
         // Fallback to check against the global rentalRecords array (updated in real-time)
         // or localStorage if the global array is not available
-        let recordsToCheck = rentalRecords && rentalRecords.length > 0 
-            ? rentalRecords 
+        let recordsToCheck = rentalRecords && rentalRecords.length > 0
+            ? rentalRecords
             : JSON.parse(localStorage.getItem('rentalRecords') || '[]');
-        
-        const hasUnpaid = recordsToCheck.some(record => 
-            record.renterId === studentId && 
-            (record.status || '').toLowerCase().trim() === 'returned' && 
+
+        const hasUnpaid = recordsToCheck.some(record =>
+            record.renterId === studentId &&
+            (record.status || '').toLowerCase().trim() === 'returned' &&
             (record.paymentStatus || '').toLowerCase().trim() === 'unpaid'
         );
-        
+
         return hasUnpaid;
     } catch (error) {
         console.error('Error checking unpaid transactions:', error);
@@ -602,19 +621,19 @@ async function checkUnpaidTransactions(studentId) {
         try {
             // First try global rentalRecords array (updated in real-time)
             if (typeof rentalRecords !== 'undefined' && rentalRecords && rentalRecords.length > 0) {
-                const hasUnpaid = rentalRecords.some(record => 
-                    record.renterId === studentId && 
-                    (record.status || '').toLowerCase().trim() === 'returned' && 
+                const hasUnpaid = rentalRecords.some(record =>
+                    record.renterId === studentId &&
+                    (record.status || '').toLowerCase().trim() === 'returned' &&
                     (record.paymentStatus || '').toLowerCase().trim() === 'unpaid'
                 );
                 if (hasUnpaid) return true;
             }
-            
+
             // Fallback to localStorage
             let localRecords = JSON.parse(localStorage.getItem('rentalRecords') || '[]');
-            return localRecords.some(record => 
-                record.renterId === studentId && 
-                (record.status || '').toLowerCase().trim() === 'returned' && 
+            return localRecords.some(record =>
+                record.renterId === studentId &&
+                (record.status || '').toLowerCase().trim() === 'returned' &&
                 (record.paymentStatus || '').toLowerCase().trim() === 'unpaid'
             );
         } catch (e) {
@@ -626,24 +645,24 @@ async function checkUnpaidTransactions(studentId) {
 
 function handleRental(item) {
     const scanResult = document.getElementById('scanResult');
-    
+
     // Check item status from Firebase (source of truth)
     const itemStatus = (item.status || '').toLowerCase();
-    
+
     // Get student and officer info from session storage
     const tempRenter = JSON.parse(sessionStorage.getItem('tempRenter'));
     const tempOfficer = JSON.parse(sessionStorage.getItem('tempOfficer'));
-    
+
     if (!tempRenter) {
         scanResult.innerHTML = `<span class='error'>✗ Please scan student ID first</span>`;
         return;
     }
-    
+
     if (!tempOfficer) {
         scanResult.innerHTML = `<span class='error'>✗ Please scan officer ID to verify</span>`;
         return;
     }
-    
+
     // Check for unpaid transactions before allowing rental
     const studentId = tempRenter.studentId || '';
     checkUnpaidTransactions(studentId).then(hasUnpaid => {
@@ -661,7 +680,7 @@ function handleRental(item) {
             sessionStorage.removeItem('tempOfficer');
             return;
         }
-        
+
         // Continue with rental process if no unpaid transactions
         proceedWithRental(item, tempRenter, tempOfficer, itemStatus, scanResult);
     }).catch(error => {
@@ -672,24 +691,24 @@ function handleRental(item) {
 }
 
 function proceedWithRental(item, tempRenter, tempOfficer, itemStatus, scanResult) {
-    
+
     // Check if item is reserved - STRICT: Only the student who reserved it can rent it
     if (itemStatus === 'reserved') {
         const reservedBy = item.reservedBy || item.currentRenter || '';
         const studentId = tempRenter.studentId || '';
-        
+
         // If item is reserved but no reservedBy info, block rental for safety
         if (!reservedBy) {
             scanResult.innerHTML = `<span class='error'>✗ Item ${item.name} (${item.id}) is reserved and cannot be rented (reservation information unavailable)</span>`;
             return;
         }
-        
+
         // If no student ID available, block rental
         if (!studentId) {
             scanResult.innerHTML = `<span class='error'>✗ Item ${item.name} (${item.id}) is reserved and cannot be rented (student identification required)</span>`;
             return;
         }
-        
+
         // Extract student ID from reservedBy field (format might be "Name (ID)" or just "ID")
         let reservedStudentId = '';
         // Try to extract ID from format "Name (ID)" or just use the whole string if it's just an ID
@@ -700,7 +719,7 @@ function proceedWithRental(item, tempRenter, tempOfficer, itemStatus, scanResult
             // If no parentheses, check if it's just an ID format
             reservedStudentId = reservedBy.trim();
         }
-        
+
         // Strict comparison: Student ID must match exactly
         if (reservedStudentId && studentId && reservedStudentId === studentId) {
             // Allow rental - this student reserved it
@@ -711,17 +730,17 @@ function proceedWithRental(item, tempRenter, tempOfficer, itemStatus, scanResult
             return;
         }
     }
-    
+
     // Check if item is already rented
     if (itemStatus === 'rented') {
         scanResult.innerHTML = `<span class='error'>✗ Item ${item.name} (${item.id}) is already rented</span>`;
         return;
     }
-    
+
     // Cross-check rentalRecords for active rental of this item (fallback check)
     // Use global rentalRecords array if available, otherwise fallback to localStorage
-    const recordsToCheck = (typeof rentalRecords !== 'undefined' && rentalRecords && rentalRecords.length > 0) 
-        ? rentalRecords 
+    const recordsToCheck = (typeof rentalRecords !== 'undefined' && rentalRecords && rentalRecords.length > 0)
+        ? rentalRecords
         : JSON.parse(localStorage.getItem('rentalRecords') || '[]');
     const isRented = recordsToCheck.some(r => r.itemId === item.id && r.status === 'active');
     if (isRented && itemStatus !== 'reserved') {
@@ -772,7 +791,7 @@ function proceedWithRental(item, tempRenter, tempOfficer, itemStatus, scanResult
         const rentalHoursInput = modal.querySelector('#rentalHours');
         const rateDisplay = modal.querySelector('#rateDisplay');
         if (rentalHoursInput && rateDisplay) {
-            rentalHoursInput.addEventListener('input', function() {
+            rentalHoursInput.addEventListener('input', function () {
                 let hours = parseInt(rentalHoursInput.value);
                 if (!hours || hours < 1) hours = 1;
                 const total = hours * 10;
@@ -794,7 +813,7 @@ async function processRentalHours(item, modal) {
 
     const tempRenter = JSON.parse(sessionStorage.getItem('tempRenter'));
     const tempOfficer = JSON.parse(sessionStorage.getItem('tempOfficer'));
-    
+
     const rentalDate = new Date();
     const dueDate = new Date(rentalDate.getTime() + (rentalHours * 60 * 60 * 1000)); // Add hours to rental date
     const baseCost = rentalHours * 10; // ₱10 per hour
@@ -817,7 +836,7 @@ async function processRentalHours(item, modal) {
     // Update item status
     item.status = 'rented';
     item.currentRenter = `${tempRenter.studentName} (${tempRenter.studentId})`;
-    
+
     // Save to Firebase or localStorage
     if (rentalFirebaseService) {
         try {
@@ -856,7 +875,7 @@ async function processRentalHours(item, modal) {
     // Update scan result
     const scanResult = document.getElementById('scanResult');
     scanResult.innerHTML = `<span class='success'>✓ Successfully rented ${item.name} (${item.id}) to ${tempRenter.studentName} (${tempRenter.studentId}) by ${tempOfficer.officerName} for ${rentalHours} hours</span>`;
-    
+
     // Update tables
     updateAvailableItemsTable();
     updateRentalRecordsTable();
@@ -876,7 +895,7 @@ function closeRentalModal(modal) {
 
 // Handle return process
 async function handleReturn(item) {
-    const activeRental = rentalRecords.find(record => 
+    const activeRental = rentalRecords.find(record =>
         record.itemId === item.id && record.status === 'active'
     );
 
@@ -933,7 +952,7 @@ async function handleReturn(item) {
     item.status = 'available';
     item.lastRenter = item.currentRenter || '';
     item.currentRenter = '';
-    
+
     // Save to Firebase or localStorage
     if (rentalFirebaseService) {
         try {
@@ -994,7 +1013,7 @@ async function handleReturn(item) {
     sessionStorage.removeItem('tempOfficer');
 
     scanResult.innerHTML = `<span class='success'>✓ Successfully returned ${item.name} (${item.id}) by ${tempOfficer.officerName}</span>`;
-    
+
     // Update tables
     updateAvailableItemsTable();
     updateRentalRecordsTable();
@@ -1050,7 +1069,7 @@ async function handlePayment(itemId, returnDate, customTotal) {
             rental.totalCost = parsedCustom;
         }
         rental.paymentStatus = 'paid';
-        
+
         // Save to Firebase or localStorage
         if (rentalFirebaseService) {
             try {
@@ -1065,7 +1084,7 @@ async function handlePayment(itemId, returnDate, customTotal) {
             // Fallback to localStorage
             localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
         }
-        
+
         updateRentalRecordsTable();
         // Show success message
         const scanResult = document.getElementById('scanResult');
@@ -1120,10 +1139,10 @@ async function closePaymentDialog(itemId, returnDate, customTotal) {
 
             rental.totalCost = parsedCustom;
         }
-        
+
         // Ensure payment status is unpaid
         rental.paymentStatus = 'unpaid';
-        
+
         // Save to Firebase or localStorage
         if (rentalFirebaseService) {
             try {
@@ -1138,7 +1157,7 @@ async function closePaymentDialog(itemId, returnDate, customTotal) {
             // Fallback to localStorage
             localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
         }
-        
+
         updateRentalRecordsTable();
         // Update history table if it exists (for rental-history.html page)
         if (typeof updateRentalHistoryTable === 'function') {
@@ -1152,12 +1171,12 @@ async function closePaymentDialog(itemId, returnDate, customTotal) {
 // Helper function to format Firebase Timestamp or Date
 function formatDateTime(dateValue) {
     if (!dateValue) return '';
-    
+
     let date;
     // Handle Firebase Timestamp object
     if (dateValue.toDate && typeof dateValue.toDate === 'function') {
         date = dateValue.toDate();
-    } 
+    }
     // Handle Firestore Timestamp with seconds/nanoseconds
     else if (dateValue.seconds) {
         date = new Date(dateValue.seconds * 1000 + (dateValue.nanoseconds || 0) / 1000000);
@@ -1172,12 +1191,12 @@ function formatDateTime(dateValue) {
     else {
         return '';
     }
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
         return '';
     }
-    
+
     // Format: MM/DD/YYYY HH:MM AM/PM
     const options = {
         year: 'numeric',
@@ -1202,12 +1221,12 @@ function updateAvailableItemsTable() {
     if (filter && filter.value !== 'all') {
         filtered = filtered.filter(item => item.name === filter.value);
     }
-    
+
     // Ensure all items have required fields and preserve Firebase status
     filtered = filtered.map(item => {
         // Preserve Firebase status as source of truth
         const firebaseStatus = (item.status || '').toLowerCase();
-        
+
         // Only check local rental records if Firebase doesn't have a status
         if (!firebaseStatus || firebaseStatus === 'available') {
             const isRented = rentalRecords.some(r => r.itemId === item.id && r.status === 'active');
@@ -1218,7 +1237,7 @@ function updateAvailableItemsTable() {
                 };
             }
         }
-        
+
         // Preserve Firebase status and rental times
         return {
             ...item,
@@ -1229,19 +1248,19 @@ function updateAvailableItemsTable() {
             currentRenter: item.currentRenter || ''
         };
     });
-    
+
     // Sort: available first, then reserved, then rented, then by numeric part of ID
     filtered = filtered.sort((a, b) => {
         const statusA = (a.status || '').toLowerCase();
         const statusB = (b.status || '').toLowerCase();
-        
+
         if (statusA !== statusB) {
             if (statusA === 'available') return -1;
             if (statusB === 'available') return 1;
             if (statusA === 'reserved') return -1;
             if (statusB === 'reserved') return 1;
         }
-        
+
         const prefixA = a.id.match(/^[A-Z]+/i)?.[0] || '';
         const prefixB = b.id.match(/^[A-Z]+/i)?.[0] || '';
         if (prefixA !== prefixB) return prefixA.localeCompare(prefixB);
@@ -1249,20 +1268,20 @@ function updateAvailableItemsTable() {
         const numB = parseInt(b.id.replace(/^[A-Z]+/i, ''), 10);
         return numA - numB;
     });
-    
+
     filtered.forEach(item => {
         const status = (item.status || 'available').toLowerCase();
         let statusBadge = '';
         let renterInfo = '';
         let rentalStartTime = '';
         let rentalEndTime = '';
-        
+
         // Format rental times for reserved or rented items
         if (status === 'reserved' || status === 'rented') {
             rentalStartTime = formatDateTime(item.rentalStartTime);
             rentalEndTime = formatDateTime(item.rentalEndTime);
         }
-        
+
         // Determine status badge and renter info
         if (status === 'reserved') {
             statusBadge = '<span class="badge bg-warning text-dark">Reserved</span>';
@@ -1274,7 +1293,7 @@ function updateAvailableItemsTable() {
             statusBadge = '<span class="badge bg-success">Available</span>';
             renterInfo = '';
         }
-        
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${item.id}</td>
@@ -1480,30 +1499,30 @@ function populateDropdowns(mode = 'rent') {
             // Get current student info from sessionStorage to check if they reserved the item
             const tempRenter = JSON.parse(sessionStorage.getItem('tempRenter') || 'null');
             const currentStudentId = tempRenter ? tempRenter.studentId : '';
-            
+
             if (itemStatus === 'available' && !rented) {
                 // Fully available items
                 availableGroup.appendChild(option);
             } else if (itemStatus === 'reserved' && !rented) {
                 // Reserved items - check if reserved by current student
                 const reservedBy = item.reservedBy || item.currentRenter || '';
-                
+
                 // Extract student ID from reservedBy
                 let reservedStudentId = '';
                 if (reservedBy) {
                     const match = reservedBy.match(/\(([^)]+)\)/);
                     reservedStudentId = match ? match[1].trim() : reservedBy.trim();
                 }
-                
+
                 // Check if this item is reserved by the current student
                 const isReservedByCurrentStudent = reservedStudentId && currentStudentId && reservedStudentId === currentStudentId;
-                
+
                 if (reservedBy) {
                     option.textContent += ` — Reserved by ${reservedBy}`;
                 } else {
                     option.textContent += ` — Reserved`;
                 }
-                
+
                 // Disable option if reserved by someone else
                 if (!isReservedByCurrentStudent && reservedStudentId) {
                     option.disabled = true;
