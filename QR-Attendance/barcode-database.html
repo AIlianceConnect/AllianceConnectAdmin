@@ -32,6 +32,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <a href="welcome.html" class="btn btn-secondary">← Back</a>
         <div>
+            <button id="syncFirebase" class="btn btn-info me-2">Sync with Firebase</button>
             <span id="offlineStatus" class="badge me-2" style="display: none;"></span>
             <span id="pendingSyncCount" class="badge bg-warning me-2" style="display: none;"></span>
             <button id="clearAll" class="btn btn-danger me-2">Clear All</button>
@@ -125,29 +126,24 @@
 let firebaseDB = null;
 let students = [];
 
-// Initialize Firebase
-async function initializeFirebase() {
+// Function to sync students from Firebase (only called when Sync button is pressed)
+async function syncFromFirebase() {
     try {
         firebaseDB = window.firebaseDB;
         if (!firebaseDB) {
             console.error('Firebase not initialized. Please check firebase-config.js');
-            return false;
+            return;
         }
-
-        // Load initial data
-        students = await firebaseDB.getStudents();
-
-        // Set up real-time listener
-        firebaseDB.listenToStudents((studentList) => {
-            students = studentList;
+        // Fetch latest students from Firebase
+        const fetchedStudents = await firebaseDB.getStudents();
+        if (fetchedStudents && fetchedStudents.length > 0) {
+            students = fetchedStudents;
+            saveStudents(); // Update localStorage with synced data
             renderDatabase();
-        });
-
-        console.log('Firebase initialized successfully');
-        return true;
+            console.log('Students synced from Firebase');
+        }
     } catch (error) {
-        console.error('Error initializing Firebase:', error);
-        return false;
+        console.error('Error syncing from Firebase:', error);
     }
 }
 
@@ -188,36 +184,19 @@ window.addEventListener('offlineStatusChanged', function(event) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
-    const firebaseInitialized = await initializeFirebase();
-    
-    // Always load students from Local Storage first (for offline support)
-    // getStudents() will merge Local Storage with Firebase if online
-    if (firebaseDB) {
-        students = await firebaseDB.getStudents();
-    } else {
-        // Fallback to localStorage
-        students = loadStudents();
-    }
-    
+    // Only load students from localStorage on page load
+    students = loadStudents();
+
     // Update offline status indicator
     updateOfflineStatus();
-    // Update every 5 seconds
     setInterval(updateOfflineStatus, 5000);
-    
+
     renderDatabase();
-    
-    // Also listen for real-time updates from Firebase (if online)
-    if (firebaseInitialized && firebaseDB) {
-        firebaseDB.listenToStudents((studentList) => {
-            // Merge with Local Storage data (use studentId for deduplication)
-            if (window.offlineSync) {
-                const localStudents = window.offlineSync.getFromLocalStorage('students');
-                students = window.offlineSync.mergeData(localStudents, studentList, 'studentId');
-            } else {
-                students = studentList;
-            }
-            renderDatabase();
-        });
+
+    // Attach sync button handler
+    const syncButton = document.getElementById('syncFirebase');
+    if (syncButton) {
+        syncButton.addEventListener('click', syncFromFirebase);
     }
 });
 
