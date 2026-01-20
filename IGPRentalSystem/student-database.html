@@ -47,6 +47,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="welcome.html" class="btn btn-secondary">← Back</a>
             <div>
+                <button id="syncFirebase" class="btn btn-info me-2">Sync with Firebase</button>
                 <button id="clearAll" class="btn btn-danger me-2">Clear All</button>
                 <button id="exportExcel" class="btn btn-success">Export to Excel</button>
             </div>
@@ -188,10 +189,13 @@
             // Get search term
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
-            // Filter students based on search term
-            let filteredStudents = students;
+            // Filter students based on search term and valid ID format
+            let filteredStudents = students.filter(student => {
+                // Only show IDs that match the expected format (e.g., start with digit and contain dash)
+                return /^\d{5,}.*-.*$/.test(student.studentId);
+            });
             if (searchTerm) {
-                filteredStudents = students.filter(student =>
+                filteredStudents = filteredStudents.filter(student =>
                     student.studentId.toLowerCase().includes(searchTerm) ||
                     student.studentName.toLowerCase().includes(searchTerm) ||
                     student.section.toLowerCase().includes(searchTerm)
@@ -441,9 +445,40 @@
         // Firebase integration for student database
         let rentalFirebaseService = null;
 
-        // Initialize Firebase
+        // Initialize Firebase and sync function
+        let firebaseInitialized = false;
+
+        // Function to sync students from Firebase (only called when Sync button is pressed)
+        async function syncFromFirebase() {
+            try {
+                if (!firebaseInitialized && window.firebaseDb) {
+                    rentalFirebaseService = new RentalSystemFirebaseService();
+                    firebaseInitialized = true;
+                }
+
+                if (rentalFirebaseService) {
+                    try {
+                        const fetchedStudents = await rentalFirebaseService.getStudents();
+                        if (fetchedStudents && fetchedStudents.length > 0) {
+                            students = fetchedStudents;
+                            console.log('Students synced from Firebase');
+                            renderDatabase();
+                            saveStudents(); // Update localStorage with synced data
+                        }
+                    } catch (fetchError) {
+                        console.error('Error fetching students from Firebase:', fetchError);
+                    }
+                } else {
+                    console.warn('Firebase not available, cannot sync');
+                }
+            } catch (error) {
+                console.error('Firebase sync error:', error);
+            }
+        }
+
+        // Page load: Load from localStorage only (no Firebase READ)
         document.addEventListener('DOMContentLoaded', async function () {
-            // 1. Render from localStorage immediately
+            // Load from localStorage immediately
             try {
                 const localData = localStorage.getItem('barcodeStudents');
                 if (localData) {
@@ -454,26 +489,10 @@
                 console.warn('Error loading local student data', e);
             }
 
-            try {
-                if (window.firebaseDb) {
-                    rentalFirebaseService = new RentalSystemFirebaseService();
-
-                    // 2. Smart sync: Load only missing/updated students from Firebase
-                    try {
-                        const syncedStudents = await rentalFirebaseService.getStudentsSinceSync();
-                        if (syncedStudents && syncedStudents.length > 0) {
-                            students = syncedStudents;
-                            console.log('Students synced from Firebase (smart sync)');
-                            renderDatabase();
-                        }
-                    } catch (fetchError) {
-                        console.error('Error syncing students:', fetchError);
-                    }
-                } else {
-                    console.warn('Firebase not available, using local data');
-                }
-            } catch (error) {
-                console.error('Firebase initialization error:', error);
+            // Attach sync button handler
+            const syncButton = document.getElementById('syncFirebase');
+            if (syncButton) {
+                syncButton.addEventListener('click', syncFromFirebase);
             }
         });
 
