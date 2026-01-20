@@ -548,13 +548,16 @@
                 if (window.firebaseDb) {
                     rentalFirebaseService = new RentalSystemFirebaseService();
 
-                    // 2. Load officers from Firebase (Background)
-                    // This will also update localStorage automatically
-                    const fetchedOfficers = await rentalFirebaseService.getOfficers();
-                    if (fetchedOfficers && fetchedOfficers.length > 0) {
-                        officers = fetchedOfficers;
-                        console.log('Officers loaded from Firebase');
-                        renderDatabase();
+                    // 2. Smart sync: Load only missing/updated officers from Firebase
+                    try {
+                        const syncedOfficers = await rentalFirebaseService.getOfficersSinceSync();
+                        if (syncedOfficers && syncedOfficers.length > 0) {
+                            officers = syncedOfficers;
+                            console.log('Officers synced from Firebase (smart sync)');
+                            renderDatabase();
+                        }
+                    } catch (syncError) {
+                        console.error('Error syncing officers:', syncError);
                     }
                 } else {
                     console.warn('Firebase not available, using local data');

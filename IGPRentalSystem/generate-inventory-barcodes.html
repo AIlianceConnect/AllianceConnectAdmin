@@ -674,15 +674,15 @@
                     rentalFirebaseService = new RentalSystemFirebaseService();
                     console.log('Firebase connected for barcode generation');
 
-                    // 2. Load inventory items from Firebase (Background update)
+                    // 2. Smart sync: Load only missing/updated inventory items from Firebase
                     try {
-                        const firebaseItems = await rentalFirebaseService.getInventoryItems();
+                        const firebaseItems = await rentalFirebaseService.getInventoryItemsSinceSync();
                         if (firebaseItems && firebaseItems.length > 0) {
                             inventoryItems = firebaseItems;
-                            console.log('Loaded inventory items from Firebase:', firebaseItems.length);
+                            console.log('Synced inventory items from Firebase:', firebaseItems.length);
                         }
                     } catch (error) {
-                        console.error('Error loading inventory items from Firebase:', error);
+                        console.error('Error syncing inventory items from Firebase:', error);
                     }
 
                     // Update display with loaded items

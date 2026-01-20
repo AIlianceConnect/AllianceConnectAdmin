@@ -833,14 +833,14 @@
         }
     });
     
-    // Override loadFinancialSummary to use Firebase
+    // Override loadFinancialSummary to use Firebase with smart sync
     async function loadFinancialSummary() {
         try {
             let rentalRecords = [];
             
             if (rentalFirebaseService) {
-                rentalRecords = await rentalFirebaseService.getRentalRecords();
-                console.log('Financial data loaded from Firebase');
+                rentalRecords = await rentalFirebaseService.getRentalRecordsSinceSync();
+                console.log('Financial data synced from Firebase');
             } else {
                 // Fallback to localStorage
                 rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
@@ -850,7 +850,7 @@
             processFinancialData(rentalRecords);
             
         } catch (error) {
-            console.error('Error loading financial data:', error);
+            console.error('Error syncing financial data:', error);
             // Fallback to localStorage
             const rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
             processFinancialData(rentalRecords);

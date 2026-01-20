@@ -125,19 +125,19 @@
 
         // Update inventory table
         async function updateInventoryTable(skipFetch = false) {
-            // Load inventory items from Firebase if available
+            // Load inventory items from Firebase if available using smart sync
             if (!skipFetch && rentalFirebaseService) {
                 try {
-                    const firebaseItems = await rentalFirebaseService.getInventoryItems();
+                    const firebaseItems = await rentalFirebaseService.getInventoryItemsSinceSync();
                     if (firebaseItems && firebaseItems.length > 0) {
                         inventoryItems = firebaseItems;
-                        console.log('Loaded inventory items from Firebase for table update:', firebaseItems.length);
+                        console.log('Synced inventory items from Firebase for table update:', firebaseItems.length);
                     } else {
-                        // Fallback to localStorage if no Firebase items
+                        // Fallback to localStorage if no items
                         inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
                     }
                 } catch (error) {
-                    console.error('Error loading inventory items from Firebase:', error);
+                    console.error('Error syncing inventory items from Firebase:', error);
                     // Fallback to localStorage
                     inventoryItems = JSON.parse(localStorage.getItem('inventoryItems')) || [];
                 }
@@ -420,16 +420,16 @@
                     rentalFirebaseService = new RentalSystemFirebaseService();
                     console.log('Firebase connected for inventory management');
 
-                    // 2. Load inventory items from Firebase (Background update)
+                    // 2. Smart sync: Load only missing/updated inventory items from Firebase
                     try {
-                        const firebaseItems = await rentalFirebaseService.getInventoryItems();
+                        const firebaseItems = await rentalFirebaseService.getInventoryItemsSinceSync();
                         if (firebaseItems && firebaseItems.length > 0) {
                             inventoryItems = firebaseItems;
-                            console.log('Loaded inventory items from Firebase:', firebaseItems.length);
-                            await updateInventoryTable(true); // skip internal fetch since we just fetched
+                            console.log('Synced inventory items from Firebase:', firebaseItems.length);
+                            await updateInventoryTable(true); // skip internal fetch since we just synced
                         }
                     } catch (error) {
-                        console.error('Error loading inventory items from Firebase:', error);
+                        console.error('Error syncing inventory items from Firebase:', error);
                     }
 
                     // Set up real-time listener for inventory items (to detect reservations from Android app)

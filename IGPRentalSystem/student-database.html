@@ -458,16 +458,16 @@
                 if (window.firebaseDb) {
                     rentalFirebaseService = new RentalSystemFirebaseService();
 
-                    // 2. Load students from Firebase (Background update)
+                    // 2. Smart sync: Load only missing/updated students from Firebase
                     try {
-                        const fetchedStudents = await rentalFirebaseService.getStudents();
-                        if (fetchedStudents && fetchedStudents.length > 0) {
-                            students = fetchedStudents;
-                            console.log('Students loaded from Firebase');
+                        const syncedStudents = await rentalFirebaseService.getStudentsSinceSync();
+                        if (syncedStudents && syncedStudents.length > 0) {
+                            students = syncedStudents;
+                            console.log('Students synced from Firebase (smart sync)');
                             renderDatabase();
                         }
                     } catch (fetchError) {
-                        console.error('Error fetching students:', fetchError);
+                        console.error('Error syncing students:', fetchError);
                     }
                 } else {
                     console.warn('Firebase not available, using local data');

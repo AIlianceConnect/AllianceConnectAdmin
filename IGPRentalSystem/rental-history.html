@@ -182,16 +182,16 @@
                 if (window.firebaseDb) {
                     rentalFirebaseService = new RentalSystemFirebaseService();
 
-                    // 2. Load from Firebase (Background update)
+                    // 2. Smart sync: Load only missing/updated rental records from Firebase
                     try {
-                        const records = await rentalFirebaseService.getRentalRecords();
+                        const records = await rentalFirebaseService.getRentalRecordsSinceSync();
                         if (records && records.length > 0) {
                             rentalRecords = records;
-                            console.log('Rental history loaded from Firebase');
+                            console.log('Rental history synced from Firebase');
                             updateRentalHistoryTableStandalone();
                         }
                     } catch (fetchError) {
-                        console.error('Error fetching history:', fetchError);
+                        console.error('Error syncing history:', fetchError);
                     }
 
                     // Set up real-time listener for rental records
