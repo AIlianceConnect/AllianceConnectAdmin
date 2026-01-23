@@ -219,15 +219,8 @@
         });
 
         function updateRentalHistoryTableStandalone() {
-            const tbody = document.getElementById('rentalHistoryRecords');
-            if (!tbody) return;
             const dateInput = document.getElementById('historyDateFilter');
             let filterDate = dateInput && dateInput.value ? new Date(dateInput.value + 'T00:00:00') : null;
-            tbody.innerHTML = '';
-            // Calculate total profit
-            let totalProfit = 0;
-            let totalUnpaid = 0;
-            let hasUnpaid = false;
 
             // Filter records by date if a filter is selected, otherwise show all records
             let filteredRecords = rentalRecords;
@@ -240,84 +233,7 @@
                 });
             }
 
-            // Sort: non-returned first, then returned, newest first within each group
-            filteredRecords = filteredRecords.sort((a, b) => {
-                if (a.status === 'returned' && b.status !== 'returned') return 1;
-                if (a.status !== 'returned' && b.status === 'returned') return -1;
-                return new Date(b.rentalDate) - new Date(a.rentalDate);
-            });
-
-            filteredRecords.forEach(record => {
-                const rentalDateObj = new Date(record.rentalDate);
-                const rentalDate = rentalDateObj.toLocaleDateString();
-                const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                let timeReturned = '';
-                if (record.returnDate) {
-                    const returnDateObj = new Date(record.returnDate);
-                    timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                }
-                const dueDate = record.dueDate ? new Date(record.dueDate) : null;
-                let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${record.itemId}</td>
-                    <td>${record.itemName}</td>
-                    <td>${record.renterName} (${record.renterId})</td>
-                    <td>${record.renterSection}</td>
-                    <td>${rentalDate}</td>
-                    <td>${timeRented}</td>
-                    <td>${expectedReturn}</td>
-                    <td>${timeReturned}</td>
-                    <td>${record.returnDate && record.dueDate ?
-                        (new Date(record.returnDate) > new Date(record.dueDate) ?
-                            formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) :
-                            '-') :
-                        '-'}</td>
-                    <td>${record.status}</td>
-                    <td>${record.officerName ? record.officerName : ''}</td>
-                    <td>${record.returningOfficerName ? record.returningOfficerName : ''}</td>
-                    <td>${record.status === 'returned' ?
-                        (typeof record.totalCost === 'number' ? '₱' + record.totalCost : (typeof record.baseCost === 'number' ? '₱' + record.baseCost : (typeof record.cost === 'number' ? '₱' + record.cost : '-')))
-                        : (() => {
-                            let price = typeof record.baseCost === 'number' ? record.baseCost : 0;
-                            let overtimeCost = 0;
-                            if (record.dueDate) {
-                                let now = new Date();
-                                let dueDate = new Date(record.dueDate);
-                                if (now > dueDate) {
-                                    let overtimeMinutes = Math.ceil((now - dueDate) / (1000 * 60));
-                                    overtimeCost = Math.ceil(overtimeMinutes / 30) * 5;
-                                }
-                            }
-                            return '₱' + (price + overtimeCost);
-                        })()
-                    }</td>
-                    <td>${record.paymentStatus || '-'}</td>
-                    <td>
-                        ${(record.paymentStatus === 'unpaid' && record.status === 'returned') ? `<button class=\"btn btn-success btn-sm\" onclick=\"markAsPaid('${record.itemId}', '${record.returnDate}')\">Mark as Paid</button>` : '-'}
-                    </td>
-                    <td>
-                        ${(record.status === 'returned') ? `<button class=\"btn btn-danger btn-sm delete-record-btn\" data-itemid=\"${record.itemId}\" data-returndate=\"${record.returnDate || ''}\">Delete</button>` : '-'}
-                    </td>
-                `;
-                tbody.appendChild(row);
-                let price = (typeof record.totalCost === 'number') ? record.totalCost
-                    : (typeof record.baseCost === 'number') ? record.baseCost
-                        : (typeof record.cost === 'number') ? record.cost
-                            : 0;
-                if (record.paymentStatus === 'paid' && price) {
-                    totalProfit += price;
-                }
-                if (record.paymentStatus === 'unpaid' && price) {
-                    totalUnpaid += price;
-                    hasUnpaid = true;
-                }
-            });
-            document.getElementById('totalProfit').textContent = '₱' + totalProfit;
-            document.getElementById('totalUnpaid').textContent = '₱' + totalUnpaid;
-            // Show/hide Pay All button
-            document.getElementById('payAllBtn').style.display = hasUnpaid ? '' : 'none';
-            setupDeleteRecordButtons(); // Call setupDeleteRecordButtons after table is populated
+            renderRentalRecords(filteredRecords);
         }
 
         function setupEventListeners() {
@@ -351,90 +267,14 @@
                     const selectedYear = selectedDate.getFullYear();
                     const tbody = document.getElementById('rentalHistoryRecords');
                     if (!tbody) return;
-                    tbody.innerHTML = '';
-                    let totalProfit = 0;
-                    let totalUnpaid = 0;
-                    let hasUnpaid = false;
-                    let monthRecords = rentalRecords.filter(record => {
+
+                    // Filter by current month
+                    const filteredRecordsByMonth = rentalRecords.filter(record => {
                         const rentalDateObj = new Date(record.rentalDate);
                         return rentalDateObj.getMonth() === selectedMonth && rentalDateObj.getFullYear() === selectedYear;
                     });
-                    // Sort: non-returned first, then returned, newest first within each group
-                    monthRecords = monthRecords.sort((a, b) => {
-                        if (a.status === 'returned' && b.status !== 'returned') return 1;
-                        if (a.status !== 'returned' && b.status === 'returned') return -1;
-                        return new Date(b.rentalDate) - new Date(a.rentalDate);
-                    });
-                    monthRecords.forEach(record => {
-                        const rentalDateObj = new Date(record.rentalDate);
-                        const rentalDate = rentalDateObj.toLocaleDateString();
-                        const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                        let timeReturned = '';
-                        if (record.returnDate) {
-                            const returnDateObj = new Date(record.returnDate);
-                            timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                        }
-                        const dueDate = record.dueDate ? new Date(record.dueDate) : null;
-                        let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${record.itemId}</td>
-                            <td>${record.itemName}</td>
-                            <td>${record.renterName} (${record.renterId})</td>
-                            <td>${record.renterSection}</td>
-                            <td>${rentalDate}</td>
-                            <td>${timeRented}</td>
-                            <td>${expectedReturn}</td>
-                            <td>${timeReturned}</td>
-                            <td>${record.returnDate && record.dueDate ?
-                                (new Date(record.returnDate) > new Date(record.dueDate) ?
-                                    formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) :
-                                    '-') :
-                                '-'}</td>
-                            <td>${record.status}</td>
-                            <td>${record.officerName ? record.officerName : ''}</td>
-                            <td>${record.returningOfficerName ? record.returningOfficerName : ''}</td>
-                            <td>${record.status === 'returned' ?
-                                (typeof record.totalCost === 'number' ? '₱' + record.totalCost : (typeof record.baseCost === 'number' ? '₱' + record.baseCost : (typeof record.cost === 'number' ? '₱' + record.cost : '-')))
-                                : (() => {
-                                    let price = typeof record.baseCost === 'number' ? record.baseCost : 0;
-                                    let overtimeCost = 0;
-                                    if (record.dueDate) {
-                                        let now = new Date();
-                                        let dueDate = new Date(record.dueDate);
-                                        if (now > dueDate) {
-                                            let overtimeMinutes = Math.ceil((now - dueDate) / (1000 * 60));
-                                            overtimeCost = Math.ceil(overtimeMinutes / 30) * 5;
-                                        }
-                                    }
-                                    return '₱' + (price + overtimeCost);
-                                })()
-                            }</td>
-                            <td>${record.paymentStatus || '-'}</td>
-                            <td>
-                                ${(record.paymentStatus === 'unpaid' && record.status === 'returned') ? `<button class=\"btn btn-success btn-sm\" onclick=\"markAsPaid('${record.itemId}', '${record.returnDate}')\">Mark as Paid</button>` : '-'}
-                            </td>
-                            <td>
-                                ${(record.status === 'returned') ? `<button class=\"btn btn-danger btn-sm delete-record-btn\" data-itemid=\"${record.itemId}\" data-returndate=\"${record.returnDate || ''}\">Delete</button>` : '-'}
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                        let price = (typeof record.totalCost === 'number') ? record.totalCost
-                            : (typeof record.baseCost === 'number') ? record.baseCost
-                                : (typeof record.cost === 'number') ? record.cost
-                                    : 0;
-                        if (record.paymentStatus === 'paid' && price) {
-                            totalProfit += price;
-                        }
-                        if (record.paymentStatus === 'unpaid' && price) {
-                            totalUnpaid += price;
-                            hasUnpaid = true;
-                        }
-                    });
-                    document.getElementById('totalProfit').textContent = '₱' + totalProfit;
-                    document.getElementById('totalUnpaid').textContent = '₱' + totalUnpaid;
-                    document.getElementById('payAllBtn').style.display = hasUnpaid ? '' : 'none';
-                    setupDeleteRecordButtons(); // Call setupDeleteRecordButtons after table is populated
+
+                    renderRentalRecords(filteredRecordsByMonth);
                 });
                 console.log('Show month button listener added');
             }
@@ -624,142 +464,134 @@
             // Create a new workbook
             const wb = XLSX.utils.book_new();
 
-            // Group records by month
+            // Function to generate data rows for a set of records
+            function generateExportRows(records) {
+                const data = [
+                    [
+                        'Item ID', 'Name', 'Rented By', 'Section', 'Rental Date', 'Time Rented',
+                        'Expected Return', 'Time Returned', 'Overdue Time', 'Status',
+                        'Processed By', 'Returned By', 'Price', 'Payment Status'
+                    ]
+                ];
+
+                let totalProfit = 0;
+                let totalUnpaid = 0;
+
+                // Sort: newest first
+                const sorted = [...records].sort((a, b) => new Date(b.rentalDate) - new Date(a.rentalDate));
+
+                sorted.forEach(r => {
+                    const rentalDateObj = new Date(r.rentalDate);
+                    const rentalDate = rentalDateObj.toLocaleDateString();
+                    const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    let timeReturned = '';
+                    if (r.returnDate) {
+                        const returnDateObj = new Date(r.returnDate);
+                        timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    }
+                    const dueDate = r.dueDate ? new Date(r.dueDate) : null;
+                    let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+
+                    let overdueTime = '-';
+                    if (r.returnDate && r.dueDate) {
+                        const returnDate = new Date(r.returnDate);
+                        const dDate = new Date(r.dueDate);
+                        if (returnDate > dDate) {
+                            overdueTime = formatMsToHHMMSS(returnDate - dDate);
+                        }
+                    }
+
+                    // Price calculation (matching UI)
+                    let price = (typeof r.totalCost === 'number') ? r.totalCost
+                        : (typeof r.baseCost === 'number') ? r.baseCost
+                            : (typeof r.cost === 'number') ? r.cost
+                                : 0;
+
+                    if (r.status !== 'returned' && r.dueDate) {
+                        let now = new Date();
+                        let dDate = new Date(r.dueDate);
+                        if (now > dDate) {
+                            let overtimeMinutes = Math.ceil((now - dDate) / (1000 * 60));
+                            let overtimeCost = Math.ceil(overtimeMinutes / 30) * 5;
+                            price += overtimeCost;
+                        }
+                    }
+
+                    if (r.paymentStatus === 'paid') {
+                        totalProfit += price;
+                    } else if (r.paymentStatus === 'unpaid') {
+                        totalUnpaid += price;
+                    }
+
+                    data.push([
+                        r.itemId,
+                        r.itemName,
+                        r.renterName + ' (' + r.renterId + ')',
+                        r.renterSection,
+                        rentalDate,
+                        timeRented,
+                        expectedReturn,
+                        timeReturned,
+                        overdueTime,
+                        r.status,
+                        r.officerName || '',
+                        r.returningOfficerName || '',
+                        '₱' + price,
+                        r.paymentStatus || '-'
+                    ]);
+                });
+
+                data.push([]);
+                data.push(['', '', '', '', '', '', '', '', '', '', '', 'Total Profit (Paid)', '₱' + totalProfit, '']);
+                data.push(['', '', '', '', '', '', '', '', '', '', '', 'Total Unpaid', '₱' + totalUnpaid, '']);
+
+                return data;
+            }
+
+            // 1. MASTER SHEET (All History)
+            const masterData = generateExportRows(rentalRecords);
+            const wsMaster = XLSX.utils.aoa_to_sheet(masterData);
+
+            const cols = [
+                { wch: 12 }, { wch: 20 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
+                { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 22 }, { wch: 22 },
+                { wch: 10 }, { wch: 14 }
+            ];
+            wsMaster['!cols'] = cols;
+            XLSX.utils.book_append_sheet(wb, wsMaster, 'All History');
+
+            // 2. BREAKDOWN BY MONTH
             const recordsByMonth = {};
             rentalRecords.forEach(record => {
                 const date = new Date(record.rentalDate);
                 const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                if (!recordsByMonth[monthYear]) {
-                    recordsByMonth[monthYear] = [];
-                }
+                if (!recordsByMonth[monthYear]) recordsByMonth[monthYear] = [];
                 recordsByMonth[monthYear].push(record);
             });
 
-            // Process each month
-            Object.keys(recordsByMonth).sort().forEach(monthYear => {
+            // Sort months descending
+            Object.keys(recordsByMonth).sort().reverse().forEach(monthYear => {
                 const monthRecords = recordsByMonth[monthYear];
                 const [year, month] = monthYear.split('-');
-                const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+                const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 
-                // Group records by week
-                const recordsByWeek = {};
-                monthRecords.forEach(record => {
-                    const date = new Date(record.rentalDate);
-                    const weekNumber = Math.ceil(date.getDate() / 7);
-                    if (!recordsByWeek[weekNumber]) {
-                        recordsByWeek[weekNumber] = [];
-                    }
-                    recordsByWeek[weekNumber].push(record);
-                });
-
-                // Create a sheet for each week
-                Object.keys(recordsByWeek).sort((a, b) => parseInt(a) - parseInt(b)).forEach(weekNumber => {
-                    const weekRecords = recordsByWeek[weekNumber];
-                    const exportData = [
-                        [
-                            'Item ID', 'Name', 'Rented By', 'Section', 'Rental Date', 'Time Rented',
-                            'Expected Return', 'Time Returned', 'Overdue Time', 'Status',
-                            'Processed By', 'Returned By', 'Price', 'Payment Status'
-                        ]
-                    ];
-
-                    let weekTotalProfit = 0;
-                    let weekTotalUnpaid = 0;
-
-                    weekRecords.forEach(r => {
-                        const rentalDateObj = new Date(r.rentalDate);
-                        const rentalDate = rentalDateObj.toLocaleDateString();
-                        const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                        let timeReturned = '';
-                        if (r.returnDate) {
-                            const returnDateObj = new Date(r.returnDate);
-                            timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                        }
-                        const dueDate = r.dueDate ? new Date(r.dueDate) : null;
-                        let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
-
-                        let overdueTime = '-';
-                        if (r.returnDate && r.dueDate) {
-                            const returnDate = new Date(r.returnDate);
-                            const dueDate = new Date(r.dueDate);
-                            if (returnDate > dueDate) {
-                                overdueTime = formatMsToHHMMSS(returnDate - dueDate);
-                            }
-                        }
-
-                        exportData.push([
-                            r.itemId,
-                            r.itemName,
-                            r.renterName + ' (' + r.renterId + ')',
-                            r.renterSection,
-                            rentalDate,
-                            timeRented,
-                            expectedReturn,
-                            timeReturned,
-                            overdueTime,
-                            r.status,
-                            r.officerName || '',
-                            r.returningOfficerName || '',
-                            (() => {
-                                let price = (typeof r.totalCost === 'number') ? r.totalCost
-                                    : (typeof r.baseCost === 'number') ? r.baseCost
-                                        : (typeof r.cost === 'number') ? r.cost
-                                            : 0;
-                                if (r.paymentStatus === 'paid') {
-                                    weekTotalProfit += price;
-                                } else if (r.paymentStatus === 'unpaid') {
-                                    weekTotalUnpaid += price;
-                                }
-                                return '₱' + price;
-                            })(),
-                            r.paymentStatus || '-'
-                        ]);
-                    });
-
-                    // Add empty row for spacing
-                    exportData.push([]);
-                    // Add summary rows
-                    exportData.push(['', '', '', '', '', '', '', '', '', '', '', 'Week Total Profit', '₱' + weekTotalProfit, '']);
-                    exportData.push(['', '', '', '', '', '', '', '', '', '', '', 'Week Total Unpaid', '₱' + weekTotalUnpaid, '']);
-
-                    // Create worksheet
-                    const ws = XLSX.utils.aoa_to_sheet(exportData);
-
-                    // Set column widths for better spacing
-                    ws['!cols'] = [
-                        { wch: 12 },  // Item ID
-                        { wch: 20 },  // Name
-                        { wch: 22 },  // Rented By
-                        { wch: 14 },  // Section
-                        { wch: 12 },  // Rental Date
-                        { wch: 12 },  // Time Rented
-                        { wch: 16 },  // Expected Return
-                        { wch: 14 },  // Time Returned
-                        { wch: 14 },  // Overdue Time
-                        { wch: 10 },  // Status
-                        { wch: 22 },  // Processed By
-                        { wch: 22 },  // Returned By
-                        { wch: 10 },  // Price
-                        { wch: 14 }   // Payment Status
-                    ];
-
-                    // Add the worksheet to the workbook
-                    const sheetName = `${monthName} Week ${weekNumber}`;
-                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-                });
+                const monthData = generateExportRows(monthRecords);
+                const wsMonth = XLSX.utils.aoa_to_sheet(monthData);
+                wsMonth['!cols'] = cols;
+                XLSX.utils.book_append_sheet(wb, wsMonth, monthName);
             });
 
             // Save the workbook
             const today = new Date();
-            const dateStr = today.toISOString().split('T')[0]; // Gets YYYY-MM-DD
-            XLSX.writeFile(wb, `rental-history-${dateStr}.xlsx`);
+            const dateStr = today.toISOString().split('T')[0];
+            XLSX.writeFile(wb, `rental-history-full-${dateStr}.xlsx`);
         }
         // Import from Excel
         document.getElementById('importExcel').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function (evt) {
+            reader.onload = async function (evt) {
                 const data = new Uint8Array(evt.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -843,10 +675,29 @@
                     }
                 }
                 if (newRecords.length) {
-                    if (confirm('Importing will overwrite all current rental history. Continue?')) {
-                        localStorage.setItem('rentalRecords', JSON.stringify(newRecords));
-                        updateRentalHistoryTableStandalone();
-                        alert('Rental history imported successfully!');
+                    if (confirm('Importing will overwrite all current rental history in both Firebase and local storage. Continue?')) {
+                        try {
+                            if (rentalFirebaseService && window.firebaseDb) {
+                                // Show loading state if needed
+                                console.log('Starting Firebase sync for import...');
+
+                                // 1. Clear existing records
+                                await rentalFirebaseService.clearRentalRecords();
+
+                                // 2. Batch import new records
+                                await rentalFirebaseService.batchImportRentalRecords(newRecords);
+
+                                alert('Rental history imported and synced to Firebase successfully!');
+                            } else {
+                                // Fallback to localStorage if Firebase not available
+                                localStorage.setItem('rentalRecords', JSON.stringify(newRecords));
+                                updateRentalHistoryTableStandalone();
+                                alert('Rental history imported to local storage (Firebase not available).');
+                            }
+                        } catch (error) {
+                            console.error('Error during import sync:', error);
+                            alert('An error occurred during import. Please check the console for details.');
+                        }
                     }
                 } else {
                     alert('No valid records found in the Excel file.');
@@ -1039,45 +890,131 @@
                 }
             });
         });
-        function formatMsToHHMMSS(ms) {
-            let totalSeconds = Math.floor(ms / 1000);
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = totalSeconds % 60;
-            return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
-        }
-        function setupDeleteRecordButtons() {
-            document.querySelectorAll('.delete-record-btn').forEach(btn => {
-                btn.onclick = function () {
-                    const itemId = btn.getAttribute('data-itemid');
-                    const returnDate = btn.getAttribute('data-returndate');
-                    // Store for modal
-                    window._deleteRecordTarget = { itemId, returnDate };
-                    document.getElementById('deleteRecordConfirmInput').value = '';
-                    document.getElementById('deleteRecordConfirmError').style.display = 'none';
-                    const deleteRecordModal = new bootstrap.Modal(document.getElementById('deleteRecordModal'));
-                    deleteRecordModal.show();
-                    document.getElementById('deleteRecordModal').addEventListener('shown.bs.modal', function () {
-                        document.getElementById('deleteRecordConfirmInput').focus();
-                    }, { once: true });
-                };
+        // Shared function for rendering records to the table
+        function renderRentalRecords(recordsToRender) {
+            const tbody = document.getElementById('rentalHistoryRecords');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalProfit = 0;
+            let totalUnpaid = 0;
+            let hasUnpaid = false;
+
+            // Sort: non-returned first, then returned, newest first within each group
+            const sortedRecords = [...recordsToRender].sort((a, b) => {
+                if (a.status === 'returned' && b.status !== 'returned') return 1;
+                if (a.status !== 'returned' && b.status === 'returned') return -1;
+                return new Date(b.rentalDate) - new Date(a.rentalDate);
             });
+
+            sortedRecords.forEach(record => {
+                const rentalDateObj = new Date(record.rentalDate);
+                const rentalDate = rentalDateObj.toLocaleDateString();
+                const timeRented = rentalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                let timeReturned = '';
+                if (record.returnDate) {
+                    const returnDateObj = new Date(record.returnDate);
+                    timeReturned = returnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+                const dueDate = record.dueDate ? new Date(record.dueDate) : null;
+                let expectedReturn = dueDate ? dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.itemId}</td>
+                    <td>${record.itemName}</td>
+                    <td>${record.renterName} (${record.renterId})</td>
+                    <td>${record.renterSection}</td>
+                    <td>${rentalDate}</td>
+                    <td>${timeRented}</td>
+                    <td>${expectedReturn}</td>
+                    <td>${timeReturned}</td>
+                    <td>${record.returnDate && record.dueDate ?
+                        (new Date(record.returnDate) > new Date(record.dueDate) ?
+                            formatMsToHHMMSS(new Date(record.returnDate) - new Date(record.dueDate)) :
+                            '-') :
+                        '-'}</td>
+                    <td>${record.status}</td>
+                    <td>${record.officerName ? record.officerName : ''}</td>
+                    <td>${record.returningOfficerName ? record.returningOfficerName : ''}</td>
+                    <td>${record.status === 'returned' ?
+                        (typeof record.totalCost === 'number' ? '₱' + record.totalCost : (typeof record.baseCost === 'number' ? '₱' + record.baseCost : (typeof record.cost === 'number' ? '₱' + record.cost : '-')))
+                        : (() => {
+                            let price = typeof record.baseCost === 'number' ? record.baseCost : 0;
+                            let overtimeCost = 0;
+                            if (record.dueDate) {
+                                let now = new Date();
+                                let dueDate = new Date(record.dueDate);
+                                if (now > dueDate) {
+                                    let overtimeMinutes = Math.ceil((now - dueDate) / (1000 * 60));
+                                    overtimeCost = Math.ceil(overtimeMinutes / 30) * 5;
+                                }
+                            }
+                            return '₱' + (price + overtimeCost);
+                        })()
+                    }</td>
+                    <td>${record.paymentStatus || '-'}</td>
+                    <td>
+                        ${(record.paymentStatus === 'unpaid' && record.status === 'returned') ? `<button class="btn btn-success btn-sm" onclick="markAsPaid('${record.itemId}', '${record.returnDate}')">Mark as Paid</button>` : '-'}
+                    </td>
+                    <td>
+                        ${(record.status === 'returned') ? `<button class="btn btn-danger btn-sm" onclick="confirmDeleteRecord('${record.id || ''}', '${record.itemId}', '${record.returnDate || ''}')">Delete</button>` : '-'}
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                let price = (typeof record.totalCost === 'number') ? record.totalCost
+                    : (typeof record.baseCost === 'number') ? record.baseCost
+                        : (typeof record.cost === 'number') ? record.cost
+                            : 0;
+                if (record.paymentStatus === 'paid' && price) {
+                    totalProfit += price;
+                }
+                if (record.paymentStatus === 'unpaid' && price) {
+                    totalUnpaid += price;
+                    hasUnpaid = true;
+                }
+            });
+
+            document.getElementById('totalProfit').textContent = '₱' + totalProfit;
+            document.getElementById('totalUnpaid').textContent = '₱' + totalUnpaid;
+            // Show/hide Pay All button
+            document.getElementById('payAllBtn').style.display = hasUnpaid ? '' : 'none';
+        }
+
+        function confirmDeleteRecord(id, itemId, returnDate) {
+            // Store for modal
+            window._deleteRecordTarget = { id, itemId, returnDate };
+            document.getElementById('deleteRecordConfirmInput').value = '';
+            document.getElementById('deleteRecordConfirmError').style.display = 'none';
+            const deleteModalEl = document.getElementById('deleteRecordModal');
+            let deleteRecordModal = bootstrap.Modal.getInstance(deleteModalEl);
+            if (!deleteRecordModal) {
+                deleteRecordModal = new bootstrap.Modal(deleteModalEl);
+            }
+            deleteRecordModal.show();
+            deleteModalEl.addEventListener('shown.bs.modal', function () {
+                document.getElementById('deleteRecordConfirmInput').focus();
+            }, { once: true });
         }
         document.getElementById('deleteRecordConfirmBtn').onclick = async function () {
             const val = document.getElementById('deleteRecordConfirmInput').value.trim();
             if (val === 'Delete') {
-                const { itemId, returnDate } = window._deleteRecordTarget || {};
-                if (itemId) {
-                    // Find the record to delete
-                    const recordToDelete = rentalRecords.find(record =>
-                        record.itemId === itemId && record.returnDate === returnDate
-                    );
+                const { id, itemId, returnDate } = window._deleteRecordTarget || {};
+
+                // Find the record to delete
+                const recordToDelete = rentalRecords.find(record =>
+                    (id && record.id === id) || (record.itemId === itemId && record.returnDate === returnDate)
+                );
+
+                if (recordToDelete) {
+                    const recordId = recordToDelete.id;
 
                     // Remove from Firebase first
-                    if (rentalFirebaseService && recordToDelete) {
+                    if (rentalFirebaseService && recordId) {
                         try {
-                            await rentalFirebaseService.deleteRentalRecord(recordToDelete.id);
-                            console.log('Rental record deleted from Firebase:', recordToDelete.id);
+                            await rentalFirebaseService.deleteRentalRecord(recordId);
+                            console.log('Rental record deleted from Firebase:', recordId);
                         } catch (error) {
                             console.error('Error deleting rental record from Firebase:', error);
                             // Still remove from local array even if Firebase fails
@@ -1086,17 +1023,19 @@
 
                     // Remove from local array
                     rentalRecords = rentalRecords.filter(record =>
-                        !(record.itemId === itemId && record.returnDate === returnDate)
+                        !(record.id === recordId || (record.itemId === itemId && record.returnDate === returnDate))
                     );
 
-                    // Fallback to localStorage if Firebase not available
-                    if (!rentalFirebaseService) {
-                        localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
-                    }
+                    // Always update localStorage
+                    localStorage.setItem('rentalRecords', JSON.stringify(rentalRecords));
 
                     updateRentalHistoryTableStandalone();
                     const deleteRecordModal = bootstrap.Modal.getInstance(document.getElementById('deleteRecordModal'));
                     if (deleteRecordModal) deleteRecordModal.hide();
+
+                    alert('Rental record deleted successfully.');
+                } else {
+                    alert('Error: Could not find the record to delete.');
                 }
             } else {
                 const err = document.getElementById('deleteRecordConfirmError');
@@ -1116,6 +1055,13 @@
                 document.getElementById('deleteConfirmBtn').click();
             }
         });
+        function formatMsToHHMMSS(ms) {
+            let totalSeconds = Math.floor(ms / 1000);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+        }
     </script>
 
     <!-- Firebase CDN -->

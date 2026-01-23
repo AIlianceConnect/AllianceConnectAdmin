@@ -657,6 +657,48 @@ if (typeof RentalSystemFirebaseService === 'undefined') {
             }
         }
 
+        async clearRentalRecords() {
+            try {
+                const querySnapshot = await window.firebaseDb.collection(this.rentalRecordsCollection).get();
+                const deletePromises = querySnapshot.docs.map(doc => doc.ref.delete());
+                await Promise.all(deletePromises);
+                localStorage.removeItem('rentalRecords');
+                console.log('Rental records cleared from Firebase and localStorage');
+            } catch (error) {
+                console.error('Error clearing rental records:', error);
+                throw error;
+            }
+        }
+
+        async batchImportRentalRecords(records) {
+            try {
+                const chunks = [];
+                for (let i = 0; i < records.length; i += 500) {
+                    chunks.push(records.slice(i, i + 500));
+                }
+
+                for (const chunk of chunks) {
+                    const batch = window.firebaseDb.batch();
+                    chunk.forEach(record => {
+                        const docRef = window.firebaseDb.collection(this.rentalRecordsCollection).doc();
+                        batch.set(docRef, {
+                            ...record,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        });
+                    });
+                    await batch.commit();
+                }
+                
+                // Refresh local data from Firebase
+                await this.getRentalRecords();
+                console.log('Batch import successful');
+            } catch (error) {
+                console.error('Error in batch import:', error);
+                throw error;
+            }
+        }
+
         // ==================== REAL-TIME LISTENERS ====================
         listenToStudents(callback) {
             try {
