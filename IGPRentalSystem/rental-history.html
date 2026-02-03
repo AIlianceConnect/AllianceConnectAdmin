@@ -44,12 +44,18 @@
         </div>
         <div class="card">
             <div class="card-header">
-                <div class="d-flex align-items-center">
-                    <label for="historyDateFilter" class="form-label mb-0 me-2">Filter by Date:</label>
-                    <input type="date" id="historyDateFilter" class="form-control form-control-sm"
-                        style="max-width:200px;display:inline-block;">
-                    <button id="showMonthBtn" class="btn btn-secondary btn-sm ms-2">Show Month</button>
-                    <button id="showAllDatesBtn" class="btn btn-info btn-sm ms-2">Show All Dates</button>
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center">
+                        <label for="historyDateFilter" class="form-label mb-0 me-2">Filter by Date:</label>
+                        <input type="date" id="historyDateFilter" class="form-control form-control-sm"
+                            style="max-width:200px;display:inline-block;">
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <label for="historyMonthFilter" class="form-label mb-0 me-2">Filter by Month:</label>
+                        <input type="month" id="historyMonthFilter" class="form-control form-control-sm"
+                            style="max-width:200px;display:inline-block;">
+                    </div>
+                    <button id="showAllDatesBtn" class="btn btn-info btn-sm">Show All Dates</button>
                 </div>
             </div>
             <div class="card-body">
@@ -174,6 +180,16 @@
     <script>
         // Initialize Firebase
         document.addEventListener('DOMContentLoaded', async function () {
+            // Set default date filter to current date
+            const dateInput = document.getElementById('historyDateFilter');
+            if (dateInput) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
+            }
+
             // 1. Render immediately from localStorage
             rentalRecords = JSON.parse(localStorage.getItem('rentalRecords')) || [];
             updateRentalHistoryTableStandalone();
@@ -255,20 +271,30 @@
                 console.log('Date filter not found');
             }
 
-            // Show month button
-            const showMonthBtn = document.getElementById('showMonthBtn');
-            if (showMonthBtn) {
-                showMonthBtn.addEventListener('click', function () {
-                    console.log('Show month button clicked');
-                    const dateInput = document.getElementById('historyDateFilter');
-                    if (!dateInput.value) return;
-                    const selectedDate = new Date(dateInput.value);
-                    const selectedMonth = selectedDate.getMonth();
-                    const selectedYear = selectedDate.getFullYear();
+            // Month filter - auto-apply when changed
+            const monthFilter = document.getElementById('historyMonthFilter');
+            if (monthFilter) {
+                monthFilter.addEventListener('change', function () {
+                    console.log('Month filter changed');
+
+                    if (!monthFilter.value) {
+                        // If month filter is cleared, show all records
+                        updateRentalHistoryTableStandalone();
+                        return;
+                    }
+
+                    // Parse the month input (format: YYYY-MM)
+                    const [year, month] = monthFilter.value.split('-');
+                    const selectedMonth = parseInt(month) - 1; // JavaScript months are 0-indexed
+                    const selectedYear = parseInt(year);
+
                     const tbody = document.getElementById('rentalHistoryRecords');
                     if (!tbody) return;
 
-                    // Filter by current month
+                    // Clear the date filter when using month filter
+                    document.getElementById('historyDateFilter').value = '';
+
+                    // Filter by selected month
                     const filteredRecordsByMonth = rentalRecords.filter(record => {
                         const rentalDateObj = new Date(record.rentalDate);
                         return rentalDateObj.getMonth() === selectedMonth && rentalDateObj.getFullYear() === selectedYear;
@@ -276,7 +302,7 @@
 
                     renderRentalRecords(filteredRecordsByMonth);
                 });
-                console.log('Show month button listener added');
+                console.log('Month filter listener added');
             }
 
             // Show all dates button
@@ -285,6 +311,7 @@
                 showAllDatesBtn.addEventListener('click', function () {
                     console.log('Show all dates button clicked');
                     document.getElementById('historyDateFilter').value = '';
+                    document.getElementById('historyMonthFilter').value = '';
                     updateRentalHistoryTableStandalone();
                 });
                 console.log('Show all dates button listener added');
