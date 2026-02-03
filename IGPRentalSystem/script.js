@@ -950,8 +950,12 @@ async function handleReturn(item) {
 
     // Update item status
     item.status = 'available';
-    item.lastRenter = item.currentRenter || '';
+    item.lastRenter = item.currentRenter || item.reservedBy || '';
     item.currentRenter = '';
+    item.reservedBy = '';  // Clear reservedBy field
+    item.rentalStartTime = null;  // Clear rental times
+    item.rentalEndTime = null;
+    item.rentalHours = null;
 
     // Save to Firebase or localStorage
     if (rentalFirebaseService) {

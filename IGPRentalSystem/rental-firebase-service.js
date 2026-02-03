@@ -529,18 +529,28 @@ if (typeof RentalSystemFirebaseService === 'undefined') {
                     window.firebaseDb.collection(this.rentalRecordsCollection).add(recordData)
                 );
 
+                // Update the record with the Firebase document ID (both locally and in Firebase)
+                const firebaseId = docRef.id;
+
+                // Update the id field inside the Firebase document to match the document ID
+                try {
+                    await window.firebaseDb.collection(this.rentalRecordsCollection).doc(firebaseId).update({ id: firebaseId });
+                } catch (updateIdError) {
+                    console.warn('Failed to update id field in Firebase document:', updateIdError);
+                }
+
                 // Update the record in localStorage with Firebase ID
                 try {
                     const records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
                     const index = records.findIndex(r => r.id === recordData.id);
                     if (index >= 0) {
-                        records[index].id = docRef.id;
+                        records[index].id = firebaseId;
                         localStorage.setItem('rentalRecords', JSON.stringify(records));
                     }
                 } catch (e) { }
 
-                console.log('Rental record synced to Firebase:', docRef.id);
-                return docRef.id;
+                console.log('Rental record synced to Firebase:', firebaseId);
+                return firebaseId;
             } catch (error) {
                 console.warn('Firebase sync failed for rental record, queuing:', error);
                 window.offlineQueueService.queueOperation('addRentalRecord', recordData, this.rentalRecordsCollection);
@@ -689,7 +699,7 @@ if (typeof RentalSystemFirebaseService === 'undefined') {
                     });
                     await batch.commit();
                 }
-                
+
                 // Refresh local data from Firebase
                 await this.getRentalRecords();
                 console.log('Batch import successful');
