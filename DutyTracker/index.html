@@ -267,7 +267,12 @@
                     <audio id="beepSound" src="Barcode scanner beep sound (sound effect).mp3" preload="auto"></audio>
                 </div>
                 <div id="officerInfo" class="officer-info"></div>
-                <h3 class="mt-4">Today's Duty Logs</h3>
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <h3>Today's Duty Logs</h3>
+                    <button class="btn btn-warning btn-sm" id="testActiveCheckBtn">Test Active User Check</button>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-bordered log-table mt-2" id="logsTable">
                         <thead class="table-light">
@@ -476,6 +481,8 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Active User Check Modal was here -->
             </div>
 
 
@@ -563,6 +570,44 @@
 
         </div>
     </div>
+    <!-- Active User Check Modal (Moved to root) -->
+    <div class="modal fade" id="activeCheckModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title text-dark">⚠️ Active Duty Check</h5>
+                    <div class="ms-auto fw-bold text-dark" id="activeCheckTimer" style="font-size: 1.2rem;">15:00</div>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">All active officers must <strong>scan their ID</strong> to confirm attendance.</p>
+                    <p class="text-danger small">Unconfirmed officers will be automatically timed-out when the timer
+                        expires.</p>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped text-center">
+                            <thead>
+                                <tr>
+                                    <th>Officer ID</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeCheckList">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Hidden input for barcode capture when modal is focused -->
+                <input type="text" id="activeCheckInput" style="opacity:0; position:absolute; pointer-events:none;">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="activeCheckTestClose">Close (Test Mode)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -886,6 +931,15 @@
                 const opts = options || {};
                 const code = String(rawValue || '').trim();
                 if (!code) return;
+
+                // INTERCEPT: If Active User Check modal is open, route scan there
+                if (typeof isActiveCheckOpen !== 'undefined' && isActiveCheckOpen) {
+                    handleActiveCheckScan(code);
+                    barcodeInput.value = '';
+                    lastValue = '';
+                    return;
+                }
+
                 if (opts.beep !== false) {
                     try {
                         beepSound.currentTime = 0;
@@ -2118,6 +2172,228 @@
             el.textContent = '';
             el.style.display = 'none';
         }
+
+        // ==========================================
+        // Active User Check Feature (Auto Time-out)
+        // ==========================================
+        let activeCheckIntervalId = null;
+        let activeCheckTimerId = null;
+        let activeCheckPendingOfficers = new Set(); // Stores studentIds of unconfirmed officers
+        let isActiveCheckOpen = false;
+
+        // Configuration
+        const ACTIVE_CHECK_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+        const ACTIVE_CHECK_TIMEOUT_MS = 15 * 60 * 1000;  // 15 minutes before auto-timeout
+
+        function initActiveCheckSystem() {
+            // Start the periodic 30m trigger
+            setInterval(startActiveUserCheck, ACTIVE_CHECK_INTERVAL_MS);
+
+            // Manual Test Button
+            const testBtn = document.getElementById('testActiveCheckBtn');
+            if (testBtn) {
+                testBtn.addEventListener('click', () => startActiveUserCheck());
+            }
+
+            // Close button (for testing/emergency)
+            const closeBtn = document.getElementById('activeCheckTestClose');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('activeCheckModal'));
+                    if (modal) modal.hide();
+                    isActiveCheckOpen = false;
+                    clearInterval(activeCheckTimerId);
+                });
+            }
+
+            // --- Active Check Input Listeners ---
+            const acInput = document.getElementById('activeCheckInput');
+            if (acInput) {
+                let acLastValue = '';
+                let acScanTimeout = null;
+
+                // Process function
+                function processActiveCheckScan(rawValue) {
+                    const code = String(rawValue || '').trim();
+                    if (!code) return;
+                    console.log('Active Check Scanned:', code);
+                    handleActiveCheckScan(code);
+                    acInput.value = '';
+                    acLastValue = '';
+                }
+
+                acInput.addEventListener('input', function (e) {
+                    if (acScanTimeout) clearTimeout(acScanTimeout);
+                    if (acInput.value && acInput.value !== acLastValue) {
+                        acScanTimeout = setTimeout(() => {
+                            acLastValue = acInput.value;
+                            processActiveCheckScan(acInput.value);
+                        }, 200);
+                    }
+                });
+
+                acInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        if (acScanTimeout) clearTimeout(acScanTimeout);
+                        if (acInput.value) {
+                            processActiveCheckScan(acInput.value);
+                        }
+                    }
+                });
+
+                // Keep focus on the input if user clicks inside modal
+                const modalEl = document.getElementById('activeCheckModal');
+                if (modalEl) {
+                    modalEl.addEventListener('click', () => {
+                        acInput.focus();
+                    });
+                }
+            }
+        }
+
+        function startActiveUserCheck() {
+            console.log('Starting Active User Check...');
+            const logs = loadLogs();
+            // Filter currently active sessions (Time-in but no Time-out)
+            const activeSessions = logs.filter(l => !l.timeOut);
+            console.log('Active sessions found:', activeSessions.length, activeSessions);
+
+            if (activeSessions.length === 0) {
+                console.log('Active Check: No active users to verify.');
+                alert('No active users to check!'); // Alert for user so they know
+                return;
+            }
+
+            activeCheckPendingOfficers.clear();
+            activeSessions.forEach(s => activeCheckPendingOfficers.add(s.officerId));
+
+            renderActiveCheckList();
+
+            // Show Modal
+            const modalEl = document.getElementById('activeCheckModal');
+            if (!modalEl) { console.error('Error: activeCheckModal element not found!'); return; }
+            if (typeof bootstrap === 'undefined') { console.error('Error: bootstrap is not defined!'); return; }
+
+            console.log('Initializing Bootstrap Modal...', modalEl);
+            const modal = new bootstrap.Modal(modalEl);
+            console.log('Calling modal.show()...');
+            modal.show();
+            console.log('modal.show() called.');
+            isActiveCheckOpen = true;
+
+            // Start Countdown
+            let remainingMs = ACTIVE_CHECK_TIMEOUT_MS;
+            updateActiveCheckTimer(remainingMs);
+
+            if (activeCheckTimerId) clearInterval(activeCheckTimerId);
+            activeCheckTimerId = setInterval(() => {
+                remainingMs -= 1000;
+                updateActiveCheckTimer(remainingMs);
+
+                if (remainingMs <= 0) {
+                    clearInterval(activeCheckTimerId);
+                    finalizeActiveUserCheck();
+                }
+
+                // If everyone confirmed early
+                if (activeCheckPendingOfficers.size === 0) {
+                    clearInterval(activeCheckTimerId);
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                        isActiveCheckOpen = false;
+                        alert('All active officers confirmed!');
+                    }, 1000);
+                }
+            }, 1000);
+
+            // Focus hidden input to ensure scanner capture works if clicked
+            setTimeout(() => {
+                const input = document.getElementById('activeCheckInput');
+                if (input) input.focus();
+            }, 500);
+        }
+
+        function updateActiveCheckTimer(ms) {
+            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+            const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const ss = String(totalSeconds % 60).padStart(2, '0');
+            const el = document.getElementById('activeCheckTimer');
+            if (el) {
+                el.textContent = `${mm}:${ss}`;
+                if (totalSeconds < 60) el.classList.add('text-danger');
+                else el.classList.remove('text-danger');
+            }
+        }
+
+        function renderActiveCheckList() {
+            const tbody = document.getElementById('activeCheckList');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const logs = loadLogs();
+            const activeSessions = logs.filter(l => !l.timeOut);
+
+            activeSessions.forEach(session => {
+                const isPending = activeCheckPendingOfficers.has(session.officerId);
+                const tr = document.createElement('tr');
+                tr.className = isPending ? '' : 'table-success'; // Green row if confirmed
+
+                tr.innerHTML = `
+                    <td class="align-middle">${session.officerId}</td>
+                    <td class="align-middle fw-bold">${session.name}</td>
+                    <td class="align-middle">
+                        ${isPending
+                        ? '<span class="badge bg-danger">Pending Scan...</span>'
+                        : '<span class="badge bg-success">Confirmed</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleActiveCheckScan(barcode) {
+            // Find matching officer by barcode or studentID
+            const officer = getOfficerByBarcode(barcode);
+            if (!officer) return;
+
+            // Check if this officer is in the pending list
+            if (activeCheckPendingOfficers.has(officer.studentId)) {
+                // Confirm them!
+                activeCheckPendingOfficers.delete(officer.studentId);
+                renderActiveCheckList();
+
+                // Audio feedback
+                const beep = document.getElementById('beepSound');
+                if (beep) { beep.currentTime = 0; beep.play().catch(() => { }); }
+            }
+        }
+
+        function finalizeActiveUserCheck() {
+            if (activeCheckPendingOfficers.size > 0) {
+                console.log('Active Check Timeout! Auto-timing out officers:', activeCheckPendingOfficers);
+
+                const officersToTimeout = Array.from(activeCheckPendingOfficers);
+                const officers = loadOfficers();
+
+                officersToTimeout.forEach(id => {
+                    const officer = officers.find(o => o.studentId === id);
+                    if (officer) {
+                        toggleDuty(officer); // This will clock them out
+                    }
+                });
+
+                alert(`Time-out! ${officersToTimeout.length} officer(s) were automatically signed out due to inactivity.`);
+            }
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('activeCheckModal'));
+            if (modal) modal.hide();
+            isActiveCheckOpen = false;
+        }
+
+        // Initialize on load
+        window.addEventListener('scroll', () => { /* no-op */ }, { passive: true }); // passive listener fix
+        window.addEventListener('DOMContentLoaded', initActiveCheckSystem);
     </script>
     <!-- Extra libs for embedded barcode generation -->
     <script src="lib/JsBarcode.all.min.js"></script>
