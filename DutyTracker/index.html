@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,572 +8,703 @@
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-        .scanner-container { max-width: 400px; margin: 0 auto; }
-        .log-table { font-size: 0.95rem; }
-        .log-table th, .log-table td { vertical-align: middle; }
-        .officer-info { font-size: 1.1rem; margin-bottom: 1rem; }
-        
+        .scanner-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .log-table {
+            font-size: 0.95rem;
+        }
+
+        .log-table th,
+        .log-table td {
+            vertical-align: middle;
+        }
+
+        .officer-info {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
         /* Summary styling */
-        .summary-table { font-size: 1rem; }
-        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #b8860b; font-weight: bold; }
-        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e5e5e5); color: #555; font-weight: bold; }
-        .rank-3 { background: linear-gradient(135deg, #cd7f32, #daa520); color: #8b4513; font-weight: bold; }
-        .rank-medal { font-size: 1.2em; margin-right: 8px; }
-        .rank-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
-        .rank-badge.top { background: #28a745; color: white; }
-        .rank-badge.high { background: #17a2b8; color: white; }
-        .rank-badge.medium { background: #ffc107; color: #212529; }
-        .rank-badge.low { background: #6c757d; color: white; }
-        .duration-highlight { font-weight: bold; font-size: 1.1em; }
-        .summary-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .top-performer { box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3); }
-        .summary-row:hover { background-color: #f8f9fa; transform: translateY(-1px); transition: all 0.2s ease; }
-        
+        .summary-table {
+            font-size: 1rem;
+        }
+
+        .rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #b8860b;
+            font-weight: bold;
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #e5e5e5);
+            color: #555;
+            font-weight: bold;
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #daa520);
+            color: #8b4513;
+            font-weight: bold;
+        }
+
+        .rank-medal {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .rank-badge.top {
+            background: #28a745;
+            color: white;
+        }
+
+        .rank-badge.high {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .rank-badge.medium {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .rank-badge.low {
+            background: #6c757d;
+            color: white;
+        }
+
+        .duration-highlight {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .summary-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .top-performer {
+            box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .summary-row:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
         /* Time-in/Time-out styling */
-        .time-in-row { background-color: #d4edda; border-left: 4px solid #28a745; }
-        .time-out-row { background-color: #f8d7da; border-left: 4px solid #dc3545; }
-        .action-badge { padding: 4px 8px; border-radius: 4px; font-weight: 500; font-size: 0.85em; }
-        .action-time-in { background-color: #28a745; color: white; }
-        .action-time-out { background-color: #dc3545; color: white; }
+        .time-in-row {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .time-out-row {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.85em;
+        }
+
+        .action-time-in {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .action-time-out {
+            background-color: #dc3545;
+            color: white;
+        }
 
         /* Taskings calendar */
-        .taskings-calendar { table-layout: fixed; width: 100%; }
-        .taskings-calendar td { vertical-align: top; height: 130px; position: relative; width: 14.2857%; }
-        .calendar-day { padding: 6px; cursor: pointer; }
-        .calendar-day.muted { background-color: #fafafa; color: #9aa0a6; }
-        .calendar-date { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; }
-        .task-chip { display: block; font-size: 0.8rem; padding: 2px 6px; border-radius: 8px; background: #e9f5ff; border: 1px solid #cfe8ff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .task-chip:hover { background: #dff0ff; }
-        .task-chip .small { opacity: 0.8; }
+        .taskings-calendar {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .taskings-calendar td {
+            vertical-align: top;
+            height: 130px;
+            position: relative;
+            width: 14.2857%;
+        }
+
+        .calendar-day {
+            padding: 6px;
+            cursor: pointer;
+        }
+
+        .calendar-day.muted {
+            background-color: #fafafa;
+            color: #9aa0a6;
+        }
+
+        .calendar-date {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .task-chip {
+            display: block;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: #e9f5ff;
+            border: 1px solid #cfe8ff;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-chip:hover {
+            background: #dff0ff;
+        }
+
+        .task-chip .small {
+            opacity: 0.8;
+        }
 
         /* Officer multi-select list */
-        .officer-list { max-height: 260px; overflow: auto; background: #fff; }
-        .officer-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
-        .officer-item:hover { background: #f6f8fa; }
-        .officer-name { flex: 1; }
+        .officer-list {
+            max-height: 260px;
+            overflow: auto;
+            background: #fff;
+        }
+
+        .officer-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .officer-item:hover {
+            background: #f6f8fa;
+        }
+
+        .officer-name {
+            flex: 1;
+        }
 
         /* Range highlight for multi-day taskings */
-        .range-highlight { background-color: #fff9db; box-shadow: inset 0 0 0 1px #ffe58f; }
+        .range-highlight {
+            background-color: #fff9db;
+            box-shadow: inset 0 0 0 1px #ffe58f;
+        }
     </style>
 </head>
+
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
-      <img src="Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo" style="height:48px;width:auto;margin-right:12px;">
-      <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../homepage/index.html">Home</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
-<div class="container mt-4 with-fixed-navbar">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="../homepage/index.html" class="btn btn-secondary">← Home</a>
-  </div>
-
-  <h1 class="mb-3">Duty Tracker</h1>
-
-  <ul class="nav nav-tabs" id="dtTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="taskings-tab" data-bs-toggle="tab" data-bs-target="#taskings" type="button" role="tab">Taskings</button>
-      </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="scan-tab" data-bs-toggle="tab" data-bs-target="#scan" type="button" role="tab">Scan</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">Log History</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">Generate Barcodes</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab">Barcode Database</button>
-    </li>
-  </ul>
-
-  <div class="tab-content pt-3" id="dtTabsContent">
-    <!-- Scan Tab -->
-    <div class="tab-pane fade show active" id="scan" role="tabpanel" aria-labelledby="scan-tab">
-
-      <div class="scanner-container mb-3">
-        <input type="text" id="barcodeInput" class="form-control form-control-lg" placeholder="Scan barcode here..." autofocus autocomplete="off" style="font-size:1.5rem; text-align:center;" />
-        <audio id="beepSound" src="Barcode scanner beep sound (sound effect).mp3" preload="auto"></audio>
-      </div>
-      <div id="officerInfo" class="officer-info"></div>
-      <h3 class="mt-4">Today's Duty Logs</h3>
-      <div class="table-responsive">
-        <table class="table table-bordered log-table mt-2" id="logsTable">
-          <thead class="table-light">
-            <tr>
-              <th>Time In</th>
-              <th>Time Out</th>
-              <th>Duration</th>
-              <th>Officer ID</th>
-              <th>Name</th>
-              <th>Section</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="logsBody"></tbody>
-        </table>
-      </div>
-
-    </div>
-
-    <!-- Taskings Tab -->
-    <div class="tab-pane fade" id="taskings" role="tabpanel" aria-labelledby="taskings-tab">
-      <div class="card mb-3">
-        <div class="card-body d-flex flex-wrap gap-2 justify-content-between align-items-center">
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-secondary" id="taskingsPrevMonth" aria-label="Previous month">‹</button>
-            <h2 class="h5 mb-0" id="taskingsMonthLabel">Month YYYY</h2>
-            <button class="btn btn-outline-secondary" id="taskingsNextMonth" aria-label="Next month">›</button>
-          </div>
-          <div class="d-flex flex-wrap gap-2 align-items-center">
-            <select id="taskingsOfficerFilter" class="form-select" style="min-width: 220px;"></select>
-            <button class="btn btn-outline-secondary" id="taskingsExportBtn">Export Taskings</button>
-            <button class="btn btn-outline-info" id="taskingsImportBtn">Import Taskings</button>
-            <button class="btn btn-outline-success" id="taskingsSyncRepoBtn" title="Load Database/taskings.json if present">Sync From Database</button>
-            <span id="taskingsSyncStatus" class="small text-muted" style="display:none;"></span>
-            <button class="btn btn-primary" id="taskingsAddBtn">Add Tasking</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-bordered mb-0 taskings-calendar" id="taskingsCalendar">
-              <thead class="table-light">
-                <tr>
-                  <th class="text-center">Sun</th>
-                  <th class="text-center">Mon</th>
-                  <th class="text-center">Tue</th>
-                  <th class="text-center">Wed</th>
-                  <th class="text-center">Thu</th>
-                  <th class="text-center">Fri</th>
-                  <th class="text-center">Sat</th>
-                </tr>
-              </thead>
-              <tbody id="taskingsCalendarBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <input type="file" id="taskingsImportInput" accept=".json" style="display:none;" />
-
-      <!-- Tasking Modal -->
-      <div class="modal fade" id="taskingsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="taskingsModalTitle">Add Tasking</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../homepage/index.html">
+                <img src="Photos/PHILSCA-LOGO-WINGS.png" alt="AISERS Logo"
+                    style="height:48px;width:auto;margin-right:12px;">
+                <span class="fw-bold" style="letter-spacing:2px;font-size:1.5rem;">ALLIANCE APP</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="../homepage/index.html">Home</a></li>
+                </ul>
             </div>
-            <form id="taskingsForm">
-              <div class="modal-body">
-                <input type="hidden" id="taskId" />
-                <div class="row g-2">
-                  <div class="col-md-6">
-                    <label for="taskStartDate" class="form-label">Start date</label>
-                    <input type="date" class="form-control" id="taskStartDate" required />
-                  </div>
-                  <div class="col-md-6">
-                    <label for="taskEndDate" class="form-label">End date</label>
-                    <input type="date" class="form-control" id="taskEndDate" />
-                  </div>
+        </div>
+    </nav>
+    <div class="container mt-4 with-fixed-navbar">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="../homepage/index.html" class="btn btn-secondary">← Home</a>
+        </div>
+
+        <h1 class="mb-3">Duty Tracker</h1>
+
+        <ul class="nav nav-tabs" id="dtTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="taskings-tab" data-bs-toggle="tab" data-bs-target="#taskings" type="button"
+                    role="tab">Taskings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="scan-tab" data-bs-toggle="tab" data-bs-target="#scan" type="button"
+                    role="tab">Scan</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button"
+                    role="tab">Log History</button>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="barcode-database.html">Database</a>
+            </li>
+        </ul>
+
+        <div class="tab-content pt-3" id="dtTabsContent">
+            <!-- Scan Tab -->
+            <div class="tab-pane fade show active" id="scan" role="tabpanel" aria-labelledby="scan-tab">
+
+                <div class="scanner-container mb-3">
+                    <input type="text" id="barcodeInput" class="form-control form-control-lg"
+                        placeholder="Scan barcode here..." autofocus autocomplete="off"
+                        style="font-size:1.5rem; text-align:center;" />
+                    <audio id="beepSound" src="Barcode scanner beep sound (sound effect).mp3" preload="auto"></audio>
                 </div>
-                <div class="mb-3">
-                  <label class="form-label">Officers</label>
-                  <input type="text" class="form-control mb-2" id="taskOfficerSearch" placeholder="Search officers..." />
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <small id="taskOfficerSelectedCount" class="text-muted">Selected: 0</small>
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" id="taskOfficerSelectAll" />
-                      <label class="form-check-label" for="taskOfficerSelectAll">Select all visible</label>
+                <div id="officerInfo" class="officer-info"></div>
+                <h3 class="mt-4">Today's Duty Logs</h3>
+                <div class="table-responsive">
+                    <table class="table table-bordered log-table mt-2" id="logsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Duration</th>
+                                <th>Officer ID</th>
+                                <th>Name</th>
+                                <th>Section</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsBody"></tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- Taskings Tab -->
+            <div class="tab-pane fade" id="taskings" role="tabpanel" aria-labelledby="taskings-tab">
+                <div class="card mb-3">
+                    <div class="card-body d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-secondary" id="taskingsPrevMonth"
+                                aria-label="Previous month">‹</button>
+                            <h2 class="h5 mb-0" id="taskingsMonthLabel">Month YYYY</h2>
+                            <button class="btn btn-outline-secondary" id="taskingsNextMonth"
+                                aria-label="Next month">›</button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <select id="taskingsOfficerFilter" class="form-select" style="min-width: 220px;"></select>
+                            <button class="btn btn-outline-secondary" id="taskingsExportBtn">Export Taskings</button>
+                            <button class="btn btn-outline-info" id="taskingsImportBtn">Import Taskings</button>
+                            <button class="btn btn-outline-success" id="taskingsSyncRepoBtn"
+                                title="Load Database/taskings.json if present">Sync From Database</button>
+                            <span id="taskingsSyncStatus" class="small text-muted" style="display:none;"></span>
+                            <button class="btn btn-primary" id="taskingsAddBtn">Add Tasking</button>
+                        </div>
                     </div>
-                  </div>
-                  <div id="taskOfficerList" class="officer-list border rounded p-2"></div>
                 </div>
-                <div class="mb-3">
-                  <label for="taskTitle" class="form-label">Title</label>
-                  <input type="text" class="form-control" id="taskTitle" placeholder="e.g., Gate Duty" required />
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0 taskings-calendar" id="taskingsCalendar">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center">Sun</th>
+                                        <th class="text-center">Mon</th>
+                                        <th class="text-center">Tue</th>
+                                        <th class="text-center">Wed</th>
+                                        <th class="text-center">Thu</th>
+                                        <th class="text-center">Fri</th>
+                                        <th class="text-center">Sat</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="taskingsCalendarBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="row g-2">
-                  <div class="col">
-                    <label for="taskStartTime" class="form-label">Start time (optional)</label>
-                    <input type="time" class="form-control" id="taskStartTime" />
-                  </div>
-                  <div class="col">
-                    <label for="taskEndTime" class="form-label">End time (optional)</label>
-                    <input type="time" class="form-control" id="taskEndTime" />
-                  </div>
-                </div>
-                <div class="mt-3">
-                  <label for="taskLocation" class="form-label">Location</label>
-                  <input type="text" class="form-control" id="taskLocation" placeholder="Optional" />
-                </div>
-                <div class="mt-3">
-                  <label for="taskDesc" class="form-label">Notes</label>
-                  <textarea class="form-control" id="taskDesc" rows="3" placeholder="Optional"></textarea>
-                </div>
-                <div class="mt-3">
-                  <label class="form-label">Checklist (officers can mark when done)</label>
-                  <div class="input-group mb-2">
-                    <input type="text" class="form-control" id="taskChecklistInput" placeholder="Add checklist item..." />
-                    <button type="button" class="btn btn-outline-primary" id="taskChecklistAddBtn">Add</button>
-                  </div>
-                  <ul class="list-group" id="taskChecklistList"></ul>
-                  <small class="text-muted">These items will appear in Tasking Details for officers to check off.</small>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-outline-danger me-auto" id="taskDeleteBtn" style="display:none;">Delete</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="taskSaveBtn">Save</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
+                <input type="file" id="taskingsImportInput" accept=".json" style="display:none;" />
 
-      <!-- Tasking Details Modal (read-only) -->
-      <div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Tasking Details</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <dl class="row mb-0">
-                <dt class="col-sm-4">Title</dt>
-                <dd class="col-sm-8" id="detailTitle"></dd>
-                <dt class="col-sm-4">Dates</dt>
-                <dd class="col-sm-8" id="detailDates"></dd>
-                <dt class="col-sm-4">Time</dt>
-                <dd class="col-sm-8" id="detailTime"></dd>
-                <dt class="col-sm-4">Officers</dt>
-                <dd class="col-sm-8" id="detailOfficers"></dd>
-                <dt class="col-sm-4">Location</dt>
-                <dd class="col-sm-8" id="detailLocation"></dd>
-                <dt class="col-sm-4">Notes</dt>
-                <dd class="col-sm-8" id="detailNotes"></dd>
-              </dl>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-              <button type="button" class="btn btn-success" id="detailMarkDoneBtn">Mark as Done</button>
-              <button type="button" class="btn btn-primary" id="detailEditBtn">Edit</button>
-            </div>
-          </div>
-        </div>
-      </div>
+                <!-- Tasking Modal -->
+                <div class="modal fade" id="taskingsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="taskingsModalTitle">Add Tasking</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <form id="taskingsForm">
+                                <div class="modal-body">
+                                    <input type="hidden" id="taskId" />
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <label for="taskStartDate" class="form-label">Start date</label>
+                                            <input type="date" class="form-control" id="taskStartDate" required />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="taskEndDate" class="form-label">End date</label>
+                                            <input type="date" class="form-control" id="taskEndDate" />
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Officers</label>
+                                        <input type="text" class="form-control mb-2" id="taskOfficerSearch"
+                                            placeholder="Search officers..." />
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <small id="taskOfficerSelectedCount" class="text-muted">Selected: 0</small>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                    id="taskOfficerSelectAll" />
+                                                <label class="form-check-label" for="taskOfficerSelectAll">Select all
+                                                    visible</label>
+                                            </div>
+                                        </div>
+                                        <div id="taskOfficerList" class="officer-list border rounded p-2"></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="taskTitle" class="form-label">Title</label>
+                                        <input type="text" class="form-control" id="taskTitle"
+                                            placeholder="e.g., Gate Duty" required />
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col">
+                                            <label for="taskStartTime" class="form-label">Start time (optional)</label>
+                                            <input type="time" class="form-control" id="taskStartTime" />
+                                        </div>
+                                        <div class="col">
+                                            <label for="taskEndTime" class="form-label">End time (optional)</label>
+                                            <input type="time" class="form-control" id="taskEndTime" />
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="taskLocation" class="form-label">Location</label>
+                                        <input type="text" class="form-control" id="taskLocation"
+                                            placeholder="Optional" />
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="taskDesc" class="form-label">Notes</label>
+                                        <textarea class="form-control" id="taskDesc" rows="3"
+                                            placeholder="Optional"></textarea>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label class="form-label">Checklist (officers can mark when done)</label>
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control" id="taskChecklistInput"
+                                                placeholder="Add checklist item..." />
+                                            <button type="button" class="btn btn-outline-primary"
+                                                id="taskChecklistAddBtn">Add</button>
+                                        </div>
+                                        <ul class="list-group" id="taskChecklistList"></ul>
+                                        <small class="text-muted">These items will appear in Tasking Details for
+                                            officers to check off.</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-danger me-auto" id="taskDeleteBtn"
+                                        style="display:none;">Delete</button>
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary" id="taskSaveBtn">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
-      <!-- Verify Task via Barcode Modal -->
-      <div class="modal fade" id="verifyTaskModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Verify Officer</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- Tasking Details Modal (read-only) -->
+                <div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Tasking Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Title</dt>
+                                    <dd class="col-sm-8" id="detailTitle"></dd>
+                                    <dt class="col-sm-4">Dates</dt>
+                                    <dd class="col-sm-8" id="detailDates"></dd>
+                                    <dt class="col-sm-4">Time</dt>
+                                    <dd class="col-sm-8" id="detailTime"></dd>
+                                    <dt class="col-sm-4">Officers</dt>
+                                    <dd class="col-sm-8" id="detailOfficers"></dd>
+                                    <dt class="col-sm-4">Location</dt>
+                                    <dd class="col-sm-8" id="detailLocation"></dd>
+                                    <dt class="col-sm-4">Notes</dt>
+                                    <dd class="col-sm-8" id="detailNotes"></dd>
+                                </dl>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-success" id="detailMarkDoneBtn">Mark as
+                                    Done</button>
+                                <button type="button" class="btn btn-primary" id="detailEditBtn">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verify Task via Barcode Modal -->
+                <div class="modal fade" id="verifyTaskModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Verify Officer</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-2" id="verifyTaskTitle">Scan the officer's barcode to mark this task as
+                                    done.</p>
+                                <input type="text" id="verifyBarcodeInput" class="form-control form-control-lg"
+                                    placeholder="Scan barcode here..." autocomplete="off" />
+                                <div class="form-text">The barcode must belong to an assigned officer.</div>
+                                <div class="mt-2" id="verifyFeedback" class="text-muted"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-              <p class="mb-2" id="verifyTaskTitle">Scan the officer's barcode to mark this task as done.</p>
-              <input type="text" id="verifyBarcodeInput" class="form-control form-control-lg" placeholder="Scan barcode here..." autocomplete="off" />
-              <div class="form-text">The barcode must belong to an assigned officer.</div>
-              <div class="mt-2" id="verifyFeedback" class="text-muted"></div>
+
+
+
+            <!-- Log History Tab -->
+            <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label for="historyFilterType" class="form-label">Filter Type</label>
+                        <select id="historyFilterType" class="form-select">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="historyDateInput" class="form-label">Select Date</label>
+                        <input type="date" id="historyDateInput" class="form-control" />
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button id="importHistoryBtn" class="btn btn-info me-2">Import Data</button>
+                        <button id="exportHistoryBtn" class="btn btn-success me-2">Export All Data</button>
+                    </div>
+                </div>
+
+                <!-- Sub-tabs for Log History -->
+                <ul class="nav nav-tabs" id="historySubTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="order-list-tab" data-bs-toggle="tab"
+                            data-bs-target="#order-list" type="button" role="tab">Recent</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary"
+                            type="button" role="tab">Summary</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content pt-3" id="historySubTabsContent">
+                    <!-- Order List Sub-tab -->
+                    <div class="tab-pane fade show active" id="order-list" role="tabpanel"
+                        aria-labelledby="order-list-tab">
+                        <div class="table-responsive">
+                            <table class="table table-bordered log-table mt-2" id="historyTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th>Duration</th>
+                                        <th>Officer ID</th>
+                                        <th>Name</th>
+                                        <th>Section</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Summary Sub-tab -->
+                    <div class="tab-pane fade" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+                        <div class="mb-3">
+                            <h4 class="text-center mb-3">Duty Hours Leaderboard</h4>
+                            <div id="summaryStats" class="row text-center mb-3"></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered summary-table" id="summaryTable">
+                                <thead class="summary-header">
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Officer ID</th>
+                                        <th>Name</th>
+                                        <th>Section</th>
+                                        <th>Total Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="summaryBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="importHistoryInput" accept=".xlsx" style="display:none;" />
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-          </div>
+
+
         </div>
-      </div>
     </div>
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="lib/firebase-config.js"></script>
+    <script src="lib/firebase-service.js"></script>
 
-    <!-- Generate Barcodes Tab (embedded from generate-qr.html) -->
-    <div class="tab-pane fade" id="generate" role="tabpanel" aria-labelledby="generate-tab">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h2 class="h5 mb-0">Bulk Generate Barcodes</h2>
-        </div>
-        <div class="card-body">
-          <form id="bulkUploadForm">
-            <div class="mb-3">
-              <label for="excelFile" class="form-label">Upload Excel File</label>
-              <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls" required>
-              <div class="form-text">Upload an Excel file with columns: Student ID, Student Name, Section</div>
-            </div>
-            <button type="submit" class="btn btn-primary">Generate Barcodes</button>
-          </form>
-          <div id="bulkBarcodes" class="mt-3"></div>
-          <div class="text-center mt-2">
-            <button id="downloadAllBarcodes" class="btn btn-success" style="display: none;">Download All Barcodes</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h2 class="h5 mb-0">Generate Single Barcode</h2>
-        </div>
-        <div class="card-body">
-          <form id="barcodeForm">
-            <div class="mb-3">
-              <label for="studentId" class="form-label">Student ID</label>
-              <input type="text" class="form-control" id="studentId" required>
-            </div>
-            <div class="mb-3">
-              <label for="studentName" class="form-label">Student Name</label>
-              <input type="text" class="form-control" id="studentName" required>
-            </div>
-            <div class="mb-3">
-              <label for="section" class="form-label">Section</label>
-              <input type="text" class="form-control" id="section" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Generate Barcode</button>
-          </form>
-          <div id="barcode" class="mt-3 text-center"></div>
-          <div class="text-center mt-2">
-            <button id="downloadBarcode" class="btn btn-success" style="display: none;">Download Barcode</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Log History Tab -->
-    <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
-      <div class="row g-3 align-items-end mb-3">
-        <div class="col-md-3">
-          <label for="historyFilterType" class="form-label">Filter Type</label>
-          <select id="historyFilterType" class="form-select">
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label for="historyDateInput" class="form-label">Select Date</label>
-          <input type="date" id="historyDateInput" class="form-control" />
-        </div>
-        <div class="col-md-6 text-md-end">
-          <button id="importHistoryBtn" class="btn btn-info me-2">Import Data</button>
-          <button id="exportHistoryBtn" class="btn btn-success me-2">Export All Data</button>
-        </div>
-      </div>
-
-      <!-- Sub-tabs for Log History -->
-      <ul class="nav nav-tabs" id="historySubTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="order-list-tab" data-bs-toggle="tab" data-bs-target="#order-list" type="button" role="tab">Recent</button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">Summary</button>
-        </li>
-      </ul>
-
-      <div class="tab-content pt-3" id="historySubTabsContent">
-        <!-- Order List Sub-tab -->
-        <div class="tab-pane fade show active" id="order-list" role="tabpanel" aria-labelledby="order-list-tab">
-      <div class="table-responsive">
-        <table class="table table-bordered log-table mt-2" id="historyTable">
-          <thead class="table-light">
-            <tr>
-                  <th>Time In</th>
-                  <th>Time Out</th>
-                  <th>Duration</th>
-              <th>Officer ID</th>
-              <th>Name</th>
-              <th>Section</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody"></tbody>
-        </table>
-          </div>
-        </div>
-
-        <!-- Summary Sub-tab -->
-        <div class="tab-pane fade" id="summary" role="tabpanel" aria-labelledby="summary-tab">
-          <div class="mb-3">
-            <h4 class="text-center mb-3">Duty Hours Leaderboard</h4>
-            <div id="summaryStats" class="row text-center mb-3"></div>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-bordered summary-table" id="summaryTable">
-              <thead class="summary-header">
-                <tr>
-                  <th>Rank</th>
-                  <th>Officer ID</th>
-                  <th>Name</th>
-                  <th>Section</th>
-                  <th>Total Duration</th>
-                </tr>
-              </thead>
-              <tbody id="summaryBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <input type="file" id="importHistoryInput" accept=".xlsx" style="display:none;" />
-    </div>
-
-    <!-- Barcode Database Tab -->
-    <div class="tab-pane fade" id="database" role="tabpanel" aria-labelledby="database-tab">
-      <div class="card">
-        <div class="card-header">
-          <h2 class="h5 mb-0">Barcode Database</h2>
-        </div>
-        <div class="card-body p-0">
-          <iframe src="barcode-database.html" title="Barcode Database" style="width:100%; height:80vh; border:0;"></iframe>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<script src="lib/bootstrap.bundle.min.js"></script>
-<script src="lib/xlsx.full.min.js"></script>
-<script src="lib/encoder.js"></script>
-<script>
-// --- Officer Database (shared with barcode-database.html) ---
-function loadOfficers() {
-    const data = localStorage.getItem('barcodeStudents');
-    if (data) {
-        try {
-            return JSON.parse(data);
-        } catch (e) {
-            return [];
-        }
-    }
-    return [];
-}
-
-// --- Duty Logs Storage ---
-function getTodayKey() {
-    const today = new Date();
-    return 'dutyLogs-' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
-}
-function loadLogs() {
-    const key = getTodayKey();
-    const data = localStorage.getItem(key);
-    if (data) {
-        try {
-            return JSON.parse(data);
-        } catch (e) {
-            return [];
-        }
-    }
-    return [];
-}
-function saveLogs(logs) {
-    const key = getTodayKey();
-    localStorage.setItem(key, JSON.stringify(logs));
-}
-
-// --- Time helpers ---
-function formatLocalTime(isoOrText) {
-    if (!isoOrText) return '';
-    const d = new Date(isoOrText);
-    if (isNaN(d)) return String(isoOrText);
-    return d.toLocaleTimeString();
-}
-
-function formatDuration(totalSeconds) {
-    if (typeof totalSeconds !== 'number' || !isFinite(totalSeconds) || totalSeconds < 0) return '';
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-    const hh = String(hours).padStart(2, '0');
-    const mm = String(minutes).padStart(2, '0');
-    const ss = String(seconds).padStart(2, '0');
-    return `${hh}:${mm}:${ss}`;
-}
-
-function elapsedSeconds(fromIso, toIso) {
-    if (!fromIso) return 0;
-    const start = new Date(fromIso);
-    const end = toIso ? new Date(toIso) : new Date();
-    if (isNaN(start) || isNaN(end)) return 0;
-    return Math.max(0, Math.floor((end - start) / 1000));
-}
-
-function getOfficerByBarcode(barcode) {
-    // Try direct match (studentId)
-    const officers = loadOfficers();
-    let officer = officers.find(s => s.studentId === barcode);
-    if (officer) return officer;
-    // Try encoded barcode (using encodeStudentData)
-    if (window.encodeStudentData) {
-        officer = officers.find(s => window.encodeStudentData(s.studentId) === barcode);
-        if (officer) return officer;
-    }
-    return null;
-}
-
-// --- Time-in/Time-out toggle ---
-function toggleDuty(officer) {
-    const logs = loadLogs();
-    const openIdx = logs.findIndex(l => l.officerId === officer.studentId && !l.timeOut);
-    if (openIdx >= 0) {
-        // Time-out existing session
-        const nowIso = new Date().toISOString();
-        const openSession = logs[openIdx];
-        openSession.timeOut = nowIso;
-        openSession.durationSec = elapsedSeconds(openSession.timeIn, openSession.timeOut);
-        openSession.action = 'Time-out';
-        logs[openIdx] = openSession;
-        saveLogs(logs);
-        renderLogs();
-        showOfficerInfo(officer, 'Time-out');
-        return 'Time-out';
-    } else {
-        // Start a new session (Time-in)
-    logs.push({
-            timeIn: new Date().toISOString(),
-            timeOut: '',
-            durationSec: 0,
-        officerId: officer.studentId,
-        name: officer.studentName,
-        section: officer.section,
-            action: 'Time-in'
-    });
-    saveLogs(logs);
-    renderLogs();
-        showOfficerInfo(officer, 'Time-in');
-        return 'Time-in';
-    }
-}
-
-function renderLogs() {
-    const logs = loadLogs();
-    const tbody = document.getElementById('logsBody');
-    tbody.innerHTML = '';
-    // Reverse the order to show most recent first
-    logs.slice().reverse().forEach((log, index) => {
-        const tr = document.createElement('tr');
-        const isSession = typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined';
-        if (isSession) {
-            const running = !log.timeOut;
-            const actionText = log.action || (running ? 'Time-in' : 'Time-out');
-            const durationText = running
-                ? `<span class="duration-running" data-time-in="${log.timeIn}">${formatDuration(elapsedSeconds(log.timeIn))}</span>`
-                : formatDuration(log.durationSec ?? elapsedSeconds(log.timeIn, log.timeOut));
-            
-            // Apply row styling based on action
-            if (running || actionText === 'Time-in') {
-                tr.className = 'time-in-row';
-            } else if (actionText === 'Time-out') {
-                tr.className = 'time-out-row';
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="lib/encoder.js"></script>
+    <script>
+        // --- Officer Database (shared with barcode-database.html) ---
+        function loadOfficers() {
+            const data = localStorage.getItem('barcodeStudents');
+            if (data) {
+                try {
+                    return JSON.parse(data);
+                } catch (e) {
+                    return [];
+                }
             }
-            
-        tr.innerHTML = `
+            return [];
+        }
+
+        // --- Duty Logs Storage ---
+        function getTodayKey() {
+            const today = new Date();
+            return 'dutyLogs-' + today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+        }
+        function loadLogs() {
+            const key = getTodayKey();
+            const data = localStorage.getItem(key);
+            if (data) {
+                try {
+                    return JSON.parse(data);
+                } catch (e) {
+                    return [];
+                }
+            }
+            return [];
+        }
+        function saveLogs(logs) {
+            const key = getTodayKey();
+            localStorage.setItem(key, JSON.stringify(logs));
+        }
+
+        // --- Time helpers ---
+        function formatLocalTime(isoOrText) {
+            if (!isoOrText) return '';
+            const d = new Date(isoOrText);
+            if (isNaN(d)) return String(isoOrText);
+            return d.toLocaleTimeString();
+        }
+
+        function formatDuration(totalSeconds) {
+            if (typeof totalSeconds !== 'number' || !isFinite(totalSeconds) || totalSeconds < 0) return '';
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            const hh = String(hours).padStart(2, '0');
+            const mm = String(minutes).padStart(2, '0');
+            const ss = String(seconds).padStart(2, '0');
+            return `${hh}:${mm}:${ss}`;
+        }
+
+        function elapsedSeconds(fromIso, toIso) {
+            if (!fromIso) return 0;
+            const start = new Date(fromIso);
+            const end = toIso ? new Date(toIso) : new Date();
+            if (isNaN(start) || isNaN(end)) return 0;
+            return Math.max(0, Math.floor((end - start) / 1000));
+        }
+
+        function getOfficerByBarcode(barcode) {
+            // Try direct match (studentId)
+            const officers = loadOfficers();
+            let officer = officers.find(s => s.studentId === barcode);
+            if (officer) return officer;
+            // Try encoded barcode (using encodeStudentData)
+            if (window.encodeStudentData) {
+                officer = officers.find(s => window.encodeStudentData(s.studentId) === barcode);
+                if (officer) return officer;
+            }
+            return null;
+        }
+
+        // --- Time-in/Time-out toggle ---
+        function toggleDuty(officer) {
+            const logs = loadLogs();
+            const openIdx = logs.findIndex(l => l.officerId === officer.studentId && !l.timeOut);
+            if (openIdx >= 0) {
+                // Time-out existing session
+                const nowIso = new Date().toISOString();
+                const openSession = logs[openIdx];
+                openSession.timeOut = nowIso;
+                openSession.durationSec = elapsedSeconds(openSession.timeIn, openSession.timeOut);
+                openSession.action = 'Time-out';
+                logs[openIdx] = openSession;
+                saveLogs(logs);
+                renderLogs();
+                showOfficerInfo(officer, 'Time-out');
+                return 'Time-out';
+            } else {
+                // Start a new session (Time-in)
+                logs.push({
+                    timeIn: new Date().toISOString(),
+                    timeOut: '',
+                    durationSec: 0,
+                    officerId: officer.studentId,
+                    name: officer.studentName,
+                    section: officer.section,
+                    action: 'Time-in'
+                });
+                saveLogs(logs);
+                renderLogs();
+                showOfficerInfo(officer, 'Time-in');
+                return 'Time-in';
+            }
+        }
+
+        function renderLogs() {
+            const logs = loadLogs();
+            const tbody = document.getElementById('logsBody');
+            tbody.innerHTML = '';
+            // Reverse the order to show most recent first
+            logs.slice().reverse().forEach((log, index) => {
+                const tr = document.createElement('tr');
+                const isSession = typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined';
+                if (isSession) {
+                    const running = !log.timeOut;
+                    const actionText = log.action || (running ? 'Time-in' : 'Time-out');
+                    const durationText = running
+                        ? `<span class="duration-running" data-time-in="${log.timeIn}">${formatDuration(elapsedSeconds(log.timeIn))}</span>`
+                        : formatDuration(log.durationSec ?? elapsedSeconds(log.timeIn, log.timeOut));
+
+                    // Apply row styling based on action
+                    if (running || actionText === 'Time-in') {
+                        tr.className = 'time-in-row';
+                    } else if (actionText === 'Time-out') {
+                        tr.className = 'time-out-row';
+                    }
+
+                    tr.innerHTML = `
                 <td>${formatLocalTime(log.timeIn)}</td>
                 <td>${formatLocalTime(log.timeOut)}</td>
                 <td>${durationText}</td>
@@ -581,12 +713,12 @@ function renderLogs() {
             <td>${log.section}</td>
                 <td><span class="action-badge ${running || actionText === 'Time-in' ? 'action-time-in' : 'action-time-out'}">${actionText}</span></td>
             `;
-        } else {
-            // Backward compatibility for old single-event logs
-            const actionClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'action-time-in' : 'action-time-out';
-            const rowClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'time-in-row' : 'time-out-row';
-            tr.className = rowClass;
-            tr.innerHTML = `
+                } else {
+                    // Backward compatibility for old single-event logs
+                    const actionClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'action-time-in' : 'action-time-out';
+                    const rowClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'time-in-row' : 'time-out-row';
+                    tr.className = rowClass;
+                    tr.innerHTML = `
                 <td>${formatLocalTime(log.time)}</td>
                 <td></td>
                 <td></td>
@@ -595,255 +727,307 @@ function renderLogs() {
                 <td>${log.section || ''}</td>
                 <td><span class="action-badge ${actionClass}">${log.action || ''}</span></td>
             `;
-        }
-        tbody.appendChild(tr);
-    });
-}
-
-// Update durations every second for running sessions
-function updateRunningDurations() {
-    const els = document.querySelectorAll('.duration-running');
-    els.forEach(el => {
-        const timeIn = el.getAttribute('data-time-in');
-        el.textContent = formatDuration(elapsedSeconds(timeIn));
-    });
-}
-
-function showOfficerInfo(officer, action) {
-    const infoDiv = document.getElementById('officerInfo');
-    infoDiv.innerHTML = officer ?
-        `<span class="badge bg-primary">${action}</span> <strong>${officer.studentName}</strong> (ID: ${officer.studentId}, Section: ${officer.section})` :
-        '<span class="text-danger">Officer not found!</span>';
-    setTimeout(() => { infoDiv.innerHTML = ''; }, 4000);
-}
-
-// --- Barcode Scanner ---
-function onScanSuccess(decodedText) {
-    const officer = getOfficerByBarcode(decodedText);
-    if (!officer) {
-        showOfficerInfo(null);
-        return;
-    }
-    toggleDuty(officer);
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    renderLogs();
-    const barcodeInput = document.getElementById('barcodeInput');
-    const beepSound = document.getElementById('beepSound');
-    barcodeInput.focus();
-    let lastValue = '';
-    // Helper to process a scanned/pasted value safely
-    function processBarcode(rawValue, options) {
-        const opts = options || {};
-        const code = String(rawValue || '').trim();
-        if (!code) return;
-        if (opts.beep !== false) {
-            try {
-                beepSound.currentTime = 0;
-                const playPromise = beepSound.play();
-                if (playPromise && typeof playPromise.catch === 'function') {
-                    playPromise.catch(() => {});
                 }
-            } catch (_) { /* ignore audio errors */ }
+                tbody.appendChild(tr);
+            });
         }
-        onScanSuccess(code);
-        barcodeInput.value = '';
-        lastValue = '';
-    }
 
-    // Auto-read barcode as soon as input is detected (barcode scanners usually send a suffix like Enter or Tab)
-    barcodeInput.addEventListener('input', function(e) {
-        // Only process if value changed and not empty
-        if (barcodeInput.value && barcodeInput.value !== lastValue) {
-            lastValue = barcodeInput.value;
-            const isPaste = e && e.inputType === 'insertFromPaste';
-            processBarcode(barcodeInput.value, { beep: !isPaste });
+        // Update durations every second for running sessions
+        function updateRunningDurations() {
+            const els = document.querySelectorAll('.duration-running');
+            els.forEach(el => {
+                const timeIn = el.getAttribute('data-time-in');
+                el.textContent = formatDuration(elapsedSeconds(timeIn));
+            });
         }
-    });
 
-    // Handle explicit paste to avoid partial/char-by-char triggers and suppress beep
-    barcodeInput.addEventListener('paste', function(e) {
-        try { e.preventDefault(); } catch (_) {}
-        const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-        lastValue = text;
-        processBarcode(text, { beep: false });
-    });
-    // Refocus input if user clicks elsewhere
-    document.body.addEventListener('click', function() {
-        barcodeInput.focus();
-    });
+        function showOfficerInfo(officer, action) {
+            const infoDiv = document.getElementById('officerInfo');
+            infoDiv.innerHTML = officer ?
+                `<span class="badge bg-primary">${action}</span> <strong>${officer.studentName}</strong> (ID: ${officer.studentId}, Section: ${officer.section})` :
+                '<span class="text-danger">Officer not found!</span>';
+            setTimeout(() => { infoDiv.innerHTML = ''; }, 4000);
+        }
 
-    // Activate tab from hash (e.g., #generate, #history, #database, #scan, #taskings)
-    const hash = window.location.hash;
-    if (hash === '#generate' || hash === '#history' || hash === '#database' || hash === '#scan' || hash === '#taskings') {
-        const triggerEl = document.querySelector(`button[data-bs-target="${hash}"]`);
-        if (triggerEl) new bootstrap.Tab(triggerEl).show();
-    }
-    // When tab changes, update hash
-    document.querySelectorAll('#dtTabs button[data-bs-toggle="tab"]').forEach(btn => {
-        btn.addEventListener('shown.bs.tab', function(e) {
-            const target = e.target.getAttribute('data-bs-target');
-            if (target) history.replaceState(null, '', target);
-        });
-    });
-    // Build history selector on first load and whenever history tab is shown
-    initHistoryDatePicker();
-    document.getElementById('historyDateInput').addEventListener('change', () => {
-        renderHistory();
-    });
-    document.getElementById('historyFilterType').addEventListener('change', () => {
-        renderHistory();
-    });
-    document.getElementById('history-tab').addEventListener('shown.bs.tab', () => {
-        initHistoryDatePicker();
-    });
+        // --- Barcode Scanner ---
+        async function onScanSuccess(decodedText) {
+            // 1. Try Local Cache First (Zero Reads)
+            let officer = getOfficerByBarcode(decodedText);
 
-    // Taskings init
-    initTaskings();
-    document.getElementById('taskings-tab').addEventListener('shown.bs.tab', () => {
-        populateTaskingOfficerLists();
-        renderTaskingsCalendar();
-    });
-});
-
-// Start interval for live durations
-setInterval(updateRunningDurations, 1000);
-
-
-
-// --- Log History helpers ---
-function listAllLogDateKeys() {
-    const keys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('dutyLogs-')) keys.push(k);
-    }
-    // Sort most recent first by date value
-    keys.sort((a, b) => {
-        const da = new Date(a.replace('dutyLogs-', '').replace(/-/g, '/'));
-        const db = new Date(b.replace('dutyLogs-', '').replace(/-/g, '/'));
-        return db - da;
-    });
-    return keys;
-}
-
-function keyToDateString(key) {
-    // key format: dutyLogs-YYYY-M-D
-    const raw = key.replace('dutyLogs-', '');
-    const [y, m, d] = raw.split('-').map(Number);
-    const mm = String(m).padStart(2, '0');
-    const dd = String(d).padStart(2, '0');
-    return `${y}-${mm}-${dd}`;
-}
-
-function dateStringToKey(dateStr) {
-    // dateStr: YYYY-MM-DD
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return `dutyLogs-${y}-${m}-${d}`; // keep storage non-padded to match existing
-}
-
-function getWeekRange(dateStr) {
-    const date = new Date(dateStr);
-    const day = date.getDay();
-    const diff = date.getDate() - day; // Sunday is 0
-    const sunday = new Date(date.setDate(diff));
-    const saturday = new Date(date.setDate(diff + 6));
-    return { start: sunday, end: saturday };
-}
-
-function getMonthRange(dateStr) {
-    const date = new Date(dateStr);
-    const start = new Date(date.getFullYear(), date.getMonth(), 1);
-    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    return { start, end };
-}
-
-function getDateKeysInRange(startDate, endDate) {
-    const keys = [];
-    const current = new Date(startDate);
-    while (current <= endDate) {
-        const year = current.getFullYear();
-        const month = current.getMonth() + 1;
-        const day = current.getDate();
-        keys.push(`dutyLogs-${year}-${month}-${day}`);
-        current.setDate(current.getDate() + 1);
-    }
-    return keys;
-}
-
-function aggregateLogsByPeriod(filterType, dateStr) {
-    let keys = [];
-    if (filterType === 'daily') {
-        keys = [dateStringToKey(dateStr)];
-    } else if (filterType === 'weekly') {
-        const range = getWeekRange(dateStr);
-        keys = getDateKeysInRange(range.start, range.end);
-    } else if (filterType === 'monthly') {
-        const range = getMonthRange(dateStr);
-        keys = getDateKeysInRange(range.start, range.end);
-    }
-    
-    const allLogs = [];
-    keys.forEach(key => {
-        const logs = loadLogsByKey(key);
-        allLogs.push(...logs);
-    });
-    return allLogs;
-}
-
-function initHistoryDatePicker() {
-    const input = document.getElementById('historyDateInput');
-    const keys = listAllLogDateKeys();
-    if (keys.length === 0) {
-        input.value = '';
-        document.getElementById('historyBody').innerHTML = '';
-        input.disabled = true;
-        return;
-    }
-    input.disabled = false;
-    // Default to most recent logs date
-    const latestKey = keys[0];
-    input.value = keyToDateString(latestKey);
-    renderHistory();
-}
-
-function loadLogsByKey(key) {
-    const data = localStorage.getItem(key);
-    if (!data) return [];
-    try { return JSON.parse(data); } catch { return []; }
-}
-
-function renderHistory() {
-    const input = document.getElementById('historyDateInput');
-    const filterType = document.getElementById('historyFilterType').value;
-    const dateStr = input.value;
-    if (!dateStr) { 
-        document.getElementById('historyBody').innerHTML = '';
-        document.getElementById('summaryBody').innerHTML = '';
-        document.getElementById('summaryStats').innerHTML = '';
-        return; 
-    }
-    
-    const logs = aggregateLogsByPeriod(filterType, dateStr);
-    const tbody = document.getElementById('historyBody');
-    tbody.innerHTML = '';
-    // Reverse the order to show most recent first
-    logs.slice().reverse().forEach(log => {
-        const tr = document.createElement('tr');
-        const isSession = typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined';
-        if (isSession) {
-            const duration = log.durationSec ?? (log.timeIn && log.timeOut ? elapsedSeconds(log.timeIn, log.timeOut) : 0);
-            const actionText = log.action || (!log.timeOut ? 'Time-in' : 'Time-out');
-            
-            // Apply row styling based on action
-            if (!log.timeOut || actionText === 'Time-in') {
-                tr.className = 'time-in-row';
-            } else if (actionText === 'Time-out') {
-                tr.className = 'time-out-row';
+            if (officer) {
+                console.log('Found officer in local cache:', officer.studentName);
+                toggleDuty(officer);
+                return;
             }
-            
-            tr.innerHTML = `
+
+            // 2. Fallback to Firebase (1 Read)
+            if (window.dutyFirebaseService) {
+                console.log('Searching for officer in Firebase:', decodedText);
+                showOfficerInfo({ studentName: 'Searching...', studentId: decodedText, section: '' }, 'Searching');
+
+                try {
+                    officer = await window.dutyFirebaseService.findOfficerByBarcode(decodedText);
+
+                    if (officer) {
+                        // Found in Firebase! 
+                        // 3. Cache it locally for next time
+                        const currentOfficers = loadOfficers();
+                        // Check if already exists (shouldn't, but safety first)
+                        if (!currentOfficers.find(o => o.studentId === officer.studentId)) {
+                            officer.uniqueId = officer.studentId; // Ensure format matches local
+                            currentOfficers.push(officer);
+                            localStorage.setItem('barcodeStudents', JSON.stringify(currentOfficers));
+                            console.log('Cached officer locally:', officer.studentName);
+                        }
+
+                        toggleDuty(officer);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Firebase lookup failed:', e);
+                }
+            }
+
+            // 3. Not found anywhere
+            console.warn('Officer not found locally or in Firebase');
+            showOfficerInfo(null);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderLogs();
+            const barcodeInput = document.getElementById('barcodeInput');
+            const beepSound = document.getElementById('beepSound');
+            barcodeInput.focus();
+            let lastValue = '';
+            // Helper to process a scanned/pasted value safely
+            function processBarcode(rawValue, options) {
+                const opts = options || {};
+                const code = String(rawValue || '').trim();
+                if (!code) return;
+                if (opts.beep !== false) {
+                    try {
+                        beepSound.currentTime = 0;
+                        const playPromise = beepSound.play();
+                        if (playPromise && typeof playPromise.catch === 'function') {
+                            playPromise.catch(() => { });
+                        }
+                    } catch (_) { /* ignore audio errors */ }
+                }
+                onScanSuccess(code);
+                barcodeInput.value = '';
+                lastValue = '';
+            }
+
+            // Auto-read barcode as soon as input is detected (barcode scanners usually send a suffix like Enter or Tab)
+            let scanTimeout = null;
+            barcodeInput.addEventListener('input', function (e) {
+                // Clear any existing timeout
+                if (scanTimeout) clearTimeout(scanTimeout);
+
+                // Only process if value changed and not empty
+                if (barcodeInput.value && barcodeInput.value !== lastValue) {
+                    // Set a timeout to wait for the scanner to finish typing
+                    scanTimeout = setTimeout(() => {
+                        lastValue = barcodeInput.value;
+                        const isPaste = e && e.inputType === 'insertFromPaste';
+                        processBarcode(barcodeInput.value, { beep: !isPaste });
+                    }, 200); // 200ms delay should be enough for most scanners
+                }
+            });
+
+            // Also handle Enter key to process immediately (common scanner suffix)
+            barcodeInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    if (scanTimeout) clearTimeout(scanTimeout);
+                    if (barcodeInput.value) {
+                        lastValue = barcodeInput.value;
+                        processBarcode(barcodeInput.value, { beep: true });
+                    }
+                }
+            });
+
+            // Handle explicit paste to avoid partial/char-by-char triggers and suppress beep
+            barcodeInput.addEventListener('paste', function (e) {
+                try { e.preventDefault(); } catch (_) { }
+                const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+                lastValue = text;
+                processBarcode(text, { beep: false });
+            });
+            // Refocus input if user clicks elsewhere
+            document.body.addEventListener('click', function () {
+                barcodeInput.focus();
+            });
+
+            // Activate tab from hash (e.g., #history, #scan, #taskings)
+            const hash = window.location.hash;
+            if (hash === '#history' || hash === '#scan' || hash === '#taskings') {
+                const triggerEl = document.querySelector(`button[data-bs-target="${hash}"]`);
+                if (triggerEl) new bootstrap.Tab(triggerEl).show();
+            }
+            // When tab changes, update hash
+            document.querySelectorAll('#dtTabs button[data-bs-toggle="tab"]').forEach(btn => {
+                btn.addEventListener('shown.bs.tab', function (e) {
+                    const target = e.target.getAttribute('data-bs-target');
+                    if (target) history.replaceState(null, '', target);
+                });
+            });
+            // Build history selector on first load and whenever history tab is shown
+            initHistoryDatePicker();
+            document.getElementById('historyDateInput').addEventListener('change', () => {
+                renderHistory();
+            });
+            document.getElementById('historyFilterType').addEventListener('change', () => {
+                renderHistory();
+            });
+            document.getElementById('history-tab').addEventListener('shown.bs.tab', () => {
+                initHistoryDatePicker();
+            });
+
+            // Taskings init
+            initTaskings();
+            document.getElementById('taskings-tab').addEventListener('shown.bs.tab', () => {
+                populateTaskingOfficerLists();
+                renderTaskingsCalendar();
+            });
+        });
+
+        // Start interval for live durations
+        setInterval(updateRunningDurations, 1000);
+
+
+
+        // --- Log History helpers ---
+        function listAllLogDateKeys() {
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('dutyLogs-')) keys.push(k);
+            }
+            // Sort most recent first by date value
+            keys.sort((a, b) => {
+                const da = new Date(a.replace('dutyLogs-', '').replace(/-/g, '/'));
+                const db = new Date(b.replace('dutyLogs-', '').replace(/-/g, '/'));
+                return db - da;
+            });
+            return keys;
+        }
+
+        function keyToDateString(key) {
+            // key format: dutyLogs-YYYY-M-D
+            const raw = key.replace('dutyLogs-', '');
+            const [y, m, d] = raw.split('-').map(Number);
+            const mm = String(m).padStart(2, '0');
+            const dd = String(d).padStart(2, '0');
+            return `${y}-${mm}-${dd}`;
+        }
+
+        function dateStringToKey(dateStr) {
+            // dateStr: YYYY-MM-DD
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return `dutyLogs-${y}-${m}-${d}`; // keep storage non-padded to match existing
+        }
+
+        function getWeekRange(dateStr) {
+            const date = new Date(dateStr);
+            const day = date.getDay();
+            const diff = date.getDate() - day; // Sunday is 0
+            const sunday = new Date(date.setDate(diff));
+            const saturday = new Date(date.setDate(diff + 6));
+            return { start: sunday, end: saturday };
+        }
+
+        function getMonthRange(dateStr) {
+            const date = new Date(dateStr);
+            const start = new Date(date.getFullYear(), date.getMonth(), 1);
+            const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+            return { start, end };
+        }
+
+        function getDateKeysInRange(startDate, endDate) {
+            const keys = [];
+            const current = new Date(startDate);
+            while (current <= endDate) {
+                const year = current.getFullYear();
+                const month = current.getMonth() + 1;
+                const day = current.getDate();
+                keys.push(`dutyLogs-${year}-${month}-${day}`);
+                current.setDate(current.getDate() + 1);
+            }
+            return keys;
+        }
+
+        function aggregateLogsByPeriod(filterType, dateStr) {
+            let keys = [];
+            if (filterType === 'daily') {
+                keys = [dateStringToKey(dateStr)];
+            } else if (filterType === 'weekly') {
+                const range = getWeekRange(dateStr);
+                keys = getDateKeysInRange(range.start, range.end);
+            } else if (filterType === 'monthly') {
+                const range = getMonthRange(dateStr);
+                keys = getDateKeysInRange(range.start, range.end);
+            }
+
+            const allLogs = [];
+            keys.forEach(key => {
+                const logs = loadLogsByKey(key);
+                allLogs.push(...logs);
+            });
+            return allLogs;
+        }
+
+        function initHistoryDatePicker() {
+            const input = document.getElementById('historyDateInput');
+            const keys = listAllLogDateKeys();
+            if (keys.length === 0) {
+                input.value = '';
+                document.getElementById('historyBody').innerHTML = '';
+                input.disabled = true;
+                return;
+            }
+            input.disabled = false;
+            // Default to most recent logs date
+            const latestKey = keys[0];
+            input.value = keyToDateString(latestKey);
+            renderHistory();
+        }
+
+        function loadLogsByKey(key) {
+            const data = localStorage.getItem(key);
+            if (!data) return [];
+            try { return JSON.parse(data); } catch { return []; }
+        }
+
+        function renderHistory() {
+            const input = document.getElementById('historyDateInput');
+            const filterType = document.getElementById('historyFilterType').value;
+            const dateStr = input.value;
+            if (!dateStr) {
+                document.getElementById('historyBody').innerHTML = '';
+                document.getElementById('summaryBody').innerHTML = '';
+                document.getElementById('summaryStats').innerHTML = '';
+                return;
+            }
+
+            const logs = aggregateLogsByPeriod(filterType, dateStr);
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '';
+            // Reverse the order to show most recent first
+            logs.slice().reverse().forEach(log => {
+                const tr = document.createElement('tr');
+                const isSession = typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined';
+                if (isSession) {
+                    const duration = log.durationSec ?? (log.timeIn && log.timeOut ? elapsedSeconds(log.timeIn, log.timeOut) : 0);
+                    const actionText = log.action || (!log.timeOut ? 'Time-in' : 'Time-out');
+
+                    // Apply row styling based on action
+                    if (!log.timeOut || actionText === 'Time-in') {
+                        tr.className = 'time-in-row';
+                    } else if (actionText === 'Time-out') {
+                        tr.className = 'time-out-row';
+                    }
+
+                    tr.innerHTML = `
                 <td>${formatLocalTime(log.timeIn) || ''}</td>
                 <td>${formatLocalTime(log.timeOut) || ''}</td>
                 <td>${formatDuration(duration) || ''}</td>
@@ -852,12 +1036,12 @@ function renderHistory() {
                 <td>${log.section || ''}</td>
                 <td><span class="action-badge ${!log.timeOut || actionText === 'Time-in' ? 'action-time-in' : 'action-time-out'}">${actionText}</span></td>
             `;
-        } else {
-            // Backward compatibility for old single-event logs
-            const actionClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'action-time-in' : 'action-time-out';
-            const rowClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'time-in-row' : 'time-out-row';
-            tr.className = rowClass;
-        tr.innerHTML = `
+                } else {
+                    // Backward compatibility for old single-event logs
+                    const actionClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'action-time-in' : 'action-time-out';
+                    const rowClass = log.action === 'Check-in' || log.action === 'Time-in' ? 'time-in-row' : 'time-out-row';
+                    tr.className = rowClass;
+                    tr.innerHTML = `
                 <td>${formatLocalTime(log.time) || ''}</td>
                 <td></td>
                 <td></td>
@@ -866,36 +1050,36 @@ function renderHistory() {
             <td>${log.section || ''}</td>
                 <td><span class="action-badge ${actionClass}">${log.action || ''}</span></td>
         `;
-        }
-        tbody.appendChild(tr);
-    });
+                }
+                tbody.appendChild(tr);
+            });
 
-    // Build summary ranking by total duration per person for this date
-    const totalsByOfficer = {};
-    logs.forEach(log => {
-        const isSession = typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined';
-        if (!isSession) return;
-        const officerKey = log.officerId || '';
-        const duration = (log.durationSec ?? (log.timeIn && log.timeOut ? elapsedSeconds(log.timeIn, log.timeOut) : 0)) || 0;
-        if (!totalsByOfficer[officerKey]) {
-            totalsByOfficer[officerKey] = { officerId: log.officerId || '', name: log.name || '', section: log.section || '', totalSec: 0 };
-        }
-        totalsByOfficer[officerKey].totalSec += duration;
-    });
-    const rows = Object.values(totalsByOfficer)
-        .sort((a, b) => b.totalSec - a.totalSec);
-    
-    // Build summary stats
-    const statsDiv = document.getElementById('summaryStats');
-    const currentFilterType = document.getElementById('historyFilterType').value;
-    const periodText = currentFilterType === 'daily' ? 'today' : `this ${currentFilterType.slice(0, -2)}`;
-    
-    if (rows.length > 0) {
-        const totalHours = rows.reduce((sum, row) => sum + row.totalSec, 0);
-        const avgHours = totalHours / rows.length;
-        const topPerformer = rows[0];
-        
-        statsDiv.innerHTML = `
+            // Build summary ranking by total duration per person for this date
+            const totalsByOfficer = {};
+            logs.forEach(log => {
+                const isSession = typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined';
+                if (!isSession) return;
+                const officerKey = log.officerId || '';
+                const duration = (log.durationSec ?? (log.timeIn && log.timeOut ? elapsedSeconds(log.timeIn, log.timeOut) : 0)) || 0;
+                if (!totalsByOfficer[officerKey]) {
+                    totalsByOfficer[officerKey] = { officerId: log.officerId || '', name: log.name || '', section: log.section || '', totalSec: 0 };
+                }
+                totalsByOfficer[officerKey].totalSec += duration;
+            });
+            const rows = Object.values(totalsByOfficer)
+                .sort((a, b) => b.totalSec - a.totalSec);
+
+            // Build summary stats
+            const statsDiv = document.getElementById('summaryStats');
+            const currentFilterType = document.getElementById('historyFilterType').value;
+            const periodText = currentFilterType === 'daily' ? 'today' : `this ${currentFilterType.slice(0, -2)}`;
+
+            if (rows.length > 0) {
+                const totalHours = rows.reduce((sum, row) => sum + row.totalSec, 0);
+                const avgHours = totalHours / rows.length;
+                const topPerformer = rows[0];
+
+                statsDiv.innerHTML = `
             <div class="col-md-3">
                 <div class="card border-primary">
                     <div class="card-body text-center">
@@ -929,934 +1113,935 @@ function renderHistory() {
                 </div>
             </div>
         `;
-    } else {
-        statsDiv.innerHTML = '<div class="col-12 text-center text-muted">No duty logs found for this date.</div>';
-    }
-    
-    const sbody = document.getElementById('summaryBody');
-    sbody.innerHTML = '';
-    rows.forEach((row, idx) => {
-        const rank = idx + 1;
-        let rankClass = '';
-        
-        // Styling for top 3
-        if (rank === 1) {
-            rankClass = 'rank-1 top-performer';
-        } else if (rank === 2) {
-            rankClass = 'rank-2';
-        } else if (rank === 3) {
-            rankClass = 'rank-3';
-        }
-        
-        const tr = document.createElement('tr');
-        tr.className = `summary-row ${rankClass}`;
-        tr.innerHTML = `
+            } else {
+                statsDiv.innerHTML = '<div class="col-12 text-center text-muted">No duty logs found for this date.</div>';
+            }
+
+            const sbody = document.getElementById('summaryBody');
+            sbody.innerHTML = '';
+            rows.forEach((row, idx) => {
+                const rank = idx + 1;
+                let rankClass = '';
+
+                // Styling for top 3
+                if (rank === 1) {
+                    rankClass = 'rank-1 top-performer';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `summary-row ${rankClass}`;
+                tr.innerHTML = `
             <td class="text-center">${rank}</td>
             <td>${row.officerId}</td>
             <td>${row.name}</td>
             <td>${row.section}</td>
             <td class="duration-highlight">${formatDuration(row.totalSec)}</td>
         `;
-        sbody.appendChild(tr);
-    });
-}
-
-// --- Export All Historical Data ---
-document.getElementById('exportHistoryBtn').addEventListener('click', function() {
-    const allKeys = listAllLogDateKeys();
-    const allLogs = [];
-    
-    // Collect all logs from all dates
-    allKeys.forEach(key => {
-    const logs = loadLogsByKey(key);
-        const dateFromKey = key.replace('dutyLogs-', '');
-        logs.forEach(log => {
-            // Add date information to each log entry
-            allLogs.push({
-                ...log,
-                date: dateFromKey
+                sbody.appendChild(tr);
             });
-        });
-    });
-    
-    const exportData = [
-        ['Date', 'Time In', 'Time Out', 'Duration', 'Officer ID', 'Name', 'Section', 'Action']
-    ];
-    
-    allLogs.forEach(log => {
-        if (typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined') {
-            const duration = log.durationSec ?? (log.timeIn && log.timeOut ? elapsedSeconds(log.timeIn, log.timeOut) : 0);
-            exportData.push([
-                log.date || '',
-                formatLocalTime(log.timeIn) || '',
-                formatLocalTime(log.timeOut) || '',
-                formatDuration(duration) || '',
-                log.officerId || '',
-                log.name || '',
-                log.section || '',
-                log.action || ''
-            ]);
-        } else {
-            // old format
-            exportData.push([log.date || '', log.time || '', '', '', log.officerId || '', log.name || '', log.section || '', log.action || '']);
         }
-    });
-    
-    const ws = XLSX.utils.aoa_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'AllDutyLogs');
-    const today = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `all-duty-logs-${today}.xlsx`);
-});
 
-// --- Import Historical Data ---
-document.getElementById('importHistoryBtn').addEventListener('click', function() {
-    document.getElementById('importHistoryInput').click();
-});
+        // --- Export All Historical Data ---
+        document.getElementById('exportHistoryBtn').addEventListener('click', function () {
+            const allKeys = listAllLogDateKeys();
+            const allLogs = [];
 
-document.getElementById('importHistoryInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        if (rows.length < 2) {
-            alert('Import file appears to be empty or invalid.');
-            return;
-        }
-        
-        const header = rows[0].map(h => String(h || '').toLowerCase());
-        const hasDate = header.includes('date');
-        const hasNewFormat = header.includes('time in') || header.includes('timein');
-        
-        // Group logs by date
-        const logsByDate = {};
-        
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length === 0) continue;
-            
-            let logDate = '';
-            let logEntry = {};
-            
-            if (hasDate) {
-                const dateIdx = header.indexOf('date');
-                logDate = String(row[dateIdx] || '');
-                
-                if (hasNewFormat) {
-                    const idxTimeIn = header.findIndex(h => h === 'time in' || h === 'timein');
-                    const idxTimeOut = header.findIndex(h => h === 'time out' || h === 'timeout');
-                    const idxDuration = header.indexOf('duration');
-                    const idxOfficer = header.indexOf('officer id');
-                    const idxName = header.indexOf('name');
-                    const idxSection = header.indexOf('section');
-                    const idxAction = header.indexOf('action');
-                    
-                    const timeIn = String(row[idxTimeIn] ?? '');
-                    const timeOut = String(row[idxTimeOut] ?? '');
-                    const durationStr = String(row[idxDuration] ?? '');
-                    let durationSec = 0;
-                    if (durationStr && /^\d{2}:\d{2}:\d{2}$/.test(durationStr)) {
-                        const parts = durationStr.split(':').map(Number);
-                        durationSec = parts[0]*3600 + parts[1]*60 + parts[2];
-                    }
-                    
-                    logEntry = {
-                        timeIn,
-                        timeOut,
-                        durationSec,
-                        officerId: String(row[idxOfficer] ?? ''),
-                        name: String(row[idxName] ?? ''),
-                        section: String(row[idxSection] ?? ''),
-                        action: String(row[idxAction] ?? '')
-                    };
+            // Collect all logs from all dates
+            allKeys.forEach(key => {
+                const logs = loadLogsByKey(key);
+                const dateFromKey = key.replace('dutyLogs-', '');
+                logs.forEach(log => {
+                    // Add date information to each log entry
+                    allLogs.push({
+                        ...log,
+                        date: dateFromKey
+                    });
+                });
+            });
+
+            const exportData = [
+                ['Date', 'Time In', 'Time Out', 'Duration', 'Officer ID', 'Name', 'Section', 'Action']
+            ];
+
+            allLogs.forEach(log => {
+                if (typeof log.timeIn !== 'undefined' || typeof log.timeOut !== 'undefined') {
+                    const duration = log.durationSec ?? (log.timeIn && log.timeOut ? elapsedSeconds(log.timeIn, log.timeOut) : 0);
+                    exportData.push([
+                        log.date || '',
+                        formatLocalTime(log.timeIn) || '',
+                        formatLocalTime(log.timeOut) || '',
+                        formatDuration(duration) || '',
+                        log.officerId || '',
+                        log.name || '',
+                        log.section || '',
+                        log.action || ''
+                    ]);
                 } else {
-                    // Old format
-                    logEntry = {
-                        time: String(row[header.indexOf('time in')] || row[header.indexOf('time')] || ''),
-                        officerId: String(row[header.indexOf('officer id')] ?? ''),
-                        name: String(row[header.indexOf('name')] ?? ''),
-                        section: String(row[header.indexOf('section')] ?? ''),
-                        action: String(row[header.indexOf('action')] ?? '')
-                    };
+                    // old format
+                    exportData.push([log.date || '', log.time || '', '', '', log.officerId || '', log.name || '', log.section || '', log.action || '']);
                 }
-            } else {
-                // Assume today's date if no date column
-                const today = new Date();
-                logDate = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-                
-                if (hasNewFormat) {
-                    // Similar logic as above but without date column
-                    const idxTimeIn = header.findIndex(h => h === 'time in' || h === 'timein');
-                    const idxTimeOut = header.findIndex(h => h === 'time out' || h === 'timeout');
-                    const idxDuration = header.indexOf('duration');
-                    const idxOfficer = header.indexOf('officer id');
-                    const idxName = header.indexOf('name');
-                    const idxSection = header.indexOf('section');
-                    const idxAction = header.indexOf('action');
-                    
-                    const timeIn = String(row[idxTimeIn] ?? '');
-                    const timeOut = String(row[idxTimeOut] ?? '');
-                    const durationStr = String(row[idxDuration] ?? '');
-                    let durationSec = 0;
-                    if (durationStr && /^\d{2}:\d{2}:\d{2}$/.test(durationStr)) {
-                        const parts = durationStr.split(':').map(Number);
-                        durationSec = parts[0]*3600 + parts[1]*60 + parts[2];
-                    }
-                    
-                    logEntry = {
-                        timeIn,
-                        timeOut,
-                        durationSec,
-                        officerId: String(row[idxOfficer] ?? ''),
-                        name: String(row[idxName] ?? ''),
-                        section: String(row[idxSection] ?? ''),
-                        action: String(row[idxAction] ?? '')
-                    };
-                }
-            }
-            
-            if (logDate && Object.keys(logEntry).length > 0) {
-                if (!logsByDate[logDate]) {
-                    logsByDate[logDate] = [];
-                }
-                logsByDate[logDate].push(logEntry);
-            }
-        }
-        
-        // Save logs to localStorage by date
-        Object.keys(logsByDate).forEach(dateStr => {
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const key = `dutyLogs-${year}-${month}-${day}`;
-            const existingLogs = loadLogsByKey(key);
-            const mergedLogs = [...existingLogs, ...logsByDate[dateStr]];
-            localStorage.setItem(key, JSON.stringify(mergedLogs));
-        });
-        
-        // Refresh the display
-        initHistoryDatePicker();
-        renderHistory();
-        alert(`Successfully imported logs for ${Object.keys(logsByDate).length} date(s)!`);
-    };
-    reader.readAsArrayBuffer(file);
-});
-
-// =========================
-// Taskings (Calendar) Logic
-// =========================
-const TASKINGS_STORAGE_KEY = 'dutyTaskings-v1';
-let taskOfficerSelection = new Set();
-
-function loadTaskings() {
-    const raw = localStorage.getItem(TASKINGS_STORAGE_KEY);
-    if (!raw) return [];
-    try { return JSON.parse(raw); } catch { return []; }
-}
-
-function saveTaskings(items) {
-    localStorage.setItem(TASKINGS_STORAGE_KEY, JSON.stringify(items));
-}
-
-function populateTaskingOfficerLists() {
-    const officers = loadOfficers();
-    const filterSelect = document.getElementById('taskingsOfficerFilter');
-    const listContainer = document.getElementById('taskOfficerList');
-    if (!filterSelect || !listContainer) return;
-
-    // Preserve current selections
-    const currentFilter = filterSelect.value;
-
-    filterSelect.innerHTML = '';
-    const optAll = document.createElement('option');
-    optAll.value = '';
-    optAll.textContent = 'All officers';
-    filterSelect.appendChild(optAll);
-
-    officers.forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o.studentId;
-        opt.textContent = o.studentName;
-        filterSelect.appendChild(opt);
-    });
-    if (currentFilter !== undefined) filterSelect.value = currentFilter;
-
-    // Build interactive list for multi-select
-    const prevSelectedIds = Array.from(taskOfficerSelection);
-    renderOfficerList(officers, prevSelectedIds);
-}
-
-function renderOfficerList(officers, selectedIds) {
-    const listContainer = document.getElementById('taskOfficerList');
-    const searchInput = document.getElementById('taskOfficerSearch');
-    const selectAll = document.getElementById('taskOfficerSelectAll');
-    const selectedCount = document.getElementById('taskOfficerSelectedCount');
-
-    const filterText = (searchInput?.value || '').toLowerCase().trim();
-    const filtered = officers.filter(o => o.studentName.toLowerCase().includes(filterText));
-
-    listContainer.innerHTML = '';
-    filtered.forEach(o => {
-        const item = document.createElement('div');
-        item.className = 'officer-item';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.className = 'form-check-input';
-        cb.value = o.studentId;
-        // Initialize selection set if provided
-        if (Array.isArray(selectedIds) && selectedIds.length > 0) {
-            selectedIds.forEach(id => taskOfficerSelection.add(id));
-        }
-        cb.checked = taskOfficerSelection.has(o.studentId);
-        const label = document.createElement('span');
-        label.className = 'officer-name';
-        label.textContent = o.studentName;
-        item.appendChild(cb);
-        item.appendChild(label);
-        item.addEventListener('click', (e) => {
-            if (e.target !== cb) cb.checked = !cb.checked;
-            if (cb.checked) taskOfficerSelection.add(o.studentId); else taskOfficerSelection.delete(o.studentId);
-            updateSelectedCount();
-        });
-        cb.addEventListener('change', () => {
-            if (cb.checked) taskOfficerSelection.add(o.studentId); else taskOfficerSelection.delete(o.studentId);
-            updateSelectedCount();
-        });
-        listContainer.appendChild(item);
-    });
-
-    function updateSelectedCount() {
-        const count = taskOfficerSelection.size;
-        if (selectedCount) selectedCount.textContent = `Selected: ${count}`;
-        if (selectAll) selectAll.checked = filtered.length > 0 && filtered.every(o => taskOfficerSelection.has(o.studentId));
-    }
-
-    if (searchInput) searchInput.oninput = () => renderOfficerList(officers, Array.from(taskOfficerSelection));
-    if (selectAll) selectAll.onchange = () => {
-        const ids = filtered.map(o => o.studentId);
-        const check = selectAll.checked;
-        if (check) ids.forEach(id => taskOfficerSelection.add(id));
-        else ids.forEach(id => taskOfficerSelection.delete(id));
-        renderOfficerList(officers, Array.from(taskOfficerSelection));
-    };
-
-    updateSelectedCount();
-}
-
-function getCurrentSelectedOfficerIds() {
-    return Array.from(taskOfficerSelection);
-}
-
-let calendarYear = new Date().getFullYear();
-let calendarMonth = new Date().getMonth(); // 0-11
-
-function setCalendarTo(year, monthIndex) {
-    calendarYear = year;
-    calendarMonth = monthIndex;
-}
-
-function renderTaskingsCalendar() {
-    const monthLabel = document.getElementById('taskingsMonthLabel');
-    const tbody = document.getElementById('taskingsCalendarBody');
-    const filterOfficerId = (document.getElementById('taskingsOfficerFilter') || {}).value || '';
-    if (!monthLabel || !tbody) return;
-
-    const firstDay = new Date(calendarYear, calendarMonth, 1);
-    const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
-    const monthName = firstDay.toLocaleString(undefined, { month: 'long' });
-    monthLabel.textContent = `${monthName} ${calendarYear}`;
-
-    // Start grid on Sunday of the week containing the 1st
-    const gridStart = new Date(firstDay);
-    gridStart.setDate(firstDay.getDate() - firstDay.getDay());
-    // End grid on Saturday of the week containing the last day
-    const gridEnd = new Date(lastDay);
-    gridEnd.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
-
-    const all = normalizeLegacyTaskings(loadTaskings());
-    tbody.innerHTML = '';
-
-    // Keep a map of date ISO -> day container for later highlighting
-    const dayMap = {};
-
-    let cursor = new Date(gridStart);
-    while (cursor <= gridEnd) {
-        const tr = document.createElement('tr');
-        for (let d = 0; d < 7; d++) {
-            const td = document.createElement('td');
-            const isMuted = cursor.getMonth() !== calendarMonth;
-            const dateStr = cursor.toISOString().split('T')[0];
-
-            const dayDiv = document.createElement('div');
-            dayDiv.className = `calendar-day ${isMuted ? 'muted' : ''}`;
-            dayDiv.dataset.date = dateStr;
-            dayDiv.addEventListener('click', () => openTaskingsModalForDate(dateStr));
-
-            const dateLabel = document.createElement('div');
-            dateLabel.className = 'calendar-date';
-            dateLabel.textContent = String(cursor.getDate());
-            dayDiv.appendChild(dateLabel);
-            // Register this day's container
-            dayMap[dateStr] = dayDiv;
-
-            const dayTasks = all.filter(t => isDateWithinRange(dateStr, t.startDate, t.endDate) && (!filterOfficerId || (t.officerIds || [t.officerId]).includes(filterOfficerId)));
-            dayTasks.sort((a,b) => (a.start || '').localeCompare(b.start || ''));
-            dayTasks.forEach(t => {
-                const chip = document.createElement('a');
-                chip.href = 'javascript:void(0)';
-                chip.className = 'task-chip';
-                const timeRange = (t.start || t.end) ? `${t.start || ''}${t.end ? ' - ' + t.end : ''}` : '';
-                const dateRange = t.startDate === t.endDate ? t.startDate : `${t.startDate} → ${t.endDate}`;
-                const firstNames = (t.officerNames || (t.officerName ? [t.officerName] : [])).map(n => (n || '').split(' ')[0]).join(', ');
-                chip.title = `${t.title}${timeRange ? ` • ${timeRange}` : ''}\n${dateRange}${t.location ? `\n${t.location}` : ''}`.trim();
-                chip.textContent = `${t.start ? t.start + ' ' : ''}${t.title} — ${firstNames}`;
-                if (t.done) {
-                    chip.classList.add('text-decoration-line-through');
-                    chip.classList.add('text-muted');
-                    chip.title += `\nCompleted`;
-                }
-                chip.addEventListener('click', (ev) => { ev.stopPropagation(); openTaskDetailsModal(t.id); });
-                dayDiv.appendChild(chip);
             });
 
-            td.appendChild(dayDiv);
-            tr.appendChild(td);
-            cursor.setDate(cursor.getDate() + 1);
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'AllDutyLogs');
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `all-duty-logs-${today}.xlsx`);
+        });
+
+        // --- Import Historical Data ---
+        document.getElementById('importHistoryBtn').addEventListener('click', function () {
+            document.getElementById('importHistoryInput').click();
+        });
+
+        document.getElementById('importHistoryInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                if (rows.length < 2) {
+                    alert('Import file appears to be empty or invalid.');
+                    return;
+                }
+
+                const header = rows[0].map(h => String(h || '').toLowerCase());
+                const hasDate = header.includes('date');
+                const hasNewFormat = header.includes('time in') || header.includes('timein');
+
+                // Group logs by date
+                const logsByDate = {};
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length === 0) continue;
+
+                    let logDate = '';
+                    let logEntry = {};
+
+                    if (hasDate) {
+                        const dateIdx = header.indexOf('date');
+                        logDate = String(row[dateIdx] || '');
+
+                        if (hasNewFormat) {
+                            const idxTimeIn = header.findIndex(h => h === 'time in' || h === 'timein');
+                            const idxTimeOut = header.findIndex(h => h === 'time out' || h === 'timeout');
+                            const idxDuration = header.indexOf('duration');
+                            const idxOfficer = header.indexOf('officer id');
+                            const idxName = header.indexOf('name');
+                            const idxSection = header.indexOf('section');
+                            const idxAction = header.indexOf('action');
+
+                            const timeIn = String(row[idxTimeIn] ?? '');
+                            const timeOut = String(row[idxTimeOut] ?? '');
+                            const durationStr = String(row[idxDuration] ?? '');
+                            let durationSec = 0;
+                            if (durationStr && /^\d{2}:\d{2}:\d{2}$/.test(durationStr)) {
+                                const parts = durationStr.split(':').map(Number);
+                                durationSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                            }
+
+                            logEntry = {
+                                timeIn,
+                                timeOut,
+                                durationSec,
+                                officerId: String(row[idxOfficer] ?? ''),
+                                name: String(row[idxName] ?? ''),
+                                section: String(row[idxSection] ?? ''),
+                                action: String(row[idxAction] ?? '')
+                            };
+                        } else {
+                            // Old format
+                            logEntry = {
+                                time: String(row[header.indexOf('time in')] || row[header.indexOf('time')] || ''),
+                                officerId: String(row[header.indexOf('officer id')] ?? ''),
+                                name: String(row[header.indexOf('name')] ?? ''),
+                                section: String(row[header.indexOf('section')] ?? ''),
+                                action: String(row[header.indexOf('action')] ?? '')
+                            };
+                        }
+                    } else {
+                        // Assume today's date if no date column
+                        const today = new Date();
+                        logDate = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
+                        if (hasNewFormat) {
+                            // Similar logic as above but without date column
+                            const idxTimeIn = header.findIndex(h => h === 'time in' || h === 'timein');
+                            const idxTimeOut = header.findIndex(h => h === 'time out' || h === 'timeout');
+                            const idxDuration = header.indexOf('duration');
+                            const idxOfficer = header.indexOf('officer id');
+                            const idxName = header.indexOf('name');
+                            const idxSection = header.indexOf('section');
+                            const idxAction = header.indexOf('action');
+
+                            const timeIn = String(row[idxTimeIn] ?? '');
+                            const timeOut = String(row[idxTimeOut] ?? '');
+                            const durationStr = String(row[idxDuration] ?? '');
+                            let durationSec = 0;
+                            if (durationStr && /^\d{2}:\d{2}:\d{2}$/.test(durationStr)) {
+                                const parts = durationStr.split(':').map(Number);
+                                durationSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                            }
+
+                            logEntry = {
+                                timeIn,
+                                timeOut,
+                                durationSec,
+                                officerId: String(row[idxOfficer] ?? ''),
+                                name: String(row[idxName] ?? ''),
+                                section: String(row[idxSection] ?? ''),
+                                action: String(row[idxAction] ?? '')
+                            };
+                        }
+                    }
+
+                    if (logDate && Object.keys(logEntry).length > 0) {
+                        if (!logsByDate[logDate]) {
+                            logsByDate[logDate] = [];
+                        }
+                        logsByDate[logDate].push(logEntry);
+                    }
+                }
+
+                // Save logs to localStorage by date
+                Object.keys(logsByDate).forEach(dateStr => {
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const key = `dutyLogs-${year}-${month}-${day}`;
+                    const existingLogs = loadLogsByKey(key);
+                    const mergedLogs = [...existingLogs, ...logsByDate[dateStr]];
+                    localStorage.setItem(key, JSON.stringify(mergedLogs));
+                });
+
+                // Refresh the display
+                initHistoryDatePicker();
+                renderHistory();
+                alert(`Successfully imported logs for ${Object.keys(logsByDate).length} date(s)!`);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // =========================
+        // Taskings (Calendar) Logic
+        // =========================
+        const TASKINGS_STORAGE_KEY = 'dutyTaskings-v1';
+        let taskOfficerSelection = new Set();
+
+        function loadTaskings() {
+            const raw = localStorage.getItem(TASKINGS_STORAGE_KEY);
+            if (!raw) return [];
+            try { return JSON.parse(raw); } catch { return []; }
         }
-        tbody.appendChild(tr);
-    }
 
-    // Highlight each day for multi-day tasks that are visible in the current grid
-    const visibleTasks = all.filter(t => (!filterOfficerId || (t.officerIds || [t.officerId]).includes(filterOfficerId)) && !t.done);
-    visibleTasks.forEach(t => {
-        const taskStart = new Date(t.startDate);
-        const taskEnd = new Date(t.endDate || t.startDate);
-        if (isNaN(taskStart) || isNaN(taskEnd)) return;
-        if (taskEnd < gridStart || taskStart > gridEnd) return;
-
-        const start = taskStart > gridStart ? new Date(taskStart) : new Date(gridStart);
-        const end = taskEnd < gridEnd ? new Date(taskEnd) : new Date(gridEnd);
-        const iter = new Date(start);
-        while (iter <= end) {
-            const iso = iter.toISOString().split('T')[0];
-            const host = dayMap[iso];
-            if (host) host.classList.add('range-highlight');
-            iter.setDate(iter.getDate() + 1);
+        function saveTaskings(items) {
+            localStorage.setItem(TASKINGS_STORAGE_KEY, JSON.stringify(items));
         }
-    });
-}
 
-function initTaskings() {
-    populateTaskingOfficerLists();
-    const today = new Date();
-    setCalendarTo(today.getFullYear(), today.getMonth());
-    renderTaskingsCalendar();
+        function populateTaskingOfficerLists() {
+            const officers = loadOfficers();
+            const filterSelect = document.getElementById('taskingsOfficerFilter');
+            const listContainer = document.getElementById('taskOfficerList');
+            if (!filterSelect || !listContainer) return;
 
-    document.getElementById('taskingsPrevMonth').addEventListener('click', () => {
-        const dt = new Date(calendarYear, calendarMonth - 1, 1);
-        setCalendarTo(dt.getFullYear(), dt.getMonth());
-        renderTaskingsCalendar();
-    });
-    document.getElementById('taskingsNextMonth').addEventListener('click', () => {
-        const dt = new Date(calendarYear, calendarMonth + 1, 1);
-        setCalendarTo(dt.getFullYear(), dt.getMonth());
-        renderTaskingsCalendar();
-    });
-    document.getElementById('taskingsOfficerFilter').addEventListener('change', () => {
-        renderTaskingsCalendar();
-    });
-    document.getElementById('taskingsAddBtn').addEventListener('click', () => openTaskingsModalForDate(new Date(calendarYear, calendarMonth, 1).toISOString().split('T')[0]));
-    document.getElementById('taskingsExportBtn').addEventListener('click', exportTaskingsJSON);
-    document.getElementById('taskingsImportBtn').addEventListener('click', () => document.getElementById('taskingsImportInput').click());
-    document.getElementById('taskingsImportInput').addEventListener('change', onImportTaskingsFile);
-    document.getElementById('taskingsSyncRepoBtn').addEventListener('click', () => syncTaskingsFromRepo(false));
+            // Preserve current selections
+            const currentFilter = filterSelect.value;
 
-    const form = document.getElementById('taskingsForm');
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        saveTaskingFromForm();
-    });
-    document.getElementById('taskDeleteBtn').addEventListener('click', () => deleteTaskingFromForm());
-}
+            filterSelect.innerHTML = '';
+            const optAll = document.createElement('option');
+            optAll.value = '';
+            optAll.textContent = 'All officers';
+            filterSelect.appendChild(optAll);
 
-function openTaskingsModalForDate(dateStr) {
-    const form = document.getElementById('taskingsForm');
-    form.reset();
-    populateTaskingOfficerLists();
-    taskOfficerSelection = new Set();
-    document.getElementById('taskId').value = '';
-    document.getElementById('taskStartDate').value = dateStr;
-    document.getElementById('taskEndDate').value = '';
-    resetChecklistUI([]);
-    document.getElementById('taskDeleteBtn').style.display = 'none';
-    document.getElementById('taskingsModalTitle').textContent = 'Add Tasking';
-    const modal = new bootstrap.Modal(document.getElementById('taskingsModal'));
-    modal.show();
-}
+            officers.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.studentId;
+                opt.textContent = o.studentName;
+                filterSelect.appendChild(opt);
+            });
+            if (currentFilter !== undefined) filterSelect.value = currentFilter;
 
-function openTaskingsModalForEdit(taskId) {
-    const t = loadTaskings().find(x => x.id === taskId);
-    if (!t) return;
-    const n = normalizeLegacyTaskings([t])[0];
-    populateTaskingOfficerLists();
-    taskOfficerSelection = new Set(n.officerIds || (n.officerId ? [n.officerId] : []));
-    document.getElementById('taskId').value = n.id;
-    document.getElementById('taskStartDate').value = n.startDate || '';
-    document.getElementById('taskEndDate').value = n.endDate || '';
-    // Mark officer checkboxes as selected
-    renderOfficerList(loadOfficers(), Array.from(taskOfficerSelection));
-    document.getElementById('taskTitle').value = n.title || '';
-    document.getElementById('taskStartTime').value = n.start || '';
-    document.getElementById('taskEndTime').value = n.end || '';
-    document.getElementById('taskLocation').value = n.location || '';
-    document.getElementById('taskDesc').value = n.notes || '';
-    resetChecklistUI(n.checklist || []);
-    document.getElementById('taskDeleteBtn').style.display = '';
-    document.getElementById('taskingsModalTitle').textContent = 'Edit Tasking';
-    const modal = new bootstrap.Modal(document.getElementById('taskingsModal'));
-    modal.show();
-}
-
-function saveTaskingFromForm() {
-    const id = document.getElementById('taskId').value || cryptoRandomId();
-    const startDate = document.getElementById('taskStartDate').value;
-    const endDateRaw = document.getElementById('taskEndDate').value;
-    const endDate = endDateRaw || startDate;
-    const selectedOfficerIds = getCurrentSelectedOfficerIds();
-    const title = document.getElementById('taskTitle').value.trim();
-    const start = document.getElementById('taskStartTime').value;
-    const end = document.getElementById('taskEndTime').value;
-    const location = document.getElementById('taskLocation').value.trim();
-    const notes = document.getElementById('taskDesc').value.trim();
-    const checklist = collectChecklistFromUI();
-
-    if (!startDate || selectedOfficerIds.length === 0 || !title) {
-        alert('Please fill in date(s), at least one officer, and title.');
-        return;
-    }
-
-    const officers = loadOfficers();
-    const officerNames = selectedOfficerIds.map(id => (officers.find(o => o.studentId === id)?.studentName || id));
-
-    const items = loadTaskings();
-    const existingIdx = items.findIndex(x => x.id === id);
-    const record = { id, startDate, endDate, officerIds: selectedOfficerIds, officerNames, title, start, end, location, notes, checklist };
-    if (existingIdx >= 0) items[existingIdx] = record; else items.push(record);
-    saveTaskings(items);
-    taskOfficerSelection = new Set();
-    renderTaskingsCalendar();
-    bootstrap.Modal.getInstance(document.getElementById('taskingsModal')).hide();
-}
-
-function deleteTaskingFromForm() {
-    const id = document.getElementById('taskId').value;
-    if (!id) return;
-    if (!confirm('Delete this tasking?')) return;
-    const items = loadTaskings().filter(x => x.id !== id);
-    saveTaskings(items);
-    renderTaskingsCalendar();
-    bootstrap.Modal.getInstance(document.getElementById('taskingsModal')).hide();
-}
-
-function cryptoRandomId() {
-    try {
-        const arr = new Uint8Array(8);
-        (window.crypto || window.msCrypto).getRandomValues(arr);
-        return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch {
-        return String(Date.now()) + Math.random().toString(16).slice(2);
-    }
-}
-
-function isDateWithinRange(targetIsoDate, startIsoDate, endIsoDate) {
-    if (!startIsoDate && !endIsoDate) return false;
-    const t = new Date(targetIsoDate);
-    const s = startIsoDate ? new Date(startIsoDate) : t;
-    const e = endIsoDate ? new Date(endIsoDate) : s;
-    // normalize to date-only comparisons
-    s.setHours(0,0,0,0); e.setHours(0,0,0,0); t.setHours(0,0,0,0);
-    return t >= s && t <= e;
-}
-
-// Backward compatibility: convert legacy single-date records {date} into range {startDate,endDate}
-function normalizeLegacyTaskings(list) {
-    return (list || []).map(t => {
-        if (!t.startDate && !t.endDate && t.date) {
-            return { ...t, startDate: t.date, endDate: t.date };
+            // Build interactive list for multi-select
+            const prevSelectedIds = Array.from(taskOfficerSelection);
+            renderOfficerList(officers, prevSelectedIds);
         }
-        // Promote single officer fields to array-based fields for new UI
-        if (!t.officerIds && t.officerId) {
-            t.officerIds = [t.officerId];
+
+        function renderOfficerList(officers, selectedIds) {
+            const listContainer = document.getElementById('taskOfficerList');
+            const searchInput = document.getElementById('taskOfficerSearch');
+            const selectAll = document.getElementById('taskOfficerSelectAll');
+            const selectedCount = document.getElementById('taskOfficerSelectedCount');
+
+            const filterText = (searchInput?.value || '').toLowerCase().trim();
+            const filtered = officers.filter(o => o.studentName.toLowerCase().includes(filterText));
+
+            listContainer.innerHTML = '';
+            filtered.forEach(o => {
+                const item = document.createElement('div');
+                item.className = 'officer-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'form-check-input';
+                cb.value = o.studentId;
+                // Initialize selection set if provided
+                if (Array.isArray(selectedIds) && selectedIds.length > 0) {
+                    selectedIds.forEach(id => taskOfficerSelection.add(id));
+                }
+                cb.checked = taskOfficerSelection.has(o.studentId);
+                const label = document.createElement('span');
+                label.className = 'officer-name';
+                label.textContent = o.studentName;
+                item.appendChild(cb);
+                item.appendChild(label);
+                item.addEventListener('click', (e) => {
+                    if (e.target !== cb) cb.checked = !cb.checked;
+                    if (cb.checked) taskOfficerSelection.add(o.studentId); else taskOfficerSelection.delete(o.studentId);
+                    updateSelectedCount();
+                });
+                cb.addEventListener('change', () => {
+                    if (cb.checked) taskOfficerSelection.add(o.studentId); else taskOfficerSelection.delete(o.studentId);
+                    updateSelectedCount();
+                });
+                listContainer.appendChild(item);
+            });
+
+            function updateSelectedCount() {
+                const count = taskOfficerSelection.size;
+                if (selectedCount) selectedCount.textContent = `Selected: ${count}`;
+                if (selectAll) selectAll.checked = filtered.length > 0 && filtered.every(o => taskOfficerSelection.has(o.studentId));
+            }
+
+            if (searchInput) searchInput.oninput = () => renderOfficerList(officers, Array.from(taskOfficerSelection));
+            if (selectAll) selectAll.onchange = () => {
+                const ids = filtered.map(o => o.studentId);
+                const check = selectAll.checked;
+                if (check) ids.forEach(id => taskOfficerSelection.add(id));
+                else ids.forEach(id => taskOfficerSelection.delete(id));
+                renderOfficerList(officers, Array.from(taskOfficerSelection));
+            };
+
+            updateSelectedCount();
         }
-        if (!t.officerNames && t.officerName) {
-            t.officerNames = [t.officerName];
+
+        function getCurrentSelectedOfficerIds() {
+            return Array.from(taskOfficerSelection);
         }
-        if (!t.endDate && t.startDate) {
-            return { ...t, endDate: t.startDate };
+
+        let calendarYear = new Date().getFullYear();
+        let calendarMonth = new Date().getMonth(); // 0-11
+
+        function setCalendarTo(year, monthIndex) {
+            calendarYear = year;
+            calendarMonth = monthIndex;
         }
-        return t;
-    });
-}
 
-function openTaskDetailsModal(taskId) {
-    const t = normalizeLegacyTaskings(loadTaskings()).find(x => x.id === taskId);
-    if (!t) return;
-    const titleEl = document.getElementById('detailTitle');
-    const datesEl = document.getElementById('detailDates');
-    const timeEl = document.getElementById('detailTime');
-    const officersEl = document.getElementById('detailOfficers');
-    const locationEl = document.getElementById('detailLocation');
-    const notesEl = document.getElementById('detailNotes');
-    const editBtn = document.getElementById('detailEditBtn');
+        function renderTaskingsCalendar() {
+            const monthLabel = document.getElementById('taskingsMonthLabel');
+            const tbody = document.getElementById('taskingsCalendarBody');
+            const filterOfficerId = (document.getElementById('taskingsOfficerFilter') || {}).value || '';
+            if (!monthLabel || !tbody) return;
 
-    const dateRange = t.startDate === t.endDate ? t.startDate : `${t.startDate} → ${t.endDate}`;
-    const timeRange = (t.start || t.end) ? `${t.start || ''}${t.end ? ' - ' + t.end : ''}` : '—';
-    const officerNames = (t.officerNames || (t.officerName ? [t.officerName] : [])).join(', ');
+            const firstDay = new Date(calendarYear, calendarMonth, 1);
+            const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+            const monthName = firstDay.toLocaleString(undefined, { month: 'long' });
+            monthLabel.textContent = `${monthName} ${calendarYear}`;
 
-    titleEl.textContent = t.title || '';
-    datesEl.textContent = dateRange;
-    timeEl.textContent = timeRange;
-    officersEl.textContent = officerNames || '—';
-    locationEl.textContent = t.location || '—';
-    notesEl.textContent = t.notes || '—';
+            // Start grid on Sunday of the week containing the 1st
+            const gridStart = new Date(firstDay);
+            gridStart.setDate(firstDay.getDate() - firstDay.getDay());
+            // End grid on Saturday of the week containing the last day
+            const gridEnd = new Date(lastDay);
+            gridEnd.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
 
-    // Render checklist if present
-    const existingChecklist = document.getElementById('detailChecklist');
-    if (existingChecklist) existingChecklist.remove();
-    if (Array.isArray(t.checklist) && t.checklist.length > 0) {
-        const list = document.createElement('ul');
-        list.id = 'detailChecklist';
-        list.className = 'list-group mt-3';
-        t.checklist.forEach((item, idx) => {
+            const all = normalizeLegacyTaskings(loadTaskings());
+            tbody.innerHTML = '';
+
+            // Keep a map of date ISO -> day container for later highlighting
+            const dayMap = {};
+
+            let cursor = new Date(gridStart);
+            while (cursor <= gridEnd) {
+                const tr = document.createElement('tr');
+                for (let d = 0; d < 7; d++) {
+                    const td = document.createElement('td');
+                    const isMuted = cursor.getMonth() !== calendarMonth;
+                    const dateStr = cursor.toISOString().split('T')[0];
+
+                    const dayDiv = document.createElement('div');
+                    dayDiv.className = `calendar-day ${isMuted ? 'muted' : ''}`;
+                    dayDiv.dataset.date = dateStr;
+                    dayDiv.addEventListener('click', () => openTaskingsModalForDate(dateStr));
+
+                    const dateLabel = document.createElement('div');
+                    dateLabel.className = 'calendar-date';
+                    dateLabel.textContent = String(cursor.getDate());
+                    dayDiv.appendChild(dateLabel);
+                    // Register this day's container
+                    dayMap[dateStr] = dayDiv;
+
+                    const dayTasks = all.filter(t => isDateWithinRange(dateStr, t.startDate, t.endDate) && (!filterOfficerId || (t.officerIds || [t.officerId]).includes(filterOfficerId)));
+                    dayTasks.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+                    dayTasks.forEach(t => {
+                        const chip = document.createElement('a');
+                        chip.href = 'javascript:void(0)';
+                        chip.className = 'task-chip';
+                        const timeRange = (t.start || t.end) ? `${t.start || ''}${t.end ? ' - ' + t.end : ''}` : '';
+                        const dateRange = t.startDate === t.endDate ? t.startDate : `${t.startDate} → ${t.endDate}`;
+                        const firstNames = (t.officerNames || (t.officerName ? [t.officerName] : [])).map(n => (n || '').split(' ')[0]).join(', ');
+                        chip.title = `${t.title}${timeRange ? ` • ${timeRange}` : ''}\n${dateRange}${t.location ? `\n${t.location}` : ''}`.trim();
+                        chip.textContent = `${t.start ? t.start + ' ' : ''}${t.title} — ${firstNames}`;
+                        if (t.done) {
+                            chip.classList.add('text-decoration-line-through');
+                            chip.classList.add('text-muted');
+                            chip.title += `\nCompleted`;
+                        }
+                        chip.addEventListener('click', (ev) => { ev.stopPropagation(); openTaskDetailsModal(t.id); });
+                        dayDiv.appendChild(chip);
+                    });
+
+                    td.appendChild(dayDiv);
+                    tr.appendChild(td);
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+                tbody.appendChild(tr);
+            }
+
+            // Highlight each day for multi-day tasks that are visible in the current grid
+            const visibleTasks = all.filter(t => (!filterOfficerId || (t.officerIds || [t.officerId]).includes(filterOfficerId)) && !t.done);
+            visibleTasks.forEach(t => {
+                const taskStart = new Date(t.startDate);
+                const taskEnd = new Date(t.endDate || t.startDate);
+                if (isNaN(taskStart) || isNaN(taskEnd)) return;
+                if (taskEnd < gridStart || taskStart > gridEnd) return;
+
+                const start = taskStart > gridStart ? new Date(taskStart) : new Date(gridStart);
+                const end = taskEnd < gridEnd ? new Date(taskEnd) : new Date(gridEnd);
+                const iter = new Date(start);
+                while (iter <= end) {
+                    const iso = iter.toISOString().split('T')[0];
+                    const host = dayMap[iso];
+                    if (host) host.classList.add('range-highlight');
+                    iter.setDate(iter.getDate() + 1);
+                }
+            });
+        }
+
+        function initTaskings() {
+            populateTaskingOfficerLists();
+            const today = new Date();
+            setCalendarTo(today.getFullYear(), today.getMonth());
+            renderTaskingsCalendar();
+
+            document.getElementById('taskingsPrevMonth').addEventListener('click', () => {
+                const dt = new Date(calendarYear, calendarMonth - 1, 1);
+                setCalendarTo(dt.getFullYear(), dt.getMonth());
+                renderTaskingsCalendar();
+            });
+            document.getElementById('taskingsNextMonth').addEventListener('click', () => {
+                const dt = new Date(calendarYear, calendarMonth + 1, 1);
+                setCalendarTo(dt.getFullYear(), dt.getMonth());
+                renderTaskingsCalendar();
+            });
+            document.getElementById('taskingsOfficerFilter').addEventListener('change', () => {
+                renderTaskingsCalendar();
+            });
+            document.getElementById('taskingsAddBtn').addEventListener('click', () => openTaskingsModalForDate(new Date(calendarYear, calendarMonth, 1).toISOString().split('T')[0]));
+            document.getElementById('taskingsExportBtn').addEventListener('click', exportTaskingsJSON);
+            document.getElementById('taskingsImportBtn').addEventListener('click', () => document.getElementById('taskingsImportInput').click());
+            document.getElementById('taskingsImportInput').addEventListener('change', onImportTaskingsFile);
+            document.getElementById('taskingsSyncRepoBtn').addEventListener('click', () => syncTaskingsFromRepo(false));
+
+            const form = document.getElementById('taskingsForm');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveTaskingFromForm();
+            });
+            document.getElementById('taskDeleteBtn').addEventListener('click', () => deleteTaskingFromForm());
+        }
+
+        function openTaskingsModalForDate(dateStr) {
+            const form = document.getElementById('taskingsForm');
+            form.reset();
+            populateTaskingOfficerLists();
+            taskOfficerSelection = new Set();
+            document.getElementById('taskId').value = '';
+            document.getElementById('taskStartDate').value = dateStr;
+            document.getElementById('taskEndDate').value = '';
+            resetChecklistUI([]);
+            document.getElementById('taskDeleteBtn').style.display = 'none';
+            document.getElementById('taskingsModalTitle').textContent = 'Add Tasking';
+            const modal = new bootstrap.Modal(document.getElementById('taskingsModal'));
+            modal.show();
+        }
+
+        function openTaskingsModalForEdit(taskId) {
+            const t = loadTaskings().find(x => x.id === taskId);
+            if (!t) return;
+            const n = normalizeLegacyTaskings([t])[0];
+            populateTaskingOfficerLists();
+            taskOfficerSelection = new Set(n.officerIds || (n.officerId ? [n.officerId] : []));
+            document.getElementById('taskId').value = n.id;
+            document.getElementById('taskStartDate').value = n.startDate || '';
+            document.getElementById('taskEndDate').value = n.endDate || '';
+            // Mark officer checkboxes as selected
+            renderOfficerList(loadOfficers(), Array.from(taskOfficerSelection));
+            document.getElementById('taskTitle').value = n.title || '';
+            document.getElementById('taskStartTime').value = n.start || '';
+            document.getElementById('taskEndTime').value = n.end || '';
+            document.getElementById('taskLocation').value = n.location || '';
+            document.getElementById('taskDesc').value = n.notes || '';
+            resetChecklistUI(n.checklist || []);
+            document.getElementById('taskDeleteBtn').style.display = '';
+            document.getElementById('taskingsModalTitle').textContent = 'Edit Tasking';
+            const modal = new bootstrap.Modal(document.getElementById('taskingsModal'));
+            modal.show();
+        }
+
+        function saveTaskingFromForm() {
+            const id = document.getElementById('taskId').value || cryptoRandomId();
+            const startDate = document.getElementById('taskStartDate').value;
+            const endDateRaw = document.getElementById('taskEndDate').value;
+            const endDate = endDateRaw || startDate;
+            const selectedOfficerIds = getCurrentSelectedOfficerIds();
+            const title = document.getElementById('taskTitle').value.trim();
+            const start = document.getElementById('taskStartTime').value;
+            const end = document.getElementById('taskEndTime').value;
+            const location = document.getElementById('taskLocation').value.trim();
+            const notes = document.getElementById('taskDesc').value.trim();
+            const checklist = collectChecklistFromUI();
+
+            if (!startDate || selectedOfficerIds.length === 0 || !title) {
+                alert('Please fill in date(s), at least one officer, and title.');
+                return;
+            }
+
+            const officers = loadOfficers();
+            const officerNames = selectedOfficerIds.map(id => (officers.find(o => o.studentId === id)?.studentName || id));
+
+            const items = loadTaskings();
+            const existingIdx = items.findIndex(x => x.id === id);
+            const record = { id, startDate, endDate, officerIds: selectedOfficerIds, officerNames, title, start, end, location, notes, checklist };
+            if (existingIdx >= 0) items[existingIdx] = record; else items.push(record);
+            saveTaskings(items);
+            taskOfficerSelection = new Set();
+            renderTaskingsCalendar();
+            bootstrap.Modal.getInstance(document.getElementById('taskingsModal')).hide();
+        }
+
+        function deleteTaskingFromForm() {
+            const id = document.getElementById('taskId').value;
+            if (!id) return;
+            if (!confirm('Delete this tasking?')) return;
+            const items = loadTaskings().filter(x => x.id !== id);
+            saveTaskings(items);
+            renderTaskingsCalendar();
+            bootstrap.Modal.getInstance(document.getElementById('taskingsModal')).hide();
+        }
+
+        function cryptoRandomId() {
+            try {
+                const arr = new Uint8Array(8);
+                (window.crypto || window.msCrypto).getRandomValues(arr);
+                return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch {
+                return String(Date.now()) + Math.random().toString(16).slice(2);
+            }
+        }
+
+        function isDateWithinRange(targetIsoDate, startIsoDate, endIsoDate) {
+            if (!startIsoDate && !endIsoDate) return false;
+            const t = new Date(targetIsoDate);
+            const s = startIsoDate ? new Date(startIsoDate) : t;
+            const e = endIsoDate ? new Date(endIsoDate) : s;
+            // normalize to date-only comparisons
+            s.setHours(0, 0, 0, 0); e.setHours(0, 0, 0, 0); t.setHours(0, 0, 0, 0);
+            return t >= s && t <= e;
+        }
+
+        // Backward compatibility: convert legacy single-date records {date} into range {startDate,endDate}
+        function normalizeLegacyTaskings(list) {
+            return (list || []).map(t => {
+                if (!t.startDate && !t.endDate && t.date) {
+                    return { ...t, startDate: t.date, endDate: t.date };
+                }
+                // Promote single officer fields to array-based fields for new UI
+                if (!t.officerIds && t.officerId) {
+                    t.officerIds = [t.officerId];
+                }
+                if (!t.officerNames && t.officerName) {
+                    t.officerNames = [t.officerName];
+                }
+                if (!t.endDate && t.startDate) {
+                    return { ...t, endDate: t.startDate };
+                }
+                return t;
+            });
+        }
+
+        function openTaskDetailsModal(taskId) {
+            const t = normalizeLegacyTaskings(loadTaskings()).find(x => x.id === taskId);
+            if (!t) return;
+            const titleEl = document.getElementById('detailTitle');
+            const datesEl = document.getElementById('detailDates');
+            const timeEl = document.getElementById('detailTime');
+            const officersEl = document.getElementById('detailOfficers');
+            const locationEl = document.getElementById('detailLocation');
+            const notesEl = document.getElementById('detailNotes');
+            const editBtn = document.getElementById('detailEditBtn');
+
+            const dateRange = t.startDate === t.endDate ? t.startDate : `${t.startDate} → ${t.endDate}`;
+            const timeRange = (t.start || t.end) ? `${t.start || ''}${t.end ? ' - ' + t.end : ''}` : '—';
+            const officerNames = (t.officerNames || (t.officerName ? [t.officerName] : [])).join(', ');
+
+            titleEl.textContent = t.title || '';
+            datesEl.textContent = dateRange;
+            timeEl.textContent = timeRange;
+            officersEl.textContent = officerNames || '—';
+            locationEl.textContent = t.location || '—';
+            notesEl.textContent = t.notes || '—';
+
+            // Render checklist if present
+            const existingChecklist = document.getElementById('detailChecklist');
+            if (existingChecklist) existingChecklist.remove();
+            if (Array.isArray(t.checklist) && t.checklist.length > 0) {
+                const list = document.createElement('ul');
+                list.id = 'detailChecklist';
+                list.className = 'list-group mt-3';
+                t.checklist.forEach((item, idx) => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex align-items-center gap-2';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'form-check-input';
+                    cb.checked = !!item.done;
+                    cb.addEventListener('change', () => { toggleChecklistDone(taskId, idx, cb.checked); updateMarkAvailability(); });
+                    const span = document.createElement('span');
+                    span.textContent = item.text || '';
+                    if (cb.checked) span.classList.add('text-decoration-line-through', 'text-muted');
+                    cb.addEventListener('change', () => {
+                        if (cb.checked) span.classList.add('text-decoration-line-through', 'text-muted');
+                        else span.classList.remove('text-decoration-line-through', 'text-muted');
+                    });
+                    li.appendChild(cb);
+                    li.appendChild(span);
+                    list.appendChild(li);
+                });
+                // Insert checklist below notes
+                notesEl.parentElement.parentElement.appendChild(list);
+            }
+
+            editBtn.onclick = () => {
+                bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal')).hide();
+                openTaskingsModalForEdit(taskId);
+            };
+
+            const markBtn = document.getElementById('detailMarkDoneBtn');
+            function updateMarkAvailability() {
+                if (t.done) {
+                    markBtn.textContent = 'Done';
+                    markBtn.classList.remove('btn-success');
+                    markBtn.classList.add('btn-outline-success');
+                    markBtn.disabled = true;
+                    return;
+                }
+                const checklistEl = document.getElementById('detailChecklist');
+                const hasChecklist = checklistEl && checklistEl.querySelectorAll('li').length > 0;
+                const allChecked = !hasChecklist || Array.from(checklistEl.querySelectorAll('input[type="checkbox"]')).every(c => c.checked);
+                markBtn.textContent = allChecked ? 'Mark as Done' : 'Mark as Done';
+                markBtn.classList.add('btn-success');
+                markBtn.classList.remove('btn-outline-success');
+                markBtn.disabled = !allChecked;
+            }
+
+            updateMarkAvailability();
+
+            markBtn.onclick = () => {
+                bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal')).hide();
+                openVerifyTaskModal(taskId);
+            };
+
+            const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+            modal.show();
+        }
+
+        function openVerifyTaskModal(taskId) {
+            const t = normalizeLegacyTaskings(loadTaskings()).find(x => x.id === taskId);
+            if (!t) return;
+            const title = document.getElementById('verifyTaskTitle');
+            const input = document.getElementById('verifyBarcodeInput');
+            const feedback = document.getElementById('verifyFeedback');
+            title.textContent = `Scan assigned officer's barcode to mark "${t.title}" as done.`;
+            input.value = '';
+            feedback.textContent = '';
+
+            const modalEl = document.getElementById('verifyTaskModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            // Focus and listen for scan input
+            setTimeout(() => input.focus(), 200);
+
+            const onInput = () => {
+                const code = input.value.trim();
+                if (!code) return;
+                // verify against officers list and task assignment
+                const officer = getOfficerByBarcode(code) || loadOfficers().find(o => o.studentId === code);
+                const allowedIds = t.officerIds || (t.officerId ? [t.officerId] : []);
+                if (officer && allowedIds.includes(officer.studentId)) {
+                    feedback.textContent = `Verified: ${officer.studentName}. Marking as done...`;
+                    markTaskAsDone(taskId, officer.studentId);
+                    input.value = '';
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(modalEl).hide();
+                        renderTaskingsCalendar();
+                        // If details modal is reopened right away, reflect done state
+                        setTimeout(() => openTaskDetailsModal(taskId), 50);
+                    }, 600);
+                } else {
+                    feedback.textContent = 'Barcode not recognized or officer not assigned to this task.';
+                    input.select();
+                }
+            };
+            input.oninput = onInput;
+        }
+
+        function markTaskAsDone(taskId, verifiedOfficerId) {
+            const items = normalizeLegacyTaskings(loadTaskings());
+            const idx = items.findIndex(t => t.id === taskId);
+            if (idx < 0) return;
+            const now = new Date().toISOString();
+            const t = items[idx];
+            const doneBy = verifiedOfficerId;
+            items[idx] = { ...t, done: true, doneAt: now, doneBy };
+            saveTaskings(items);
+        }
+
+        // Checklist helpers
+        function resetChecklistUI(items) {
+            const list = document.getElementById('taskChecklistList');
+            const input = document.getElementById('taskChecklistInput');
+            list.innerHTML = '';
+            input.value = '';
+            (items || []).forEach(it => addChecklistItemToUI(it.text || '', !!it.done));
+        }
+
+        function addChecklistItemToUI(text, done) {
+            if (!text) return;
+            const list = document.getElementById('taskChecklistList');
             const li = document.createElement('li');
-            li.className = 'list-group-item d-flex align-items-center gap-2';
+            li.className = 'list-group-item d-flex align-items-center justify-content-between';
+            const left = document.createElement('div');
+            left.className = 'd-flex align-items-center gap-2';
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'form-check-input';
-            cb.checked = !!item.done;
-            cb.addEventListener('change', () => { toggleChecklistDone(taskId, idx, cb.checked); updateMarkAvailability(); });
+            cb.checked = !!done;
             const span = document.createElement('span');
-            span.textContent = item.text || '';
-            if (cb.checked) span.classList.add('text-decoration-line-through','text-muted');
+            span.textContent = text;
+            if (cb.checked) span.classList.add('text-decoration-line-through', 'text-muted');
             cb.addEventListener('change', () => {
-                if (cb.checked) span.classList.add('text-decoration-line-through','text-muted');
-                else span.classList.remove('text-decoration-line-through','text-muted');
+                if (cb.checked) span.classList.add('text-decoration-line-through', 'text-muted');
+                else span.classList.remove('text-decoration-line-through', 'text-muted');
             });
-            li.appendChild(cb);
-            li.appendChild(span);
+            left.appendChild(cb); left.appendChild(span);
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'btn btn-sm btn-outline-danger';
+            del.textContent = 'Remove';
+            del.addEventListener('click', () => li.remove());
+            li.appendChild(left); li.appendChild(del);
             list.appendChild(li);
-        });
-        // Insert checklist below notes
-        notesEl.parentElement.parentElement.appendChild(list);
-    }
-
-    editBtn.onclick = () => {
-        bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal')).hide();
-        openTaskingsModalForEdit(taskId);
-    };
-
-    const markBtn = document.getElementById('detailMarkDoneBtn');
-    function updateMarkAvailability() {
-        if (t.done) {
-            markBtn.textContent = 'Done';
-            markBtn.classList.remove('btn-success');
-            markBtn.classList.add('btn-outline-success');
-            markBtn.disabled = true;
-            return;
         }
-        const checklistEl = document.getElementById('detailChecklist');
-        const hasChecklist = checklistEl && checklistEl.querySelectorAll('li').length > 0;
-        const allChecked = !hasChecklist || Array.from(checklistEl.querySelectorAll('input[type="checkbox"]')).every(c => c.checked);
-        markBtn.textContent = allChecked ? 'Mark as Done' : 'Mark as Done';
-        markBtn.classList.add('btn-success');
-        markBtn.classList.remove('btn-outline-success');
-        markBtn.disabled = !allChecked;
-    }
 
-    updateMarkAvailability();
-
-    markBtn.onclick = () => {
-        bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal')).hide();
-        openVerifyTaskModal(taskId);
-    };
-
-    const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
-    modal.show();
-}
-
-function openVerifyTaskModal(taskId) {
-    const t = normalizeLegacyTaskings(loadTaskings()).find(x => x.id === taskId);
-    if (!t) return;
-    const title = document.getElementById('verifyTaskTitle');
-    const input = document.getElementById('verifyBarcodeInput');
-    const feedback = document.getElementById('verifyFeedback');
-    title.textContent = `Scan assigned officer's barcode to mark "${t.title}" as done.`;
-    input.value = '';
-    feedback.textContent = '';
-
-    const modalEl = document.getElementById('verifyTaskModal');
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-
-    // Focus and listen for scan input
-    setTimeout(() => input.focus(), 200);
-
-    const onInput = () => {
-        const code = input.value.trim();
-        if (!code) return;
-        // verify against officers list and task assignment
-        const officer = getOfficerByBarcode(code) || loadOfficers().find(o => o.studentId === code);
-        const allowedIds = t.officerIds || (t.officerId ? [t.officerId] : []);
-        if (officer && allowedIds.includes(officer.studentId)) {
-            feedback.textContent = `Verified: ${officer.studentName}. Marking as done...`;
-            markTaskAsDone(taskId, officer.studentId);
+        document.getElementById('taskChecklistAddBtn').addEventListener('click', () => {
+            const input = document.getElementById('taskChecklistInput');
+            const text = input.value.trim();
+            if (!text) return;
+            addChecklistItemToUI(text, false);
             input.value = '';
-            setTimeout(() => {
-                bootstrap.Modal.getInstance(modalEl).hide();
-                renderTaskingsCalendar();
-                // If details modal is reopened right away, reflect done state
-                setTimeout(() => openTaskDetailsModal(taskId), 50);
-            }, 600);
-        } else {
-            feedback.textContent = 'Barcode not recognized or officer not assigned to this task.';
-            input.select();
+            input.focus();
+        });
+
+        function collectChecklistFromUI() {
+            const list = document.getElementById('taskChecklistList');
+            return Array.from(list.querySelectorAll('li')).map(li => {
+                const cb = li.querySelector('input[type="checkbox"]');
+                const text = li.querySelector('span')?.textContent || '';
+                return { text, done: !!(cb && cb.checked) };
+            });
         }
-    };
-    input.oninput = onInput;
-}
 
-function markTaskAsDone(taskId, verifiedOfficerId) {
-    const items = normalizeLegacyTaskings(loadTaskings());
-    const idx = items.findIndex(t => t.id === taskId);
-    if (idx < 0) return;
-    const now = new Date().toISOString();
-    const t = items[idx];
-    const doneBy = verifiedOfficerId;
-    items[idx] = { ...t, done: true, doneAt: now, doneBy };
-    saveTaskings(items);
-}
-
-// Checklist helpers
-function resetChecklistUI(items) {
-    const list = document.getElementById('taskChecklistList');
-    const input = document.getElementById('taskChecklistInput');
-    list.innerHTML = '';
-    input.value = '';
-    (items || []).forEach(it => addChecklistItemToUI(it.text || '', !!it.done));
-}
-
-function addChecklistItemToUI(text, done) {
-    if (!text) return;
-    const list = document.getElementById('taskChecklistList');
-    const li = document.createElement('li');
-    li.className = 'list-group-item d-flex align-items-center justify-content-between';
-    const left = document.createElement('div');
-    left.className = 'd-flex align-items-center gap-2';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'form-check-input';
-    cb.checked = !!done;
-    const span = document.createElement('span');
-    span.textContent = text;
-    if (cb.checked) span.classList.add('text-decoration-line-through','text-muted');
-    cb.addEventListener('change', () => {
-        if (cb.checked) span.classList.add('text-decoration-line-through','text-muted');
-        else span.classList.remove('text-decoration-line-through','text-muted');
-    });
-    left.appendChild(cb); left.appendChild(span);
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'btn btn-sm btn-outline-danger';
-    del.textContent = 'Remove';
-    del.addEventListener('click', () => li.remove());
-    li.appendChild(left); li.appendChild(del);
-    list.appendChild(li);
-}
-
-document.getElementById('taskChecklistAddBtn').addEventListener('click', () => {
-    const input = document.getElementById('taskChecklistInput');
-    const text = input.value.trim();
-    if (!text) return;
-    addChecklistItemToUI(text, false);
-    input.value = '';
-    input.focus();
-});
-
-function collectChecklistFromUI() {
-    const list = document.getElementById('taskChecklistList');
-    return Array.from(list.querySelectorAll('li')).map(li => {
-        const cb = li.querySelector('input[type="checkbox"]');
-        const text = li.querySelector('span')?.textContent || '';
-        return { text, done: !!(cb && cb.checked) };
-    });
-}
-
-function toggleChecklistDone(taskId, itemIndex, done) {
-    const items = normalizeLegacyTaskings(loadTaskings());
-    const idx = items.findIndex(t => t.id === taskId);
-    if (idx < 0) return;
-    const t = items[idx];
-    if (!Array.isArray(t.checklist)) t.checklist = [];
-    if (!t.checklist[itemIndex]) return;
-    t.checklist[itemIndex].done = !!done;
-    saveTaskings(items);
-}
-
-// Export/Import Taskings (JSON)
-function exportTaskingsJSON() {
-    const data = normalizeLegacyTaskings(loadTaskings());
-    const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), taskings: data }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const today = new Date().toISOString().split('T')[0];
-    a.href = url;
-    a.download = `taskings-${today}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-}
-
-function onImportTaskingsFile(e) {
-    const file = e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        try {
-            const parsed = JSON.parse(String(evt.target.result || '{}'));
-            const incoming = Array.isArray(parsed) ? parsed : Array.isArray(parsed.taskings) ? parsed.taskings : [];
-            if (incoming.length === 0) { alert('No taskings found in file.'); return; }
-            mergeImportedTaskings(incoming);
-            renderTaskingsCalendar();
-            alert(`Imported ${incoming.length} tasking(s).`);
-        } catch (err) {
-            alert('Invalid JSON file.');
+        function toggleChecklistDone(taskId, itemIndex, done) {
+            const items = normalizeLegacyTaskings(loadTaskings());
+            const idx = items.findIndex(t => t.id === taskId);
+            if (idx < 0) return;
+            const t = items[idx];
+            if (!Array.isArray(t.checklist)) t.checklist = [];
+            if (!t.checklist[itemIndex]) return;
+            t.checklist[itemIndex].done = !!done;
+            saveTaskings(items);
         }
-    };
-    reader.readAsText(file);
-}
 
-function mergeImportedTaskings(incomingRaw) {
-    const incoming = normalizeLegacyTaskings(incomingRaw).map(t => ({ ...t, id: t.id || cryptoRandomId() }));
-    const current = normalizeLegacyTaskings(loadTaskings());
-    const byId = new Map(current.map(t => [t.id, t]));
-    incoming.forEach(t => {
-        // Simple merge: replace if same id, otherwise add new
-        byId.set(t.id, t);
-    });
-    saveTaskings(Array.from(byId.values()));
-}
-
-// Load taskings from Database/taskings.json (served by GitHub Pages or local dev)
-async function syncTaskingsFromRepo(replace) {
-    try {
-        setSyncStatus('Syncing…');
-        // Try canonical file first
-        let url = 'Database/taskings.json?cb=' + Date.now();
-        let res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) {
-            // Fallback: discover latest dated file like taskings-YYYY-MM-DD.json by probing recent dates
-            const discovered = await findLatestTaskingsUrl();
-            if (!discovered) { alert('Database/taskings.json not found. No dated taskings file detected.'); return; }
-            url = discovered;
-            res = await fetch(url, { cache: 'no-store' });
-            if (!res.ok) { alert('Failed to load ' + url); return; }
+        // Export/Import Taskings (JSON)
+        function exportTaskingsJSON() {
+            const data = normalizeLegacyTaskings(loadTaskings());
+            const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), taskings: data }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const today = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `taskings-${today}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
-        const json = await res.json();
-        const incoming = Array.isArray(json) ? json : Array.isArray(json.taskings) ? json.taskings : [];
-        if (incoming.length === 0) { alert('No taskings in Database/taskings.json'); return; }
-        if (replace) {
-            saveTaskings(normalizeLegacyTaskings(incoming).map(t => ({ ...t, id: t.id || cryptoRandomId() })));
-        } else {
-            mergeImportedTaskings(incoming);
-        }
-        renderTaskingsCalendar();
-        alert(`Synced ${incoming.length} tasking(s) from ${url.replace(/\?cb=.*/, '')}`);
-    } catch (e) {
-        alert('Failed to load Database/taskings.json');
-    } finally {
-        clearSyncStatus();
-    }
-}
 
-// Probe recent dates to find latest taskings-YYYY-MM-DD.json
-async function findLatestTaskingsUrl() {
-    const baseMakers = [
-        (d) => `Database/taskings-${d}`,
-        (d) => `Database/taskings_${d}`,
-        (d) => `Database/taskings${d}`,
-    ];
-    const today = new Date();
-    // Check the past 365 days
-    for (let i = 0; i < 365; i++) {
-        const dt = new Date(today);
-        dt.setDate(today.getDate() - i);
-        const y = dt.getFullYear();
-        const m = String(dt.getMonth() + 1).padStart(2, '0');
-        const d = String(dt.getDate()).padStart(2, '0');
-        const seg = `${y}-${m}-${d}`;
-        for (const makeBase of baseMakers) {
-            const base = makeBase(seg);
-            // Try numbered copies first (highest number is newest)
-            for (let n = 50; n >= 1; n--) {
-                const candidate = `${base}%20(${n}).json`;
+        function onImportTaskingsFile(e) {
+            const file = e.target.files[0];
+            e.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
                 try {
-                    let r = await fetch(candidate, { method: 'HEAD', cache: 'no-store' });
-                    if (!r.ok) {
-                        r = await fetch(candidate, { method: 'GET', cache: 'no-store' });
-                        if (!r.ok) continue;
-                    }
-                    return candidate + '?cb=' + Date.now();
-                } catch (_) { /* continue */ }
-            }
-            // Then try plain filename without number
-            const plain = `${base}.json`;
-            try {
-                let r = await fetch(plain, { method: 'HEAD', cache: 'no-store' });
-                if (!r.ok) {
-                    r = await fetch(plain, { method: 'GET', cache: 'no-store' });
-                    if (!r.ok) continue;
+                    const parsed = JSON.parse(String(evt.target.result || '{}'));
+                    const incoming = Array.isArray(parsed) ? parsed : Array.isArray(parsed.taskings) ? parsed.taskings : [];
+                    if (incoming.length === 0) { alert('No taskings found in file.'); return; }
+                    mergeImportedTaskings(incoming);
+                    renderTaskingsCalendar();
+                    alert(`Imported ${incoming.length} tasking(s).`);
+                } catch (err) {
+                    alert('Invalid JSON file.');
                 }
-                return plain + '?cb=' + Date.now();
-            } catch (_) { /* continue */ }
+            };
+            reader.readAsText(file);
         }
-    }
-    return null;
-}
 
-// On first load, if there are no local taskings, attempt auto-sync from repo
-(function autoSyncIfEmpty(){
-    try {
-        const existing = loadTaskings();
-        if (!existing || existing.length === 0) {
-            // fire and forget, do not block UI
-            syncTaskingsFromRepo(false);
+        function mergeImportedTaskings(incomingRaw) {
+            const incoming = normalizeLegacyTaskings(incomingRaw).map(t => ({ ...t, id: t.id || cryptoRandomId() }));
+            const current = normalizeLegacyTaskings(loadTaskings());
+            const byId = new Map(current.map(t => [t.id, t]));
+            incoming.forEach(t => {
+                // Simple merge: replace if same id, otherwise add new
+                byId.set(t.id, t);
+            });
+            saveTaskings(Array.from(byId.values()));
         }
-    } catch {}
-})();
 
-function setSyncStatus(text) {
-    const el = document.getElementById('taskingsSyncStatus');
-    if (!el) return;
-    el.textContent = text || 'Syncing…';
-    el.style.display = '';
-}
+        // Load taskings from Database/taskings.json (served by GitHub Pages or local dev)
+        async function syncTaskingsFromRepo(replace) {
+            try {
+                setSyncStatus('Syncing…');
+                // Try canonical file first
+                let url = 'Database/taskings.json?cb=' + Date.now();
+                let res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) {
+                    // Fallback: discover latest dated file like taskings-YYYY-MM-DD.json by probing recent dates
+                    const discovered = await findLatestTaskingsUrl();
+                    if (!discovered) { alert('Database/taskings.json not found. No dated taskings file detected.'); return; }
+                    url = discovered;
+                    res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) { alert('Failed to load ' + url); return; }
+                }
+                const json = await res.json();
+                const incoming = Array.isArray(json) ? json : Array.isArray(json.taskings) ? json.taskings : [];
+                if (incoming.length === 0) { alert('No taskings in Database/taskings.json'); return; }
+                if (replace) {
+                    saveTaskings(normalizeLegacyTaskings(incoming).map(t => ({ ...t, id: t.id || cryptoRandomId() })));
+                } else {
+                    mergeImportedTaskings(incoming);
+                }
+                renderTaskingsCalendar();
+                alert(`Synced ${incoming.length} tasking(s) from ${url.replace(/\?cb=.*/, '')}`);
+            } catch (e) {
+                alert('Failed to load Database/taskings.json');
+            } finally {
+                clearSyncStatus();
+            }
+        }
 
-function clearSyncStatus() {
-    const el = document.getElementById('taskingsSyncStatus');
-    if (!el) return;
-    el.textContent = '';
-    el.style.display = 'none';
-}
-</script>
-<!-- Extra libs for embedded barcode generation -->
-<script src="lib/JsBarcode.all.min.js"></script>
-<script src="lib/jszip.min.js"></script>
-<!-- Reuse existing generator logic -->
-<script src="generate-qr.js"></script>
+        // Probe recent dates to find latest taskings-YYYY-MM-DD.json
+        async function findLatestTaskingsUrl() {
+            const baseMakers = [
+                (d) => `Database/taskings-${d}`,
+                (d) => `Database/taskings_${d}`,
+                (d) => `Database/taskings${d}`,
+            ];
+            const today = new Date();
+            // Check the past 365 days
+            for (let i = 0; i < 365; i++) {
+                const dt = new Date(today);
+                dt.setDate(today.getDate() - i);
+                const y = dt.getFullYear();
+                const m = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                const seg = `${y}-${m}-${d}`;
+                for (const makeBase of baseMakers) {
+                    const base = makeBase(seg);
+                    // Try numbered copies first (highest number is newest)
+                    for (let n = 50; n >= 1; n--) {
+                        const candidate = `${base}%20(${n}).json`;
+                        try {
+                            let r = await fetch(candidate, { method: 'HEAD', cache: 'no-store' });
+                            if (!r.ok) {
+                                r = await fetch(candidate, { method: 'GET', cache: 'no-store' });
+                                if (!r.ok) continue;
+                            }
+                            return candidate + '?cb=' + Date.now();
+                        } catch (_) { /* continue */ }
+                    }
+                    // Then try plain filename without number
+                    const plain = `${base}.json`;
+                    try {
+                        let r = await fetch(plain, { method: 'HEAD', cache: 'no-store' });
+                        if (!r.ok) {
+                            r = await fetch(plain, { method: 'GET', cache: 'no-store' });
+                            if (!r.ok) continue;
+                        }
+                        return plain + '?cb=' + Date.now();
+                    } catch (_) { /* continue */ }
+                }
+            }
+            return null;
+        }
+
+        // On first load, if there are no local taskings, attempt auto-sync from repo
+        (function autoSyncIfEmpty() {
+            try {
+                const existing = loadTaskings();
+                if (!existing || existing.length === 0) {
+                    // fire and forget, do not block UI
+                    syncTaskingsFromRepo(false);
+                }
+            } catch { }
+        })();
+
+        function setSyncStatus(text) {
+            const el = document.getElementById('taskingsSyncStatus');
+            if (!el) return;
+            el.textContent = text || 'Syncing…';
+            el.style.display = '';
+        }
+
+        function clearSyncStatus() {
+            const el = document.getElementById('taskingsSyncStatus');
+            if (!el) return;
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+    </script>
+    <!-- Extra libs for embedded barcode generation -->
+    <script src="lib/JsBarcode.all.min.js"></script>
+    <script src="lib/jszip.min.js"></script>
+    <!-- Reuse existing generator logic -->
+    <script src="generate-qr.js"></script>
 </body>
+
 </html>
