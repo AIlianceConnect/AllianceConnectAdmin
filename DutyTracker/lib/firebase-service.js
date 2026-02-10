@@ -251,6 +251,59 @@ class DutyFirebaseService {
         }
     }
 
+    // --- Duty Log Methods ---
+
+    async addDutyLog(logData) {
+        try {
+            // Create a new document in 'DutyTracker_logs'
+            // We let Firestore generate the ID, or we could use a composite key (officerId_timestamp)
+            // Let's use Firestore auto-ID for simplicity, but we'll return it to store locally
+            const docRef = await this.db.collection('DutyTracker_logs').add({
+                ...logData, // Should include officerId, name, section, timeIn, action
+                createdAt: new Date()
+            });
+            return docRef.id;
+        } catch (error) {
+            console.error('Error adding duty log:', error);
+            // Don't throw, just return null so local storage continues
+            return null;
+        }
+    }
+
+    async updateDutyLog(docId, updateData) {
+        try {
+            await this.db.collection('DutyTracker_logs').doc(docId).update({
+                ...updateData, // Should include timeOut, durationSec, action
+                updatedAt: new Date()
+            });
+            return true;
+        } catch (error) {
+            console.error('Error updating duty log:', error);
+            return false;
+        }
+    }
+
+    async getDutyLogsSince(lastSyncTimestamp) {
+        try {
+            const date = new Date(lastSyncTimestamp || 0);
+            const querySnapshot = await this.db.collection('DutyTracker_logs')
+                .where('updatedAt', '>', date)
+                .get();
+
+            const logs = [];
+            querySnapshot.forEach(doc => {
+                logs.push({
+                    firebaseId: doc.id,
+                    ...doc.data()
+                });
+            });
+            return logs;
+        } catch (error) {
+            console.error('Error getting logs since:', error);
+            return [];
+        }
+    }
+
 }
 
 // Initialize and export the service

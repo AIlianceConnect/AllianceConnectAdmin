@@ -608,6 +608,62 @@
             localStorage.setItem(key, JSON.stringify(logs));
         }
 
+        async function syncLogsFromFirebase() {
+            if (!window.dutyFirebaseService) return;
+
+            const lastSync = localStorage.getItem('lastLogSync');
+            const now = new Date().toISOString();
+            console.log('Syncing logs from Firebase since:', lastSync);
+
+            const remoteLogs = await window.dutyFirebaseService.getDutyLogsSince(lastSync);
+
+            if (remoteLogs && remoteLogs.length > 0) {
+                console.log(`Fetched ${remoteLogs.length} updated logs from Firebase`);
+
+                // Group by day to update specific local storage keys
+                const logsByDay = {}; // Key: 'dutyLogs-YYYY-M-D', Value: [logs]
+
+                remoteLogs.forEach(remoteLog => {
+                    const logDate = new Date(remoteLog.timeIn);
+                    const key = 'dutyLogs-' + logDate.getFullYear() + '-' + (logDate.getMonth() + 1) + '-' + logDate.getDate();
+                    if (!logsByDay[key]) logsByDay[key] = [];
+                    logsByDay[key].push(remoteLog);
+                });
+
+                // Update Local Storage for each affected day
+                Object.keys(logsByDay).forEach(key => {
+                    let localLogs = [];
+                    try {
+                        localLogs = JSON.parse(localStorage.getItem(key)) || [];
+                    } catch (e) { localLogs = []; }
+
+                    logsByDay[key].forEach(remoteLog => {
+                        // Check if exists by firebaseId or matching content (deduplication)
+                        const existingIdx = localLogs.findIndex(l =>
+                            (l.firebaseId && l.firebaseId === remoteLog.firebaseId) ||
+                            (l.officerId === remoteLog.officerId && Math.abs(new Date(l.timeIn) - new Date(remoteLog.timeIn)) < 1000) // blurry match if no ID yet
+                        );
+
+                        if (existingIdx >= 0) {
+                            // Update existing
+                            localLogs[existingIdx] = { ...localLogs[existingIdx], ...remoteLog };
+                        } else {
+                            // Add new
+                            localLogs.push(remoteLog);
+                        }
+                    });
+
+                    localStorage.setItem(key, JSON.stringify(localLogs));
+                });
+
+                renderLogs(); // Refresh current view
+                renderHistory && typeof renderHistory === 'function' && renderHistory(); // Refresh history tab if active
+            }
+
+            // Update sync timestamp
+            localStorage.setItem('lastLogSync', now);
+        }
+
         // --- Time helpers ---
         function formatLocalTime(isoOrText) {
             if (!isoOrText) return '';
@@ -649,9 +705,11 @@
         }
 
         // --- Time-in/Time-out toggle ---
-        function toggleDuty(officer) {
+        // --- Time-in/Time-out toggle ---
+        async function toggleDuty(officer) {
             const logs = loadLogs();
             const openIdx = logs.findIndex(l => l.officerId === officer.studentId && !l.timeOut);
+
             if (openIdx >= 0) {
                 // Time-out existing session
                 const nowIso = new Date().toISOString();
@@ -659,6 +717,18 @@
                 openSession.timeOut = nowIso;
                 openSession.durationSec = elapsedSeconds(openSession.timeIn, openSession.timeOut);
                 openSession.action = 'Time-out';
+
+                // Sync to Firebase
+                if (openSession.firebaseId && window.dutyFirebaseService) {
+                    try {
+                        await window.dutyFirebaseService.updateDutyLog(openSession.firebaseId, {
+                            timeOut: openSession.timeOut,
+                            durationSec: openSession.durationSec,
+                            action: openSession.action
+                        });
+                    } catch (e) { console.error('Error syncing time-out to Firebase:', e); }
+                }
+
                 logs[openIdx] = openSession;
                 saveLogs(logs);
                 renderLogs();
@@ -666,7 +736,7 @@
                 return 'Time-out';
             } else {
                 // Start a new session (Time-in)
-                logs.push({
+                const newLog = {
                     timeIn: new Date().toISOString(),
                     timeOut: '',
                     durationSec: 0,
@@ -674,7 +744,17 @@
                     name: officer.studentName,
                     section: officer.section,
                     action: 'Time-in'
-                });
+                };
+
+                // Sync to Firebase
+                if (window.dutyFirebaseService) {
+                    try {
+                        const docId = await window.dutyFirebaseService.addDutyLog(newLog);
+                        if (docId) newLog.firebaseId = docId;
+                    } catch (e) { console.error('Error syncing time-in to Firebase:', e); }
+                }
+
+                logs.push(newLog);
                 saveLogs(logs);
                 renderLogs();
                 showOfficerInfo(officer, 'Time-in');
@@ -795,6 +875,8 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             renderLogs();
+            // Auto-sync logs from Firebase (optimized: only newer than last sync)
+            setTimeout(syncLogsFromFirebase, 1000); // Small delay to let Firebase init
             const barcodeInput = document.getElementById('barcodeInput');
             const beepSound = document.getElementById('beepSound');
             barcodeInput.focus();
@@ -1945,23 +2027,23 @@
                 if (!res.ok) {
                     // Fallback: discover latest dated file like taskings-YYYY-MM-DD.json by probing recent dates
                     const discovered = await findLatestTaskingsUrl();
-                    if (!discovered) { alert('Database/taskings.json not found. No dated taskings file detected.'); return; }
+                    if (!discovered) { console.warn('Database/taskings.json not found. No dated taskings file detected.'); return; }
                     url = discovered;
                     res = await fetch(url, { cache: 'no-store' });
-                    if (!res.ok) { alert('Failed to load ' + url); return; }
+                    if (!res.ok) { console.warn('Failed to load ' + url); return; }
                 }
                 const json = await res.json();
                 const incoming = Array.isArray(json) ? json : Array.isArray(json.taskings) ? json.taskings : [];
-                if (incoming.length === 0) { alert('No taskings in Database/taskings.json'); return; }
+                if (incoming.length === 0) { console.warn('No taskings in Database/taskings.json'); return; }
                 if (replace) {
                     saveTaskings(normalizeLegacyTaskings(incoming).map(t => ({ ...t, id: t.id || cryptoRandomId() })));
                 } else {
                     mergeImportedTaskings(incoming);
                 }
                 renderTaskingsCalendar();
-                alert(`Synced ${incoming.length} tasking(s) from ${url.replace(/\?cb=.*/, '')}`);
+                console.info(`Synced ${incoming.length} tasking(s) from ${url.replace(/\?cb=.*/, '')}`);
             } catch (e) {
-                alert('Failed to load Database/taskings.json');
+                console.warn('Failed to load Database/taskings.json');
             } finally {
                 clearSyncStatus();
             }
