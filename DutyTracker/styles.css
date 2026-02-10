@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+:root {
+  --gold: #FFD700;
+  --gold-dark: #FFC107;
+  --black: #181818;
+  --white: #fff;
+}
+
+/* Navbar to match merchandise site */
+.navbar {
+  background: var(--black) !important;
+  height: 70px;
+}
+
+.navbar-brand span {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+/* Primary button uses gold */
+.btn-primary {
+  background: var(--gold);
+  color: var(--black);
+  border: none;
+  font-weight: 700;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background: var(--black);
+  color: var(--gold);
+}
+
+/* Outline buttons with gold theme */
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-info,
+.btn-outline-warning {
+  border-color: var(--gold) !important;
+  color: var(--black) !important;
+  background-color: #fff !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover {
+  background-color: var(--gold) !important;
+  color: var(--black) !important;
+}
+
+/* Info/Success hover alignment */
+.btn-info:hover,
+.btn-success:hover {
+  background-color: var(--black) !important;
+  color: var(--gold) !important;
+  border-color: var(--black) !important;
+}
+
+/* Optional utility for spacing below fixed navbar */
+.with-fixed-navbar {
+  margin-top: 120px !important;
+}
+
+
