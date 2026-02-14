@@ -631,6 +631,56 @@
             return [];
         }
 
+        // --- Google Form Auto-submit Configuration ---
+        // Set `GOOGLE_FORM_URL` to your form's POST endpoint, for example:
+        // https://docs.google.com/forms/d/e/FORM_ID/formResponse
+        // Set the `ENTRY_*` keys to the entry.<id> names from your Google Form prefill (see README below comments).
+        const GOOGLE_FORM_CONFIG = {
+            GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSd3ZQGYC7aIX0cejUlBJuxBy8YjGxBEU6hxbnwbqxoPAdk58g/formResponse',
+            ENTRY_OFFICER_ID: 'entry.1732369830',
+            ENTRY_NAME: 'entry.1251342239',
+            ENTRY_SECTION: '',
+            ENTRY_ACTION: 'entry.47885340',
+            ENTRY_TIMEIN: 'entry.1587778642',
+            ENTRY_TIMEOUT: 'entry.267265748',
+            ENTRY_DURATION: 'entry.40359946'
+        };
+
+        // Helper that posts a response to Google Forms (non-blocking)
+        async function submitToGoogleForm(data) {
+            try {
+                if (!GOOGLE_FORM_CONFIG.GOOGLE_FORM_URL) {
+                    console.warn('Google Form URL not configured — skipping form submit');
+                    return;
+                }
+
+                const formData = new URLSearchParams();
+                if (data.officerId) formData.append(GOOGLE_FORM_CONFIG.ENTRY_OFFICER_ID, data.officerId);
+                if (data.name) formData.append(GOOGLE_FORM_CONFIG.ENTRY_NAME, data.name);
+                if (data.section) formData.append(GOOGLE_FORM_CONFIG.ENTRY_SECTION, data.section);
+                if (data.action) formData.append(GOOGLE_FORM_CONFIG.ENTRY_ACTION, data.action);
+                if (data.timeIn) formData.append(GOOGLE_FORM_CONFIG.ENTRY_TIMEIN, data.timeIn);
+                if (data.timeOut) formData.append(GOOGLE_FORM_CONFIG.ENTRY_TIMEOUT, data.timeOut);
+                if (typeof data.durationSec !== 'undefined') formData.append(GOOGLE_FORM_CONFIG.ENTRY_DURATION, String(data.durationSec));
+
+                // POST as application/x-www-form-urlencoded
+                fetch(GOOGLE_FORM_CONFIG.GOOGLE_FORM_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData.toString()
+                }).then(() => {
+                    console.log('Submitted to Google Form (no-cors) for', data.officerId, data.action);
+                }).catch(err => {
+                    console.warn('Google Form submit failed (fetch):', err);
+                });
+            } catch (e) {
+                console.error('submitToGoogleForm error:', e);
+            }
+        }
+
         // --- Duty Logs Storage ---
         function getTodayKey() {
             const today = new Date();
@@ -778,6 +828,18 @@
                 saveLogs(logs);
                 renderLogs();
                 showOfficerInfo(officer, 'Time-out');
+
+                // Submit time-out to Google Form (non-blocking)
+                submitToGoogleForm({
+                    officerId: openSession.officerId,
+                    name: openSession.name,
+                    section: openSession.section,
+                    action: openSession.action,
+                    timeIn: openSession.timeIn,
+                    timeOut: openSession.timeOut,
+                    durationSec: openSession.durationSec
+                });
+
                 return 'Time-out';
             } else {
                 // Start a new session (Time-in)
@@ -803,6 +865,18 @@
                 saveLogs(logs);
                 renderLogs();
                 showOfficerInfo(officer, 'Time-in');
+
+                // Submit time-in to Google Form (non-blocking)
+                submitToGoogleForm({
+                    officerId: newLog.officerId,
+                    name: newLog.name,
+                    section: newLog.section,
+                    action: newLog.action,
+                    timeIn: newLog.timeIn,
+                    timeOut: newLog.timeOut,
+                    durationSec: newLog.durationSec
+                });
+
                 return 'Time-in';
             }
         }
@@ -1692,7 +1766,10 @@
             document.getElementById('taskingsExportBtn').addEventListener('click', exportTaskingsJSON);
             document.getElementById('taskingsImportBtn').addEventListener('click', () => document.getElementById('taskingsImportInput').click());
             document.getElementById('taskingsImportInput').addEventListener('change', onImportTaskingsFile);
-            document.getElementById('taskingsSyncRepoBtn').addEventListener('click', () => syncTaskingsFromRepo(false));
+            document.getElementById('taskingsSyncRepoBtn').addEventListener('click', () => {
+                // Disabled: avoid probing for Database/taskings*.json which causes 404s in local/dev setups
+                alert('Sync from Database is disabled in this build.');
+            });
 
             const form = document.getElementById('taskingsForm');
             form.addEventListener('submit', (e) => {
@@ -2150,13 +2227,8 @@
 
         // On first load, if there are no local taskings, attempt auto-sync from repo
         (function autoSyncIfEmpty() {
-            try {
-                const existing = loadTaskings();
-                if (!existing || existing.length === 0) {
-                    // fire and forget, do not block UI
-                    syncTaskingsFromRepo(false);
-                }
-            } catch { }
+            // Auto-sync from repo disabled to avoid repeated 404 probes for Database/taskings-*.json
+            // If you want to re-enable this, call `syncTaskingsFromRepo(false)` manually after configuring a repo.
         })();
 
         function setSyncStatus(text) {
