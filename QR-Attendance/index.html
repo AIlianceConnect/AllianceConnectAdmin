@@ -35,7 +35,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">Attendance System</h1>
             <div>
-                <a href="events.html" class="btn btn-outline-primary">Change Event</a>
+                <button class="btn btn-outline-primary" onclick="openEventSelectorModal()">Change Event</button>
             </div>
         </div>
         
@@ -215,6 +215,47 @@
         </div>
     </div>
 
+    <!-- Event Selector Modal -->
+    <div class="modal fade" id="eventSelectorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Select or Create Event</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Search Events -->
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="eventSelectorSearch" placeholder="Search events...">
+                    </div>
+                    
+                    <!-- Events List -->
+                    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+                        <div id="eventSelectorList" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Events will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Create New Event Section -->
+                    <div style="border-top: 1px solid #dee2e6; padding-top: 16px;">
+                        <h6 style="margin-bottom: 12px; font-weight: 600;">Create New Event</h6>
+                        <form id="createEventForm">
+                            <div class="mb-3">
+                                <label for="newEventName" class="form-label">Event Name</label>
+                                <input type="text" class="form-control" id="newEventName" required placeholder="Enter event name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="newEventDescription" class="form-label">Description (Optional)</label>
+                                <textarea class="form-control" id="newEventDescription" rows="2" placeholder="Event description"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Create & Use Event</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -261,6 +302,199 @@
                     // Reorder the rows in the table
                     visibleRows.forEach(row => {
                         tbody.appendChild(row);
+                    });
+                });
+            }
+        });
+    </script>
+    <script>
+        // Event Selector Modal Functions
+        let eventSelectorModalInstance = null;
+
+        function openEventSelectorModal() {
+            const modalEl = document.getElementById('eventSelectorModal');
+            eventSelectorModalInstance = new bootstrap.Modal(modalEl);
+            eventSelectorModalInstance.show();
+            loadEventsForSelector();
+        }
+
+        async function loadEventsForSelector() {
+            const eventsList = document.getElementById('eventSelectorList');
+            eventsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #6c757d;"><i class="fas fa-spinner fa-spin"></i> Loading events...</div>';
+
+            try {
+                let events = [];
+                const attendanceRecords = await firebaseDB.getAttendanceRecords();
+                
+                // Get events from Firebase
+                if (firebaseDB) {
+                    events = await firebaseDB.getEvents();
+                }
+                
+                // Also get unique event names from attendance records
+                const eventNamesFromRecords = new Set();
+                attendanceRecords.forEach(record => {
+                    if (record.event) {
+                        eventNamesFromRecords.add(record.event);
+                    }
+                });
+                
+                // Merge events
+                const eventsMap = new Map();
+                events.forEach(event => {
+                    if (event.name) {
+                        eventsMap.set(event.name, event);
+                    }
+                });
+                
+                eventNamesFromRecords.forEach(eventName => {
+                    if (!eventsMap.has(eventName)) {
+                        eventsMap.set(eventName, {
+                            name: eventName,
+                            description: 'Event from attendance records',
+                            status: 'active'
+                        });
+                    }
+                });
+                
+                const allEvents = Array.from(eventsMap.values());
+                const currentEvent = await firebaseDB.getCurrentEvent() || localStorage.getItem('currentEvent') || '';
+                
+                if (allEvents.length === 0) {
+                    eventsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #6c757d;">No events found. Create a new event below.</div>';
+                    return;
+                }
+                
+                // Sort events by name
+                allEvents.sort((a, b) => a.name.localeCompare(b.name));
+                
+                eventsList.innerHTML = '';
+                allEvents.forEach(event => {
+                    const isActive = event.name === currentEvent;
+                    const eventItem = document.createElement('div');
+                    eventItem.className = 'event-selector-item';
+                    eventItem.style.cssText = `
+                        padding: 12px 16px;
+                        border: 1px solid #dee2e6;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        background: ${isActive ? 'var(--gold-dark)' : '#fff'};
+                        color: ${isActive ? 'var(--black)' : '#000'};
+                    `;
+                    
+                    eventItem.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">${event.name}</div>
+                                <div style="font-size: 0.85rem; opacity: 0.8;">${event.description || 'No description'}</div>
+                            </div>
+                            ${isActive ? '<i class="fas fa-check" style="color: var(--black);"></i>' : ''}
+                        </div>
+                    `;
+                    
+                    eventItem.addEventListener('mouseenter', function() {
+                        if (!isActive) {
+                            this.style.background = '#f8f9fa';
+                            this.style.borderColor = 'var(--gold-dark)';
+                        }
+                    });
+                    
+                    eventItem.addEventListener('mouseleave', function() {
+                        if (!isActive) {
+                            this.style.background = '#fff';
+                            this.style.borderColor = '#dee2e6';
+                        }
+                    });
+                    
+                    eventItem.addEventListener('click', function() {
+                        selectEvent(event.name);
+                    });
+                    
+                    eventsList.appendChild(eventItem);
+                });
+            } catch (error) {
+                console.error('Error loading events:', error);
+                eventsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error loading events. Please try again.</div>';
+            }
+        }
+
+        async function selectEvent(eventName) {
+            try {
+                if (firebaseDB) {
+                    await firebaseDB.setCurrentEvent(eventName);
+                } else {
+                    localStorage.setItem('currentEvent', eventName);
+                }
+                
+                // Update event display
+                document.getElementById('eventNameDisplay').textContent = eventName;
+                
+                // Close modal
+                if (eventSelectorModalInstance) {
+                    eventSelectorModalInstance.hide();
+                }
+                
+                // Reload page to refresh data
+                location.reload();
+            } catch (error) {
+                console.error('Error setting event:', error);
+                alert('Error setting event: ' + error.message);
+            }
+        }
+
+        // Create Event Form Handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const createEventForm = document.getElementById('createEventForm');
+            if (createEventForm) {
+                createEventForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const eventName = document.getElementById('newEventName').value.trim();
+                    const eventDescription = document.getElementById('newEventDescription').value.trim();
+                    
+                    if (!eventName) {
+                        alert('Please enter an event name');
+                        return;
+                    }
+                    
+                    try {
+                        if (firebaseDB) {
+                            await firebaseDB.createEvent(eventName, eventDescription);
+                            await firebaseDB.setCurrentEvent(eventName);
+                        } else {
+                            localStorage.setItem('currentEvent', eventName);
+                        }
+                        
+                        // Update event display
+                        document.getElementById('eventNameDisplay').textContent = eventName;
+                        
+                        // Close modal
+                        if (eventSelectorModalInstance) {
+                            eventSelectorModalInstance.hide();
+                        }
+                        
+                        alert('Event created successfully!');
+                        
+                        // Reload page
+                        location.reload();
+                    } catch (error) {
+                        console.error('Error creating event:', error);
+                        alert('Error creating event: ' + error.message);
+                    }
+                });
+            }
+            
+            // Event selector search
+            const eventSelectorSearch = document.getElementById('eventSelectorSearch');
+            if (eventSelectorSearch) {
+                eventSelectorSearch.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const eventItems = document.querySelectorAll('.event-selector-item');
+                    
+                    eventItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        item.style.display = text.includes(searchTerm) ? 'block' : 'none';
                     });
                 });
             }

@@ -6,6 +6,7 @@
     <title>Welcome - Attendance System</title>
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
 </head>
 
@@ -57,11 +58,46 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            <a href="events.html" class="btn btn-info">View All Events</a>
+                            <button class="btn btn-info" onclick="openEventListModal()">View All Events</button>
                             <a href="generate-qr.html" class="btn btn-warning">Generate Bar Codes</a>
                             <a href="barcode-database.html" class="btn btn-warning">View Barcode Database</a>
                             <a href="firebase-migration.html" class="btn btn-success">Migrate to Firebase</a>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event List Modal -->
+    <div class="modal fade" id="eventListModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">All Events</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Search Events -->
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="eventListSearch" placeholder="Search events...">
+                    </div>
+                    
+                    <!-- Events Table -->
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Event Name</th>
+                                    <th>Total Attendance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventListTableBody">
+                                <!-- Events will be populated here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -106,6 +142,127 @@
             
             // Redirect to the attendance page
             window.location.href = 'index.html';
+        });
+
+        // Event List Modal Functions
+        let eventListModalInstance = null;
+
+        async function openEventListModal() {
+            const modalEl = document.getElementById('eventListModal');
+            eventListModalInstance = new bootstrap.Modal(modalEl);
+            eventListModalInstance.show();
+            await loadEventsList();
+        }
+
+        async function loadEventsList() {
+            const tableBody = document.getElementById('eventListTableBody');
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading events...</td></tr>';
+
+            try {
+                let events = [];
+                const attendanceRecords = await firebaseDB.getAttendanceRecords();
+                
+                // Get events from Firebase
+                if (firebaseDB) {
+                    events = await firebaseDB.getEvents();
+                }
+                
+                // Also get unique event names from attendance records
+                const eventNamesFromRecords = new Set();
+                const eventAttendanceCounts = new Map();
+                
+                attendanceRecords.forEach(record => {
+                    if (record.event) {
+                        eventNamesFromRecords.add(record.event);
+                        eventAttendanceCounts.set(record.event, (eventAttendanceCounts.get(record.event) || 0) + 1);
+                    }
+                });
+                
+                // Merge events
+                const eventsMap = new Map();
+                events.forEach(event => {
+                    if (event.name) {
+                        eventsMap.set(event.name, {
+                            ...event,
+                            attendanceCount: eventAttendanceCounts.get(event.name) || 0
+                        });
+                    }
+                });
+                
+                eventNamesFromRecords.forEach(eventName => {
+                    if (!eventsMap.has(eventName)) {
+                        eventsMap.set(eventName, {
+                            name: eventName,
+                            description: 'Event from attendance records',
+                            status: 'active',
+                            attendanceCount: eventAttendanceCounts.get(eventName) || 0
+                        });
+                    }
+                });
+                
+                const allEvents = Array.from(eventsMap.values());
+                
+                if (allEvents.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #6c757d;">No events found.</td></tr>';
+                    return;
+                }
+                
+                // Sort events by name
+                allEvents.sort((a, b) => a.name.localeCompare(b.name));
+                
+                tableBody.innerHTML = '';
+                allEvents.forEach(event => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${event.name}</td>
+                        <td>${event.attendanceCount}</td>
+                        <td><span class="badge bg-${event.status === 'active' ? 'success' : 'secondary'}">${event.status || 'active'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="selectAndStartEvent('${event.name.replace(/'/g, "\\'")}')">Select & Start</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading events:', error);
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">Error loading events. Please try again.</td></tr>';
+            }
+        }
+
+        async function selectAndStartEvent(eventName) {
+            try {
+                if (firebaseDB) {
+                    await firebaseDB.setCurrentEvent(eventName);
+                } else {
+                    localStorage.setItem('currentEvent', eventName);
+                }
+                
+                // Close modal and redirect
+                if (eventListModalInstance) {
+                    eventListModalInstance.hide();
+                }
+                
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Error setting event:', error);
+                alert('Error setting event: ' + error.message);
+            }
+        }
+
+        // Event list search
+        document.addEventListener('DOMContentLoaded', function() {
+            const eventListSearch = document.getElementById('eventListSearch');
+            if (eventListSearch) {
+                eventListSearch.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#eventListTableBody tr');
+                    
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
         });
     </script>
 </body>
