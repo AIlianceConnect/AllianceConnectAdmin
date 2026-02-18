@@ -1342,6 +1342,7 @@ function updateRentalRecordsTable() {
 
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td><button class="btn btn-sm btn-success quick-return-btn" data-item-id="${record.itemId}" title="Quick Return">Return</button></td>
             <td>${record.itemId}</td>
             <td>${record.itemName}</td>
             <td>${record.renterName}</td>
@@ -1355,6 +1356,14 @@ function updateRentalRecordsTable() {
         tbody.appendChild(row);
         // Initial update
         updateTimeRemainingSpan(timeRemainingId, dueDate);
+    });
+
+    // Add event listeners for quick return buttons
+    document.querySelectorAll('.quick-return-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            openQuickReturnModal(itemId);
+        });
     });
 }
 
