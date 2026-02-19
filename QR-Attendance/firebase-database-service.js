@@ -409,18 +409,7 @@ class FirebaseDatabaseService {
                         }
                     }
                     
-                    // If still not found, try to find by just studentId and date (in case event is missing)
-                    if (!docRef && updateData.studentId && updateData.date) {
-                        const querySnapshot = await window.firebaseDb.collection(this.attendanceCollection)
-                            .where('studentId', '==', updateData.studentId)
-                            .where('date', '==', updateData.date)
-                            .limit(1)
-                            .get();
-                        
-                        if (!querySnapshot.empty) {
-                            docRef = querySnapshot.docs[0].ref;
-                        }
-                    }
+                    // Do not fall back to studentId+date only, to avoid cross-event updates.
                     
                     if (docRef) {
                         // Update the document
@@ -475,18 +464,7 @@ class FirebaseDatabaseService {
                     }
                 }
                 
-                // If still not found, try by just studentId and date
-                if (!docRef && updateData.studentId && updateData.date) {
-                    const querySnapshot = await window.firebaseDb.collection(this.attendanceCollection)
-                        .where('studentId', '==', updateData.studentId)
-                        .where('date', '==', updateData.date)
-                        .limit(1)
-                        .get();
-                    
-                    if (!querySnapshot.empty) {
-                        docRef = querySnapshot.docs[0].ref;
-                    }
-                }
+                // Do not fall back to studentId+date only, to avoid cross-event updates.
                 
                 if (docRef) {
                     await docRef.update({
@@ -512,13 +490,50 @@ class FirebaseDatabaseService {
 
     async findAttendanceRecord(studentId, section, event, date) {
         try {
-            const records = await this.getAttendanceRecords();
-            return records.find(r => 
-                r.studentId === studentId && 
-                r.section === section && 
-                r.event === event && 
+            if (!studentId || !event || !date) return null;
+
+            // Local cache first (zero Firestore reads)
+            if (window.offlineSync) {
+                const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                const localMatch = localRecords.find(r =>
+                    r.studentId === studentId &&
+                    r.section === section &&
+                    r.event === event &&
+                    r.date === date
+                );
+                if (localMatch) {
+                    return localMatch;
+                }
+            }
+
+            // Targeted Firebase lookup (single filtered query)
+            if ((!window.offlineSync || window.offlineSync.isOnline) && window.firebaseDb) {
+                const querySnapshot = await window.firebaseDb.collection(this.attendanceCollection)
+                    .where('studentId', '==', studentId)
+                    .where('section', '==', section)
+                    .where('event', '==', event)
+                    .where('date', '==', date)
+                    .limit(1)
+                    .get();
+
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    const record = { id: doc.id, ...doc.data() };
+                    if (window.offlineSync) {
+                        window.offlineSync.saveToLocalStorage('attendance', record, 'add');
+                    }
+                    return record;
+                }
+            }
+
+            // Legacy fallback
+            const legacy = JSON.parse(localStorage.getItem('attendanceRecords') || '[]');
+            return legacy.find(r =>
+                r.studentId === studentId &&
+                r.section === section &&
+                r.event === event &&
                 r.date === date
-            );
+            ) || null;
         } catch (error) {
             console.error('Error finding attendance record:', error);
             return null;
