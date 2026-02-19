@@ -1008,6 +1008,41 @@ class FirebaseDatabaseService {
         }
     }
 
+    async listenToAttendanceRecordsByEvent(eventName, callback) {
+        try {
+            if (!eventName || !String(eventName).trim()) {
+                return this.listenToAttendanceRecords(callback);
+            }
+
+            return window.firebaseDb
+                .collection(this.attendanceCollection)
+                .where('event', '==', String(eventName).trim())
+                .onSnapshot((querySnapshot) => {
+                    const records = [];
+                    const changes = querySnapshot.docChanges();
+
+                    changes.forEach((change) => {
+                        if (change.type === 'removed') {
+                            callback({
+                                type: 'removed',
+                                id: change.doc.id,
+                                data: change.doc.data()
+                            });
+                        }
+                    });
+
+                    querySnapshot.forEach((doc) => {
+                        records.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    callback(records);
+                });
+        } catch (error) {
+            console.error('Error setting up attendance records by event listener:', error);
+            return null;
+        }
+    }
+
     async listenToStudents(callback) {
         try {
             return window.firebaseDb.collection(this.studentsCollection).onSnapshot(

@@ -15,7 +15,7 @@ let recentTimedOutKey = null;
 let recentTimedOutTimeout = null;
 
 // Initialize Firebase and load data
-async function initializeFirebase() {
+async function initializeFirebase(currentEventForListener = null) {
     try {
         firebaseDB = window.firebaseDB;
         if (!firebaseDB) {
@@ -23,12 +23,45 @@ async function initializeFirebase() {
             return false;
         }
 
-        // Load initial data (getStudents and getAttendanceRecords already handle Local Storage)
-        attendanceRecords = await firebaseDB.getAttendanceRecords();
+        // Load initial data (scope to current event to reduce reads)
+        if (currentEventForListener) {
+            attendanceRecords = await firebaseDB.getAttendanceRecordsByEvent(currentEventForListener);
+        } else {
+            attendanceRecords = await firebaseDB.getAttendanceRecords();
+        }
         students = await firebaseDB.getStudents();
 
         // Set up real-time listeners
-        firebaseDB.listenToAttendanceRecords((records) => {
+        const attendanceListener = currentEventForListener
+            ? firebaseDB.listenToAttendanceRecordsByEvent(currentEventForListener, (records) => {
+                if (!Array.isArray(records)) return;
+                // Save Firebase records to Local Storage if they don't exist there
+                if (window.offlineSync) {
+                    const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                    const localRecordKeys = new Set(localRecords.map(r => 
+                        `${r.studentId}_${r.date}_${r.event}`
+                    ));
+                    records.forEach(fbRecord => {
+                        const key = `${fbRecord.studentId}_${fbRecord.date}_${fbRecord.event}`;
+                        if (!localRecordKeys.has(key)) {
+                            // Save to Local Storage
+                            window.offlineSync.saveToLocalStorage('attendance', fbRecord, 'add');
+                        }
+                    });
+                }
+                // Merge with Local Storage data
+                if (window.offlineSync) {
+                    const localRecords = window.offlineSync.getFromLocalStorage('attendance');
+                    attendanceRecords = window.offlineSync.mergeData(localRecords, records, 'attendance')
+                        .filter(r => r.event === currentEventForListener);
+                } else {
+                    attendanceRecords = records;
+                }
+                updateAttendanceTable();
+                updateSectionDropdownAndStudentList();
+            })
+            : firebaseDB.listenToAttendanceRecords((records) => {
+            if (!Array.isArray(records)) return;
             // Save Firebase records to Local Storage if they don't exist there
             if (window.offlineSync) {
                 const localRecords = window.offlineSync.getFromLocalStorage('attendance');
@@ -122,8 +155,10 @@ window.addEventListener('offlineStatusChanged', function(event) {
 
 // Initialize current event display
 document.addEventListener('DOMContentLoaded', async function() {
-    // Initialize Firebase first
-    const firebaseInitialized = await initializeFirebase();
+    const preferredEvent = localStorage.getItem('currentEvent');
+
+    // Initialize Firebase first (scoped listener to current event)
+    const firebaseInitialized = await initializeFirebase(preferredEvent);
     
     // Always load from Local Storage first (for offline support)
     // getStudents() and getAttendanceRecords() already save Firebase data to Local Storage
