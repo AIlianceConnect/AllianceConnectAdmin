@@ -58,7 +58,7 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            <button class="btn btn-info" onclick="openEventListModal()">View All Events</button>
+                            <button class="btn btn-info" onclick="window.location.href='events.html'">View All Events</button>
                             <a href="generate-qr.html" class="btn btn-warning">Generate Bar Codes</a>
                             <a href="barcode-database.html" class="btn btn-warning">View Barcode Database</a>
                             <a href="firebase-migration.html" class="btn btn-success">Migrate to Firebase</a>
@@ -148,10 +148,7 @@
         let eventListModalInstance = null;
 
         async function openEventListModal() {
-            const modalEl = document.getElementById('eventListModal');
-            eventListModalInstance = new bootstrap.Modal(modalEl);
-            eventListModalInstance.show();
-            await loadEventsList();
+            window.location.href = 'events.html';
         }
 
         async function loadEventsList() {
