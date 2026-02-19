@@ -178,6 +178,7 @@
                             <table class="table">
                                 <thead style="position: sticky; top: 0; background: white; z-index: 1;">
                                     <tr>
+                                        <th>Action</th>
                                         <th>Item ID</th>
                                         <th>Name</th>
                                         <th>Rented By</th>
@@ -199,11 +200,150 @@
         </div>
     </div>
 
+    <!-- Quick Return Modal -->
+    <div class="modal fade" id="quickReturnModal" tabindex="-1" aria-labelledby="quickReturnModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quickReturnModalLabel">Quick Return Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="quickReturnItemInfo" class="alert alert-info mb-3"></div>
+                    <div class="mb-3">
+                        <label for="quickReturnOfficerBarcode" class="form-label">Scan Officer Barcode to Verify Return</label>
+                        <input type="text" class="form-control" id="quickReturnOfficerBarcode" placeholder="Scan officer barcode here..." autocomplete="off">
+                        <small class="form-text text-muted">Scan your officer barcode to process the return</small>
+                    </div>
+                    <div id="quickReturnScanResult" class="mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="lib/bootstrap.bundle.min.js"></script>
     <script src="lib/encoder.js"></script>
     <script src="script.js"></script>
     <script>
+        // Quick Return Modal Handler
+        let quickReturnItem = null;
+        let quickReturnModalInstance = null;
+        let quickReturnBarcodeInput = null;
+
+        function openQuickReturnModal(itemId) {
+            const item = inventoryItems.find(i => i.id === itemId);
+            if (!item) {
+                alert('Item not found');
+                return;
+            }
+
+            const activeRental = rentalRecords.find(record =>
+                record.itemId === item.id && record.status === 'active'
+            );
+
+            if (!activeRental) {
+                alert('No active rental found for this item');
+                return;
+            }
+
+            quickReturnItem = item;
+
+            // Show item info in modal
+            const infoDiv = document.getElementById('quickReturnItemInfo');
+            infoDiv.innerHTML = `<strong>Returning:</strong> ${item.name} (${item.id})<br>
+                                <strong>Rented by:</strong> ${activeRental.renterName || item.currentRenter || 'Unknown'}`;
+
+            // Reset barcode input
+            quickReturnBarcodeInput = document.getElementById('quickReturnOfficerBarcode');
+            quickReturnBarcodeInput.value = '';
+            document.getElementById('quickReturnScanResult').innerHTML = '';
+
+            // Disable main barcode input
+            const mainBarcodeInput = document.getElementById('barcodeInput');
+            if (mainBarcodeInput) mainBarcodeInput.disabled = true;
+
+            // Show modal
+            const modalElement = document.getElementById('quickReturnModal');
+            quickReturnModalInstance = new bootstrap.Modal(modalElement);
+            quickReturnModalInstance.show();
+
+            // Auto-focus on barcode input when modal is shown
+            modalElement.addEventListener('shown.bs.modal', function () {
+                quickReturnBarcodeInput.focus();
+            }, { once: true });
+
+            // Re-enable main input when modal is hidden
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                if (mainBarcodeInput) {
+                    mainBarcodeInput.disabled = false;
+                    mainBarcodeInput.focus();
+                }
+                quickReturnItem = null;
+            }, { once: true });
+        }
+
+        // Initialize quick return barcode scanner
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set up barcode input handler for quick return modal
+            const quickReturnBarcodeInputElement = document.getElementById('quickReturnOfficerBarcode');
+            if (quickReturnBarcodeInputElement) {
+                quickReturnBarcodeInputElement.addEventListener('input', function (e) {
+                    const scannedValue = e.target.value.trim();
+                    if (!scannedValue) return;
+
+                    // Play beep sound
+                    const beep = document.getElementById('beepSound');
+                    if (beep) { beep.currentTime = 0; beep.play(); }
+
+                    const scanResult = document.getElementById('quickReturnScanResult');
+
+                    // Look for officer by barcode reference
+                    const foundOfficer = officers.find(officer => encodeStudentData(officer.officerId) === scannedValue || officer.officerId === scannedValue);
+                    
+                    if (foundOfficer) {
+                        // Store officer info temporarily
+                        sessionStorage.setItem('tempOfficer', JSON.stringify(foundOfficer));
+                        scanResult.innerHTML = `<span class='text-success'>✓ Officer verified: ${foundOfficer.officerName}</span>`;
+                        
+                        // Process return after a short delay
+                        setTimeout(() => {
+                            if (quickReturnItem) {
+                                // Close modal
+                                if (quickReturnModalInstance) {
+                                    quickReturnModalInstance.hide();
+                                }
+                                
+                                // Call confirmReturn to show confirmation dialog
+                                confirmReturn(quickReturnItem);
+                            }
+                        }, 500);
+                    } else {
+                        scanResult.innerHTML = `<span class='text-danger'>✗ Officer not found for barcode: ${scannedValue}</span>`;
+                    }
+
+                    // Clear input after short delay
+                    setTimeout(() => {
+                        e.target.value = '';
+                    }, 200);
+                });
+
+                // Keep focus on quick return barcode input when modal is open
+                document.addEventListener('click', function (e) {
+                    const modal = document.getElementById('quickReturnModal');
+                    if (modal && modal.classList.contains('show') && quickReturnBarcodeInputElement) {
+                        // Only refocus if click is within modal
+                        if (modal.contains(e.target)) {
+                            setTimeout(() => quickReturnBarcodeInputElement.focus(), 10);
+                        }
+                    }
+                });
+            }
+        });
+
         // Filtering and sorting for Available Items
         document.addEventListener('DOMContentLoaded', function () {
             const filter = document.getElementById('itemFilter');
