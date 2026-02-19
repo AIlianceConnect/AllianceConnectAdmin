@@ -237,7 +237,7 @@ class FirebaseDatabaseService {
                     }
                     
                     // Merge Firebase data with Local Storage data
-                    records = window.offlineSync.mergeData(records, firebaseRecords, 'studentId');
+                    records = window.offlineSync.mergeData(records, firebaseRecords, 'attendance');
                 } catch (error) {
                     console.error('Error getting attendance records from Firebase:', error);
                     // Continue with Local Storage data
@@ -566,7 +566,7 @@ class FirebaseDatabaseService {
                     }
                     
                     // Merge Firebase data with Local Storage data
-                    records = window.offlineSync.mergeData(records, firebaseRecords, 'studentId');
+                    records = window.offlineSync.mergeData(records, firebaseRecords, 'attendance');
                 } catch (error) {
                     console.error('Error getting attendance records by event from Firebase:', error);
                     // Continue with Local Storage data

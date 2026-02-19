@@ -46,7 +46,7 @@ async function initializeFirebase() {
             // Merge with Local Storage data
             if (window.offlineSync) {
                 const localRecords = window.offlineSync.getFromLocalStorage('attendance');
-                attendanceRecords = window.offlineSync.mergeData(localRecords, records, 'studentId');
+                attendanceRecords = window.offlineSync.mergeData(localRecords, records, 'attendance');
             } else {
                 attendanceRecords = records;
             }

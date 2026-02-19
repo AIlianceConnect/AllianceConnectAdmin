@@ -180,6 +180,19 @@
             return String(name).trim();
         }
 
+        function dedupeEventsByName(eventList) {
+            const eventsMap = new Map();
+            (eventList || []).forEach(event => {
+                const normalizedName = normalizeEventName(event.name || event.eventName);
+                if (!normalizedName || eventsMap.has(normalizedName)) return;
+                eventsMap.set(normalizedName, {
+                    ...event,
+                    name: normalizedName
+                });
+            });
+            return Array.from(eventsMap.values());
+        }
+
         // Initialize Firebase
         async function initializeFirebase() {
             try {
@@ -189,17 +202,8 @@
                     return false;
                 }
 
-                // Load initial data
-                const allEvents = await firebaseDB.getEventsWithAttendanceCounts();
-                // Deduplicate events by name (keep the first occurrence)
-                const eventsMap = new Map();
-                allEvents.forEach(event => {
-                    const normalizedName = normalizeEventName(event.name);
-                    if (normalizedName && !eventsMap.has(normalizedName)) {
-                        eventsMap.set(normalizedName, event);
-                    }
-                });
-                events = Array.from(eventsMap.values());
+                // Load initial data from events collection only
+                events = dedupeEventsByName(await firebaseDB.getEvents());
                 attendanceRecords = await firebaseDB.getAttendanceRecords();
 
                 // Set up real-time listener for attendance records
@@ -248,7 +252,7 @@
                         // Merge with Local Storage data
                         if (window.offlineSync) {
                             const localRecords = window.offlineSync.getFromLocalStorage('attendance');
-                            attendanceRecords = window.offlineSync.mergeData(localRecords, records, 'studentId');
+                            attendanceRecords = window.offlineSync.mergeData(localRecords, records, 'attendance');
                         } else {
                             attendanceRecords = records;
                         }
@@ -276,7 +280,7 @@
                                 attendanceRecords = filteredRecords;
                             }
                             
-                            events = filtered;
+                            events = dedupeEventsByName(filtered);
                             console.log('Removed event from Local Storage:', eventList.id);
                         }
                         updateEventsList();
@@ -296,24 +300,12 @@
                                 }
                             });
                         }
-                        // Merge with Local Storage data and reload events with attendance counts
+                        // Keep events sourced from events collection only
                         if (window.offlineSync) {
-                            const localEvents = window.offlineSync.getFromLocalStorage('events');
-                            const mergedEvents = window.offlineSync.mergeData(localEvents, eventList, 'id');
-                            // Reload events with attendance counts
-                            firebaseDB.getEventsWithAttendanceCounts().then(allEvents => {
-                                const eventsMap = new Map();
-                                allEvents.forEach(event => {
-                                    const normalizedName = normalizeEventName(event.name);
-                                    if (normalizedName && !eventsMap.has(normalizedName)) {
-                                        eventsMap.set(normalizedName, event);
-                                    }
-                                });
-                                events = Array.from(eventsMap.values());
-                                updateEventsList();
-                            });
+                            events = dedupeEventsByName(eventList);
+                            updateEventsList();
                         } else {
-                            events = eventList;
+                            events = dedupeEventsByName(eventList);
                             updateEventsList();
                         }
                     }
@@ -367,28 +359,14 @@
             // Initialize Firebase first
             const firebaseInitialized = await initializeFirebase();
             
-            // Always load from Local Storage first (for offline support)
-            // getEventsWithAttendanceCounts() and getAttendanceRecords() already save Firebase data to Local Storage
             if (!firebaseInitialized) {
-                console.error('Failed to initialize Firebase. Falling back to localStorage.');
-                // Fallback to localStorage
-                if (window.offlineSync) {
-                    events = window.offlineSync.getFromLocalStorage('events');
-                    attendanceRecords = window.offlineSync.getFromLocalStorage('attendance');
-                } else {
-                    attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-                    events = [];
-                }
+                console.error('Failed to initialize Firebase. Events list requires Firebase events collection.');
+                events = [];
+                attendanceRecords = [];
             } else {
-                // Refresh from Local Storage (which now includes Firebase data)
-                if (window.offlineSync) {
-                    events = window.offlineSync.getFromLocalStorage('events');
-                    attendanceRecords = window.offlineSync.getFromLocalStorage('attendance');
-                } else {
-                    // Fallback: reload from Firebase
-                    events = await firebaseDB.getEvents();
-                    attendanceRecords = await firebaseDB.getAttendanceRecords();
-                }
+                // Read event list from events collection only
+                events = dedupeEventsByName(await firebaseDB.getEvents());
+                attendanceRecords = await firebaseDB.getAttendanceRecords();
             }
             
             // Update offline status indicator
@@ -423,31 +401,21 @@
                         status: event.status,
                         createdAt: event.createdAt,
                         records: [],
+                        students: [],
                         firstDate: null,
                         lastDate: null
                     });
                 }
             });
 
-            // Then, add attendance records to their respective events
+            // Add attendance records only to events that exist in AttendanceSystem_events
             attendanceRecords.forEach(record => {
                 if (!record.event) return;
                 const normalizedEventName = normalizeEventName(record.event);
                 if (!normalizedEventName) return;
-                
-                if (!eventsMap.has(normalizedEventName)) {
-                    // Create event from attendance record if it doesn't exist in Firebase
-                    eventsMap.set(normalizedEventName, {
-                        id: null,
-                        name: normalizedEventName,
-                        description: 'Event created from attendance records',
-                        status: 'active',
-                        createdAt: new Date(),
-                        records: [],
-                        firstDate: record.date,
-                        lastDate: record.date
-                    });
-                }
+
+                if (!eventsMap.has(normalizedEventName)) return;
+
                 const event = eventsMap.get(normalizedEventName);
                 if (event) {
                     event.records.push(record);
@@ -459,6 +427,21 @@
                         event.lastDate = record.date;
                     }
                 }
+            });
+
+            // Build unique student list per event
+            eventsMap.forEach(event => {
+                const studentsMap = new Map();
+                event.records.forEach(record => {
+                    const studentId = normalizeImportedText(record.studentId);
+                    if (!studentId || studentsMap.has(studentId)) return;
+                    studentsMap.set(studentId, {
+                        studentId: studentId,
+                        studentName: normalizeImportedText(record.studentName),
+                        section: normalizeImportedText(record.section)
+                    });
+                });
+                event.students = Array.from(studentsMap.values());
             });
 
             // Sort events by last date (most recent first)
@@ -491,7 +474,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${event.name}</td>
-                    <td>${event.records.length}</td>
+                    <td>${event.students.length}</td>
                     <td>${event.firstDate || 'N/A'}</td>
                     <td>${event.lastDate || 'N/A'}</td>
                     <td class="text-end">
@@ -565,26 +548,37 @@
 
         // Show event details in modal
         function showEventDetails(eventName) {
-            const eventRecords = attendanceRecords.filter(r => r.event === eventName);
+            const normalizedEventName = normalizeEventName(eventName);
+            const eventRecords = attendanceRecords.filter(r => normalizeEventName(r.event) === normalizedEventName);
             currentEventDetails = {
-                name: eventName,
+                name: normalizedEventName,
                 records: eventRecords
             };
 
-            document.getElementById('modalEventName').textContent = eventName;
+            document.getElementById('modalEventName').textContent = normalizedEventName;
             const modalRecords = document.getElementById('modalEventRecords');
             modalRecords.innerHTML = '';
 
-            // Get unique records (one per student per day)
+            // Build one row per student (keep most recent attendance record)
             const uniqueRecords = new Map();
             eventRecords.forEach(record => {
-                const key = `${record.studentId}-${record.date}`;
-                if (!uniqueRecords.has(key)) {
-                    uniqueRecords.set(key, record);
+                const studentId = normalizeImportedText(record.studentId);
+                if (!studentId) return;
+                const existing = uniqueRecords.get(studentId);
+                if (!existing) {
+                    uniqueRecords.set(studentId, record);
+                    return;
+                }
+                const existingTs = new Date(`${existing.date || ''} ${existing.timeIn || ''}`).getTime() || 0;
+                const currentTs = new Date(`${record.date || ''} ${record.timeIn || ''}`).getTime() || 0;
+                if (currentTs >= existingTs) {
+                    uniqueRecords.set(studentId, record);
                 }
             });
 
-            Array.from(uniqueRecords.values()).forEach((record, idx) => {
+            Array.from(uniqueRecords.values())
+                .sort((a, b) => normalizeImportedText(a.studentId).localeCompare(normalizeImportedText(b.studentId)))
+                .forEach((record, idx) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${idx + 1}</td>
@@ -609,41 +603,124 @@
             }
         });
 
+        function normalizeImportedText(value) {
+            if (value === undefined || value === null) return '';
+            return String(value).trim();
+        }
+
+        function excelSerialToDateString(serial) {
+            if (typeof serial !== 'number' || Number.isNaN(serial)) return '';
+            const parsed = XLSX.SSF.parse_date_code(serial);
+            if (!parsed) return '';
+            const yyyy = String(parsed.y).padStart(4, '0');
+            const mm = String(parsed.m).padStart(2, '0');
+            const dd = String(parsed.d).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function normalizeImportedDate(value) {
+            if (value === undefined || value === null || value === '') return '';
+            if (typeof value === 'number') {
+                return excelSerialToDateString(value);
+            }
+            const text = String(value).trim();
+            if (!text) return '';
+            const parsed = new Date(text);
+            if (!Number.isNaN(parsed.getTime())) {
+                const yyyy = parsed.getFullYear();
+                const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+                const dd = String(parsed.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+            return text;
+        }
+
+        function recordKey(record) {
+            return `${normalizeImportedText(record.studentId)}-${normalizeImportedText(record.section)}-${normalizeImportedText(record.event)}-${normalizeImportedText(record.date)}`;
+        }
+
+        function buildDateRange(records) {
+            const normalizedDates = records
+                .map(r => normalizeImportedDate(r.date))
+                .filter(Boolean)
+                .sort((a, b) => new Date(a) - new Date(b));
+            if (normalizedDates.length === 0) return '';
+            return `${normalizedDates[0]} to ${normalizedDates[normalizedDates.length - 1]}`;
+        }
+
+        function makeUniqueSheetName(baseName, usedNames) {
+            const sanitized = normalizeImportedText(baseName).replace(/[\\/*?:\[\]]/g, '_') || 'Sheet';
+            let name = sanitized.substring(0, 31);
+            let counter = 2;
+            while (usedNames.has(name)) {
+                const suffix = `_${counter}`;
+                name = sanitized.substring(0, 31 - suffix.length) + suffix;
+                counter += 1;
+            }
+            usedNames.add(name);
+            return name;
+        }
+
         // Export all events
         document.getElementById('exportAllEvents').addEventListener('click', function() {
-            const events = new Map();
-            attendanceRecords.forEach(record => {
-                if (!record.event) return;
-                if (!events.has(record.event)) {
-                    events.set(record.event, []);
+            const eventRecordsByEvent = new Map();
+            events.forEach(event => {
+                const eventName = normalizeEventName(event.name || event.eventName);
+                if (eventName) {
+                    eventRecordsByEvent.set(eventName, []);
                 }
-                events.get(record.event).push(record);
             });
 
+            attendanceRecords.forEach(record => {
+                if (!record.event) return;
+                const eventName = normalizeEventName(record.event);
+                if (!eventRecordsByEvent.has(eventName)) {
+                    return;
+                }
+                eventRecordsByEvent.get(eventName).push(record);
+            });
+
+            const eventsWithData = new Map(
+                Array.from(eventRecordsByEvent.entries()).filter(([, records]) => records.length > 0)
+            );
+
+            if (eventsWithData.size === 0) {
+                alert('No attendance records available to export.');
+                return;
+            }
+
             const wb = XLSX.utils.book_new();
-            
+            const usedSheetNames = new Set();
+             
             // Create a summary sheet
             const summaryData = [];
-            events.forEach((records, eventName) => {
+            eventsWithData.forEach((records, eventName) => {
                 const uniqueStudents = new Set(records.map(r => r.studentId));
                 const sections = new Set(records.map(r => r.section).filter(Boolean));
-                const dates = new Set(records.map(r => r.date));
+                const dateRange = buildDateRange(records);
+                const sortedByDate = [...records].sort((a, b) => new Date(normalizeImportedDate(a.date)) - new Date(normalizeImportedDate(b.date)));
+                const attendanceSheetName = makeUniqueSheetName(eventName, usedSheetNames);
+                const sectionSheetName = makeUniqueSheetName(`${eventName}_Sections`, usedSheetNames);
                 
                 summaryData.push({
                     'Event Name': eventName,
+                    'Sheet Name': attendanceSheetName,
+                    'Sections Sheet': sectionSheetName,
                     'Total Records': records.length,
                     'Unique Students': uniqueStudents.size,
                     'Sections': sections.size,
-                    'Date Range': `${Math.min(...dates)} to ${Math.max(...dates)}`,
-                    'First Record': records[0].date,
-                    'Last Record': records[records.length - 1].date
+                    'Date Range': dateRange,
+                    'First Record': sortedByDate[0] ? normalizeImportedDate(sortedByDate[0].date) : '',
+                    'Last Record': sortedByDate[sortedByDate.length - 1] ? normalizeImportedDate(sortedByDate[sortedByDate.length - 1].date) : ''
                 });
             });
             const summaryWs = XLSX.utils.json_to_sheet(summaryData);
             XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
 
             // Create a sheet for each event
-            events.forEach((records, eventName) => {
+            summaryData.forEach(summaryRow => {
+                const eventName = summaryRow['Event Name'];
+                const records = eventsWithData.get(eventName) || [];
                 // Sort records by date and time
                 records.sort((a, b) => {
                     const dateCompare = new Date(a.date) - new Date(b.date);
@@ -654,6 +731,7 @@
                 // Attendance sheet
                 const exportData = records.map((record, idx) => ({
                     '#': idx + 1,
+                    'Event Name': eventName,
                     'Student#': record.studentId,
                     'Name': record.studentName,
                     'Section': record.section,
@@ -670,40 +748,40 @@
                     'Student#': 'Summary',
                     'Name': `Total Records: ${records.length}`,
                     'Section': `Unique Students: ${uniqueStudents.size}`,
-                    'Date': `Date Range: ${Math.min(...records.map(r => r.date))} to ${Math.max(...records.map(r => r.date))}`,
+                    'Date': `Date Range: ${buildDateRange(records)}`,
                     'Time-in': '',
                     'Time-out': '',
                     'Duration': ''
                 });
 
                 const ws = XLSX.utils.json_to_sheet(exportData);
-                XLSX.utils.book_append_sheet(wb, ws, eventName.substring(0, 31));
+                XLSX.utils.book_append_sheet(wb, ws, summaryRow['Sheet Name']);
 
                 // Per-section sheet
                 const studentsBySection = {};
-                records.forEach(record => {
-                    if (!record.section) return;
-                    if (!studentsBySection[record.section]) studentsBySection[record.section] = {};
-                    const key = record.studentId + '|' + record.studentName;
-                    if (!studentsBySection[record.section][key]) {
-                        studentsBySection[record.section][key] = {
-                            'Student#': record.studentId,
-                            'Name': record.studentName,
-                            'Time-in': record.timeIn || '',
-                            'Time-out': record.timeOut || '',
-                            'Duration': record.timeOut ? calculateDuration(record.timeIn, record.timeOut) : ''
-                        };
-                    } else {
-                        // Update with latest time-out if exists
-                        if (record.timeOut) {
-                            studentsBySection[record.section][key]['Time-out'] = record.timeOut;
-                            studentsBySection[record.section][key]['Duration'] = calculateDuration(
-                                studentsBySection[record.section][key]['Time-in'],
-                                record.timeOut
-                            );
+                    records.forEach(record => {
+                        const sectionName = normalizeImportedText(record.section) || 'Unspecified';
+                        if (!studentsBySection[sectionName]) studentsBySection[sectionName] = {};
+                        const key = record.studentId + '|' + record.studentName;
+                        if (!studentsBySection[sectionName][key]) {
+                            studentsBySection[sectionName][key] = {
+                                'Student#': record.studentId,
+                                'Name': record.studentName,
+                                'Time-in': record.timeIn || '',
+                                'Time-out': record.timeOut || '',
+                                'Duration': record.timeOut ? calculateDuration(record.timeIn, record.timeOut) : ''
+                            };
+                        } else {
+                            // Update with latest time-out if exists
+                            if (record.timeOut) {
+                                studentsBySection[sectionName][key]['Time-out'] = record.timeOut;
+                                studentsBySection[sectionName][key]['Duration'] = calculateDuration(
+                                    studentsBySection[sectionName][key]['Time-in'],
+                                    record.timeOut
+                                );
+                            }
                         }
-                    }
-                });
+                    });
 
                 let exportStudents = [];
                 Object.keys(studentsBySection).sort().forEach(section => {
@@ -722,7 +800,7 @@
                 });
 
                 const ws2 = XLSX.utils.json_to_sheet(exportStudents);
-                XLSX.utils.book_append_sheet(wb, ws2, (eventName.substring(0, 23) + '_Sections').substring(0, 31));
+                XLSX.utils.book_append_sheet(wb, ws2, summaryRow['Sections Sheet']);
             });
 
             // Use UTC+8 (Philippines) date for filename
@@ -742,6 +820,11 @@
             const wb = XLSX.utils.book_new();
             const records = currentEventDetails.records;
 
+            if (!records || records.length === 0) {
+                alert('No records available to export for this event.');
+                return;
+            }
+
             // Sort records by date and time
             records.sort((a, b) => {
                 const dateCompare = new Date(a.date) - new Date(b.date);
@@ -752,6 +835,7 @@
             // Attendance sheet
             const exportData = records.map((record, idx) => ({
                 '#': idx + 1,
+                'Event Name': currentEventDetails.name,
                 'Student#': record.studentId,
                 'Name': record.studentName,
                 'Section': record.section,
@@ -768,7 +852,7 @@
                 'Student#': 'Summary',
                 'Name': `Total Records: ${records.length}`,
                 'Section': `Unique Students: ${uniqueStudents.size}`,
-                'Date': `Date Range: ${Math.min(...records.map(r => r.date))} to ${Math.max(...records.map(r => r.date))}`,
+                'Date': `Date Range: ${buildDateRange(records)}`,
                 'Time-in': '',
                 'Time-out': '',
                 'Duration': ''
@@ -780,11 +864,11 @@
             // Per-section sheet
             const studentsBySection = {};
             records.forEach(record => {
-                if (!record.section) return;
-                if (!studentsBySection[record.section]) studentsBySection[record.section] = {};
+                const sectionName = normalizeImportedText(record.section) || 'Unspecified';
+                if (!studentsBySection[sectionName]) studentsBySection[sectionName] = {};
                 const key = record.studentId + '|' + record.studentName;
-                if (!studentsBySection[record.section][key]) {
-                    studentsBySection[record.section][key] = {
+                if (!studentsBySection[sectionName][key]) {
+                    studentsBySection[sectionName][key] = {
                         'Student#': record.studentId,
                         'Name': record.studentName,
                         'Time-in': record.timeIn || '',
@@ -794,9 +878,9 @@
                 } else {
                     // Update with latest time-out if exists
                     if (record.timeOut) {
-                        studentsBySection[record.section][key]['Time-out'] = record.timeOut;
-                        studentsBySection[record.section][key]['Duration'] = calculateDuration(
-                            studentsBySection[record.section][key]['Time-in'],
+                        studentsBySection[sectionName][key]['Time-out'] = record.timeOut;
+                        studentsBySection[sectionName][key]['Duration'] = calculateDuration(
+                            studentsBySection[sectionName][key]['Time-in'],
                             record.timeOut
                         );
                     }
@@ -837,7 +921,7 @@
             document.getElementById('importEventFile').click();
         });
 
-        document.getElementById('importEventFile').addEventListener('change', function(e) {
+        document.getElementById('importEventFile').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
             if (!currentEventDetails) {
@@ -847,44 +931,53 @@
             }
 
             const reader = new FileReader();
-            reader.onload = function(ev) {
+            reader.onload = async function(ev) {
                 try {
                     const data = new Uint8Array(ev.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
 
-                    // Prefer sheet named 'Attendance' if present, else first sheet
-                    let sheetName = workbook.SheetNames.includes('Attendance') ? 'Attendance' : workbook.SheetNames[0];
+                    // Import only the first worksheet
+                    let sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     const rows = XLSX.utils.sheet_to_json(sheet);
 
                     // Build new records for this event
-                    const newEventRecords = [];
+                    const dedupedMap = new Map();
                     rows.forEach(r => {
                         if (r['Student#'] === 'Summary' || r['Student#'] === 'Section Total') return;
                         if (!r['Student#']) return;
-                        newEventRecords.push({
-                            studentId: String(r['Student#']).trim(),
-                            studentName: (r['Name'] || '').trim(),
-                            section: (r['Section'] || '').trim(),
+                        const candidate = {
+                            studentId: normalizeImportedText(r['Student#']),
+                            studentName: normalizeImportedText(r['Name']),
+                            section: normalizeImportedText(r['Section']),
                             event: currentEventDetails.name,
-                            date: (r['Date'] || '').trim(),
-                            timeIn: (r['Time-in'] || '').trim(),
-                            timeOut: (r['Time-out'] || '').trim(),
+                            date: normalizeImportedDate(r['Date']),
+                            timeIn: normalizeImportedText(r['Time-in']),
+                            timeOut: normalizeImportedText(r['Time-out']),
                             checkInMs: Date.now()
-                        });
+                        };
+                        if (!candidate.studentId || !candidate.date) return;
+                        dedupedMap.set(recordKey(candidate), candidate);
                     });
+                    const newEventRecords = Array.from(dedupedMap.values());
 
-                    // Load all records, remove existing ones for this event, then merge new unique ones
-                    let all = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-                    all = all.filter(r => r.event !== currentEventDetails.name);
+                    if (newEventRecords.length === 0) {
+                        alert('No valid event records found in the selected file.');
+                        return;
+                    }
 
-                    const uniqueMap = new Map();
-                    [...all, ...newEventRecords].forEach(rec => {
-                        const key = `${rec.studentId}-${rec.section}-${rec.event}-${rec.date}`;
-                        if (!uniqueMap.has(key)) uniqueMap.set(key, rec);
-                    });
+                    if (firebaseDB) {
+                        await firebaseDB.deleteAttendanceRecordsByEvent(currentEventDetails.name);
+                        for (const record of newEventRecords) {
+                            await firebaseDB.addAttendanceRecord(record);
+                        }
+                    } else {
+                        let all = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                        all = all.filter(r => r.event !== currentEventDetails.name);
+                        all.push(...newEventRecords);
+                        localStorage.setItem('attendanceRecords', JSON.stringify(all));
+                    }
 
-                    localStorage.setItem('attendanceRecords', JSON.stringify(Array.from(uniqueMap.values())));
                     alert('Event data imported successfully.');
                     location.reload();
                 } catch (err) {
@@ -959,17 +1052,7 @@
                                 // Delete attendance records by event name (for events created from attendance records)
                                 await firebaseDB.deleteAttendanceRecordsByEvent(eventName);
                             }
-                            // Reload events from Local Storage (which includes Firebase data)
-                            const allEvents = await firebaseDB.getEventsWithAttendanceCounts();
-                            // Deduplicate events by name (keep the first occurrence)
-                            const eventsMap = new Map();
-                            allEvents.forEach(event => {
-                                const normalizedName = normalizeEventName(event.name);
-                                if (normalizedName && !eventsMap.has(normalizedName)) {
-                                    eventsMap.set(normalizedName, event);
-                                }
-                            });
-                            events = Array.from(eventsMap.values());
+                            events = dedupeEventsByName(await firebaseDB.getEvents());
                         } catch (error) {
                             console.error('Error deleting from Firebase:', error);
                             // Continue - Local Storage is already updated and will sync when online
@@ -1133,56 +1216,73 @@
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     
-                    // Get the first sheet (Summary sheet)
-                    const summarySheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const summaryData = XLSX.utils.sheet_to_json(summarySheet);
-                    
-                    // Process each event sheet
+                    // Import only the first worksheet
+                    const firstSheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[firstSheetName];
+                    const records = XLSX.utils.sheet_to_json(sheet);
+
+                    // Process first-sheet records only
                     const importedRecords = [];
-                    workbook.SheetNames.forEach(sheetName => {
-                        // Skip the summary sheet and section sheets
-                        if (sheetName === 'Summary' || sheetName.endsWith('_Sections')) return;
-                        
-                        const sheet = workbook.Sheets[sheetName];
-                        const records = XLSX.utils.sheet_to_json(sheet);
-                        
-                        // Process each record
-                        records.forEach(record => {
-                            // Skip summary rows
-                            if (record['Student#'] === 'Summary' || record['Student#'] === 'Section Total') return;
-                            
-                            // Create attendance record
-                            const attendanceRecord = {
-                                studentId: record['Student#'],
-                                studentName: record['Name'],
-                                section: record['Section'],
-                                event: sheetName,
-                                date: record['Date'],
-                                timeIn: record['Time-in'],
-                                timeOut: record['Time-out'],
-                                checkInMs: Date.now() // Set current timestamp for sorting
-                            };
-                            importedRecords.push(attendanceRecord);
-                        });
+                    records.forEach(record => {
+                        // Skip summary rows
+                        if (record['Student#'] === 'Summary' || record['Student#'] === 'Section Total') return;
+                        if (!record['Student#']) return;
+                         
+                        // Create attendance record
+                        const resolvedEventName = normalizeImportedText(record['Event Name']) || firstSheetName;
+                        const attendanceRecord = {
+                            studentId: normalizeImportedText(record['Student#']),
+                            studentName: normalizeImportedText(record['Name']),
+                            section: normalizeImportedText(record['Section']),
+                            event: normalizeImportedText(resolvedEventName),
+                            date: normalizeImportedDate(record['Date']),
+                            timeIn: normalizeImportedText(record['Time-in']),
+                            timeOut: normalizeImportedText(record['Time-out']),
+                            checkInMs: Date.now() // Set current timestamp for sorting
+                        };
+                        if (!attendanceRecord.studentId || !attendanceRecord.event || !attendanceRecord.date) return;
+                        importedRecords.push(attendanceRecord);
                     });
+
+                    if (importedRecords.length === 0) {
+                        alert('No valid records found in the selected file.');
+                        return;
+                    }
 
                     // Merge with existing records
                     const existingRecords = firebaseDB ? await firebaseDB.getAttendanceRecords() : JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-                    const mergedRecords = [...existingRecords, ...importedRecords];
-                    
-                    // Remove duplicates (keep existing records if there's a conflict)
-                    const uniqueRecords = new Map();
-                    mergedRecords.forEach(record => {
-                        const key = `${record.studentId}-${record.section}-${record.event}-${record.date}`;
-                        if (!uniqueRecords.has(key)) {
-                            uniqueRecords.set(key, record);
+                    const existingKeys = new Set(existingRecords.map(recordKey));
+                    const onlyNewMap = new Map();
+                    importedRecords.forEach(record => {
+                        const key = recordKey(record);
+                        if (!existingKeys.has(key) && !onlyNewMap.has(key)) {
+                            onlyNewMap.set(key, record);
                         }
                     });
+                    const onlyNewRecords = Array.from(onlyNewMap.values());
+
+                    if (onlyNewRecords.length === 0) {
+                        alert('No new records to import. Existing records were unchanged.');
+                        return;
+                    }
 
                     // Save to Firebase or localStorage
                     if (firebaseDB) {
+                        const existingEvents = await firebaseDB.getEvents();
+                        const existingEventNames = new Set(existingEvents.map(evt => normalizeEventName(evt.name || evt.eventName)));
+                        const importedEventNames = new Set(onlyNewRecords.map(r => normalizeEventName(r.event)));
+                        for (const eventName of importedEventNames) {
+                            if (!eventName || existingEventNames.has(eventName)) continue;
+                            await firebaseDB.createEvent({
+                                name: eventName,
+                                description: 'Imported from spreadsheet',
+                                status: 'active'
+                            });
+                            existingEventNames.add(eventName);
+                        }
+
                         // Add new records to Firebase
-                        for (const record of Array.from(uniqueRecords.values())) {
+                        for (const record of onlyNewRecords) {
                             try {
                                 await firebaseDB.addAttendanceRecord(record);
                             } catch (error) {
@@ -1191,7 +1291,7 @@
                         }
                     } else {
                         // Fallback to localStorage
-                        localStorage.setItem('attendanceRecords', JSON.stringify(Array.from(uniqueRecords.values())));
+                        localStorage.setItem('attendanceRecords', JSON.stringify([...existingRecords, ...onlyNewRecords]));
                     }
                     
                     // Refresh the page
