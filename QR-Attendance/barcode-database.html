@@ -134,13 +134,23 @@ async function syncFromFirebase() {
             console.error('Firebase not initialized. Please check firebase-config.js');
             return;
         }
-        // Fetch latest students from Firebase
-        const fetchedStudents = await firebaseDB.getStudents();
+        // Force-fetch latest students from Firebase
+        const fetchedStudents = [];
+        if (window.firebaseDb) {
+            const querySnapshot = await window.firebaseDb.collection(firebaseDB.studentsCollection).get();
+            querySnapshot.forEach((doc) => {
+                fetchedStudents.push({ id: doc.id, ...doc.data() });
+            });
+        }
+
         if (fetchedStudents && fetchedStudents.length > 0) {
-            students = fetchedStudents;
-            saveStudents(); // Update localStorage with synced data
+            students = ensureUniqueIds(fetchedStudents);
+            saveStudents(); // Persist to local storage caches
             renderDatabase();
             console.log('Students synced from Firebase');
+        } else {
+            students = loadStudents();
+            renderDatabase();
         }
     } catch (error) {
         console.error('Error syncing from Firebase:', error);
@@ -184,6 +194,8 @@ window.addEventListener('offlineStatusChanged', function(event) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
+    firebaseDB = window.firebaseDB || null;
+
     // Only load students from localStorage on page load
     students = loadStudents();
 
@@ -219,10 +231,21 @@ const SAMPLE_STUDENTS = [
 ];
 
 function loadStudents() {
+    if (window.offlineSync) {
+        const offlineStudents = window.offlineSync.getFromLocalStorage('students');
+        if (Array.isArray(offlineStudents) && offlineStudents.length > 0) {
+            return offlineStudents;
+        }
+    }
+
     const data = localStorage.getItem('barcodeStudents');
     if (data) {
         try {
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+            return [...SAMPLE_STUDENTS];
         } catch (e) {
             return [...SAMPLE_STUDENTS];
         }
@@ -231,6 +254,10 @@ function loadStudents() {
 }
 
 function saveStudents() {
+    if (window.offlineSync) {
+        const key = window.offlineSync.localStoragePrefix + 'students';
+        localStorage.setItem(key, JSON.stringify(students));
+    }
     localStorage.setItem('barcodeStudents', JSON.stringify(students));
 }
 
@@ -593,8 +620,6 @@ document.getElementById('exportExcel').addEventListener('click', function() {
     XLSX.writeFile(wb, 'barcode-students.xlsx');
 });
 
-// Initial render
-renderDatabase();
 </script>
 </body>
 </html> 

@@ -116,6 +116,26 @@
                                         <input class="form-check-input" type="radio" name="manualCourse" id="manualCourseAis" value="BSAIS">
                                         <label class="form-check-label" for="manualCourseAis">BSAIS</label>
                                     </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="manualCourse" id="manualCourseAvcomm" value="AVCOMM">
+                                        <label class="form-check-label" for="manualCourseAvcomm">AVCOMM</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="manualCourse" id="manualCourseAvtour" value="AVTOUR">
+                                        <label class="form-check-label" for="manualCourseAvtour">AVTOUR</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="manualCourse" id="manualCourseAvlog" value="AVLOG">
+                                        <label class="form-check-label" for="manualCourseAvlog">AVLOG</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="manualCourse" id="manualCourseAvssm" value="AVSSM">
+                                        <label class="form-check-label" for="manualCourseAvssm">AVSSM</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="manualCourse" id="manualCourseOthers" value="Others">
+                                        <label class="form-check-label" for="manualCourseOthers">Others</label>
+                                    </div>
                                 </div>
                                 <input type="text" class="form-control" id="manualYearSection" placeholder="Year-Section, e.g., 3-3 or 1-2" required autocomplete="off">
                             </div>
@@ -195,6 +215,7 @@
                             <table class="table">
                                 <thead>
                                     <tr>
+                                        <th>Check-out</th>
                                         <th>#</th>
                                         <th>Student#</th>
                                         <th>Name</th>
@@ -286,8 +307,8 @@
                     const visibleRows = rows.filter(row => row.style.display !== 'none');
                     visibleRows.sort((a, b) => {
                         // Get the time-out values (last column)
-                        const timeOutA = a.cells[7].textContent.trim();
-                        const timeOutB = b.cells[7].textContent.trim();
+                        const timeOutA = a.cells[8].textContent.trim();
+                        const timeOutB = b.cells[8].textContent.trim();
                         
                         // If both have time-out, keep original order
                         if (timeOutA && timeOutB) return 0;

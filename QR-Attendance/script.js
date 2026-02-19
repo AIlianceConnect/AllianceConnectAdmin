@@ -341,33 +341,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (manualForm) {
             manualForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                const studentId = (document.getElementById('manualStudentId')?.value || '').trim();
-                const studentName = (document.getElementById('manualStudentName')?.value || '').trim();
-                const course = (document.querySelector('input[name="manualCourse"]:checked')?.value || '').trim();
-                const yearSection = (document.getElementById('manualYearSection')?.value || '').trim();
-                if (!studentId || !studentName || !course || !yearSection) return;
-                const section = `${course} ${yearSection}`;
-                const student = { studentId, studentName, section };
-                
-                // Add/update student in database if using Firebase
-                if (firebaseDB) {
-                    try {
+                try {
+                    const studentId = (document.getElementById('manualStudentId')?.value || '').trim();
+                    const studentName = (document.getElementById('manualStudentName')?.value || '').trim();
+                    const course = (document.querySelector('input[name="manualCourse"]:checked')?.value || '').trim();
+                    const yearSection = (document.getElementById('manualYearSection')?.value || '').trim();
+                    if (!studentId || !studentName || !course || !yearSection) return;
+                    const section = `${course} ${yearSection}`;
+                    const student = { studentId, studentName, section };
+                    
+                    // Add/update student in database if using Firebase
+                    if (firebaseDB) {
                         const existingStudent = await firebaseDB.findStudentByBarcode(firebaseDB.encodeStudentData(studentId));
                         if (!existingStudent) {
                             await firebaseDB.addStudent(student);
                         } else {
                             await firebaseDB.updateStudent(studentId, { studentName, section });
                         }
-                    } catch (error) {
-                        console.error('Error updating student database:', error);
                     }
+                    
+                    await markAttendance(student);
+                    showToast('Manual Check-in', `${studentName} (${studentId})`, 'success');
+                    // Clear and close modal
+                    manualForm.reset();
+                    if (manualModal) manualModal.hide();
+                } catch (error) {
+                    console.error('Manual check-in failed:', error);
+                    showToast('Manual Check-in Failed', error.message || 'Unable to save check-in.', 'error');
                 }
-                
-                await markAttendance(student);
-                showToast('Manual Check-in', `${studentName} (${studentId})`, 'success');
-                // Clear and close modal
-                manualForm.reset();
-                if (manualModal) manualModal.hide();
             });
         }
     }
@@ -405,29 +406,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (outForm) {
             outForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                const studentId = (document.getElementById('manualCheckOutStudentId')?.value || '').trim();
-                if (!studentId) return;
-                const currentEvent = localStorage.getItem('currentEvent') || await firebaseDB?.getCurrentEvent();
-                const today = new Date().toLocaleDateString();
-                const records = attendanceRecords;
-                // Find the student's section from today's record in current event
-                // Prefer the record with no timeOut yet; otherwise last record today
-                const candidates = records.filter(r => r.studentId === studentId && r.event === currentEvent && r.date === today);
-                let target = candidates.find(r => !r.timeOut);
-                if (!target) {
-                    // If all timed-out, choose the most recent by checkInMs
-                    target = candidates.sort((a,b)=> (b.lastUpdateMs||b.checkInMs||0) - (a.lastUpdateMs||a.checkInMs||0))[0];
-                }
-                if (target) {
-                    const updated = await updateStudentTimeOut(target.studentId, target.section, target.event, target.date, 'manual');
-                    if (updated) {
-                        showToast('Manual Time-out', `${target.studentName || ''} (${target.studentId})`, 'error');
+                try {
+                    const studentId = (document.getElementById('manualCheckOutStudentId')?.value || '').trim();
+                    if (!studentId) return;
+                    const currentEvent = localStorage.getItem('currentEvent') || await firebaseDB?.getCurrentEvent();
+                    const today = new Date().toLocaleDateString();
+                    const records = attendanceRecords;
+                    // Find the student's section from today's record in current event
+                    // Prefer the record with no timeOut yet; otherwise last record today
+                    const candidates = records.filter(r => r.studentId === studentId && r.event === currentEvent && r.date === today);
+                    let target = candidates.find(r => !r.timeOut);
+                    if (!target) {
+                        // If all timed-out, choose the most recent by checkInMs
+                        target = candidates.sort((a,b)=> (b.lastUpdateMs||b.checkInMs||0) - (a.lastUpdateMs||a.checkInMs||0))[0];
                     }
-                } else {
-                    showToast('Student Not Found', `No record for ${studentId} today`, 'error');
+                    if (target) {
+                        const updated = await updateStudentTimeOut(target.studentId, target.section, target.event, target.date, 'manual');
+                        if (updated) {
+                            showToast('Manual Time-out', `${target.studentName || ''} (${target.studentId})`, 'success');
+                        } else {
+                            showToast('Manual Time-out Failed', `${target.studentName || ''} (${target.studentId})`, 'error');
+                        }
+                    } else {
+                        showToast('Student Not Found', `No record for ${studentId} today`, 'error');
+                    }
+
+                    outForm.reset();
+                    if (outModal) outModal.hide();
+                } catch (error) {
+                    console.error('Manual time-out failed:', error);
+                    showToast('Manual Time-out Failed', error.message || 'Unable to save time-out.', 'error');
                 }
-                outForm.reset();
-                if (outModal) outModal.hide();
             });
         }
     }
@@ -778,11 +787,16 @@ function updateAttendanceTable() {
     }
     sortedRecords.forEach((record, idx) => {
         const key = `${record.studentId}-${record.section}-${record.event}-${record.date}`;
+        const encodedKey = encodeURIComponent(key);
         const row = document.createElement('tr');
         if (recentTimedOutKey && key === recentTimedOutKey) {
             row.style.backgroundColor = '#fff3cd'; // Bootstrap warning highlight
         }
+        const checkoutButtonHtml = record.timeOut
+            ? '<button class="btn btn-sm btn-secondary" type="button" disabled>Done</button>'
+            : `<button class="btn btn-sm btn-danger checkout-record" type="button" data-record-key="${encodedKey}">Check-out</button>`;
         row.innerHTML = `
+            <td>${checkoutButtonHtml}</td>
             <td>${idx + 1}</td>
             <td>${record.studentId}</td>
             <td>${record.studentName}</td>
@@ -793,6 +807,31 @@ function updateAttendanceTable() {
             <td>${record.timeOut || ''}</td>
         `;
         tbody.appendChild(row);
+    });
+
+    // Wire per-row checkout buttons
+    tbody.querySelectorAll('.checkout-record').forEach((button) => {
+        button.addEventListener('click', async function() {
+            const recordKey = decodeURIComponent(this.getAttribute('data-record-key') || '');
+            const target = sortedRecords.find(r =>
+                `${r.studentId}-${r.section}-${r.event}-${r.date}` === recordKey
+            );
+            if (!target) {
+                showToast('Checkout Failed', 'Record not found.', 'error');
+                return;
+            }
+
+            const updated = await updateStudentTimeOut(
+                target.studentId,
+                target.section,
+                target.event,
+                target.date,
+                'manual'
+            );
+            if (!updated) {
+                showToast('Checkout Failed', `${target.studentName} (${target.studentId})`, 'error');
+            }
+        });
     });
     // Update section dropdown and student list to reflect latest students
     updateSectionDropdownAndStudentList();
